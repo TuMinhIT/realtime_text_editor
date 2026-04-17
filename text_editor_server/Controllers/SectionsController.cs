@@ -44,7 +44,15 @@ namespace text_editor_server.Controllers
                         return BadRequest("Document contains no sections");
 
                     // Get current user ID (in production, extract from JWT token)
-                    var userId = Guid.NewGuid(); // TODO: Extract from auth context
+
+                    //T mock test id ở đây Tú gray
+                    var Test_user = await _context.Users.FirstOrDefaultAsync(); // Replace with actual user retrieval logic
+                    if (Test_user == null)
+                    {
+                        return BadRequest("No users found in the database. Please seed users before uploading documents.");
+
+                    }
+                    var userId = Test_user.Id;
 
                     // Create document
                     var document = new Document

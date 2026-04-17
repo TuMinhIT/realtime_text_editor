@@ -12,8 +12,8 @@ using text_editor_server.Data;
 namespace text_editor_server.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260417092427_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260417153410_InitalCreate")]
+    partial class InitalCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

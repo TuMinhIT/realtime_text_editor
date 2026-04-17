@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using text_editor_server.Data;
+using text_editor_server.Entities;
 using text_editor_server.Hubs;
 using text_editor_server.Services;
 
@@ -21,8 +22,8 @@ namespace text_editor_server
             var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "text-editor-client";
 
             // Add database
-            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-                ?? "Source=THOCODE\\SQLEXPRESS;Initial Catalog=KyNang;Integrated Security=True;Persist Security Info=False;Pooling=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=True;";
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+               
             
             builder.Services.AddDbContext<AppDbContext>(options =>
                 options.UseSqlServer(connectionString));
@@ -98,10 +99,30 @@ namespace text_editor_server
                     Console.WriteLine($"✗ Database migration failed: {ex.Message}");
                 }
             }
+            //fake data seeding:
+            using (var scope = app.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+                if (!db.Users.Any())
+                {
+                    db.Users.Add(new User
+                    {
+                        Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
+                        Email = "test@gmail.com",
+                        PasswordHash = "hash",
+                        FullName = "Test User",
+                        CreatedAt = DateTime.UtcNow,
+                        IsActive = true
+                    });
+
+                    db.SaveChanges();
+                }
+            }
 
             // Configure middleware
-          
-                app.UseSwagger();
+
+            app.UseSwagger();
                 app.UseSwaggerUI();
        
 
