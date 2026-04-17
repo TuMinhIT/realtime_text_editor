@@ -1,0 +1,6 @@
+@text_editor_server_HostAddress = http://localhost:5181
+
+GET {{text_editor_server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
