@@ -7,7 +7,7 @@ using text_editor_server.Services;
 namespace text_editor_server.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/[controller]")] 
     public class SectionsController : ControllerBase
     {
         private readonly AppDbContext _context;

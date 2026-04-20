@@ -2,7 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using text_editor_server.Data;
-using text_editor_server.Entities;
+using text_editor_server.DTOs.req;
+using text_editor_server.DTOs.res;
 using text_editor_server.Services;
 
 namespace text_editor_server.Controllers
@@ -12,11 +13,11 @@ namespace text_editor_server.Controllers
     public class UsersController : ControllerBase
     {
         private readonly AppDbContext _context;
-        private readonly IAuthService _authService;
+      private readonly AuthService _authService;
         private readonly IConfiguration _configuration;
         private readonly ILogger<UsersController> _logger;
 
-        public UsersController(AppDbContext context, IAuthService authService, IConfiguration configuration, ILogger<UsersController> logger)
+        public UsersController(AppDbContext context, AuthService authService, IConfiguration configuration, ILogger<UsersController> logger)
         {
             _context = context;
             _authService = authService;
@@ -28,35 +29,21 @@ namespace text_editor_server.Controllers
         /// Register a new user
         /// </summary>
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+        public async Task<IActionResult> Register([FromBody] RegisterReq request)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
+                if (request.Email == null || request.Password == null)
                     return BadRequest("Email and password are required");
 
-                // Check if user exists
-                var existingUser = await _context.Users
-                    .FirstOrDefaultAsync(u => u.Email == request.Email);
-
-                if (existingUser != null)
+                var user = await _authService.RegisterUser(request.Email, request.Password, request.FullName);
+                if (user == null)
                     return BadRequest("User with this email already exists");
 
-                // Create user
-                var user = new User
-                {
-                    Id = Guid.NewGuid(),
-                    Email = request.Email,
-                    FullName = request.FullName ?? request.Email.Split('@')[0],
-                    PasswordHash = _authService.HashPassword(request.Password),
-                    CreatedAt = DateTime.UtcNow,
-                    IsActive = true
-                };
-
-                _context.Users.Add(user);
-                await _context.SaveChangesAsync();
-
-                return Ok(new { userId = user.Id, email = user.Email, message = "User registered successfully" });
+                return Ok(new { 
+                    user,
+                    message = "User registered successfully" 
+                });
             }
             catch (Exception ex)
             {
@@ -65,73 +52,71 @@ namespace text_editor_server.Controllers
             }
         }
 
+
+
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken()
+        {
+
+            var refreshToken = Request.Cookies["refreshToken"];
+            if (string.IsNullOrEmpty(refreshToken))
+           
+                return Unauthorized("Refresh token is missing");
+            RefreshTokenRes newTokens = await _authService.RefreshTokenAsync(refreshToken) as RefreshTokenRes;
+            if (newTokens == null)
+                return Unauthorized("Invalid refresh token");
+
+            
+                // set lại cookie mới (rotate)
+                Response.Cookies.Append("refreshToken", newTokens.RefreshToken, new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Strict,
+                    Expires = DateTime.UtcNow.AddDays(7)
+                });
+
+            return Ok(new
+            {
+                AccessToken = newTokens.accessToken,
+                message = "Token refreshed successfully"
+            });   
+        }
         /// <summary>
         /// Login user
         /// </summary>
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequest request)
+      
+        public async Task<IActionResult> Login([FromBody] LoginReq request)
         {
-            try
+            if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
+                return BadRequest("Email and password are required");
+
+            var result = await _authService.Login(request.Email, request.Password);
+            if (result == null)
+                return Unauthorized("Invalid email or password");
+
+            // lấy refresh token từ result
+            var refreshToken = result.RefreshToken;
+
+            // set cookie
+            Response.Cookies.Append("refreshToken", refreshToken!, new CookieOptions
             {
-                if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
-                    return BadRequest("Email and password are required");
+                HttpOnly = true,    
+                Secure = true,       
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddDays(7)
+            });
 
-                var user = await _context.Users
-                    .FirstOrDefaultAsync(u => u.Email == request.Email);
-
-                if (user == null || !_authService.VerifyPassword(request.Password, user.PasswordHash))
-                    return Unauthorized("Invalid email or password");
-
-                if (!user.IsActive)
-                    return Unauthorized("User account is not active");
-
-                // Generate JWT token
-                var jwtSecret = _configuration["Jwt:Secret"];
-                var jwtIssuer = _configuration["Jwt:Issuer"];
-                var jwtAudience = _configuration["Jwt:Audience"];
-                var token = _authService.GenerateJwtToken(user, jwtSecret, jwtIssuer, jwtAudience);
-
-
-                //Them oldToken de kiem tra refreshtoken cu:
-                var oldTokens = await _context.RefreshTokens
-                    .Where(x => x.UserId == user.Id && !x.IsRevoked && !x.IsUsed)
-                    .ToListAsync();
-                foreach (var t in oldTokens)
-                {
-                    t.IsRevoked = true;
-                }
-                // Generate refresh token
-                var refreshToken = _authService.GenerateRefreshToken();
-                var refreshTokenHash = _authService.HashToken(refreshToken);
-
-                var newRefreshToken = new RefreshToken
-                {
-                    TokenHash = refreshTokenHash,
-                    ExpiryTime = DateTime.UtcNow.AddDays(7),
-                    UserId = user.Id,
-                    CreatedByIp = HttpContext.Connection.RemoteIpAddress?.ToString(),
-                    UserAgent = Request.Headers["User-Agent"].ToString()
-                };
-                _context.RefreshTokens.Add(newRefreshToken);
-                await _context.SaveChangesAsync();
-
-                return Ok(new
-                {
-                    userId = user.Id,
-                    email = user.Email,
-                    fullName = user.FullName,
-                    token,
-                    expiresIn = 900, // 15 phút
-                    refreshToken, // chỉ trả về plain text 1 lần
-                    refreshTokenExpiry = newRefreshToken.ExpiryTime
-                });
-            }
-            catch (Exception ex)
+       
+            return Ok(new
             {
-                _logger.LogError(ex, "Error logging in user");
-                return StatusCode(500, "Failed to login");
-            }
+                User = result.User,
+                AccessToken = result.AccessToken,
+                message = "Login successful"
+            });
         }
+
 
         /// <summary>
         /// Get current user profile
@@ -193,114 +178,11 @@ namespace text_editor_server.Controllers
             }
         }
 
-        /// <summary>
-        /// Search users by email
-        /// </summary>
-        [HttpGet("search")]
-        public async Task<IActionResult> SearchUsers([FromQuery] string query)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(query) || query.Length < 2)
-                    return BadRequest("Search query must be at least 2 characters");
+    
 
-                var users = await _context.Users
-                    .Where(u => u.Email.Contains(query) || u.FullName.Contains(query))
-                    .Take(10)
-                    .Select(u => new { u.Id, u.Email, u.FullName })
-                    .ToListAsync();
-
-                return Ok(users);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Error searching users: {ex.Message}");
-                return StatusCode(500, "Failed to search users");
-            }
-        }
-
-        /// <summary>
-        /// Refresh JWT token
-        /// </summary>
-        [HttpPost("refresh-token")]
-        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
-        {
-            if (string.IsNullOrWhiteSpace(request.RefreshToken))
-                return BadRequest("Refresh token is required");
-
-            var refreshTokenHash = _authService.HashToken(request.RefreshToken);
-            var storedToken = await _context.RefreshTokens
-                .Include(rt => rt.User)
-                .FirstOrDefaultAsync(rt => rt.TokenHash == refreshTokenHash);
-
-            if (storedToken == null || storedToken.IsUsed || storedToken.IsRevoked || storedToken.ExpiryTime < DateTime.UtcNow)
-                return Unauthorized("Invalid or expired refresh token");
-            
-            // Đánh dấu token đã dùng và đã thu hồi
-            storedToken.IsUsed = true;
-            storedToken.IsRevoked = true;
-            _context.RefreshTokens.Update(storedToken);
-
-            // Sinh access token mới
-            var jwtSecret = _configuration["Jwt:Secret"];
-            var jwtIssuer = _configuration["Jwt:Issuer"];
-            var jwtAudience = _configuration["Jwt:Audience"];
-            var newAccessToken = _authService.GenerateJwtToken(storedToken.User, jwtSecret, jwtIssuer, jwtAudience);
-
-            // (Tùy chọn) Sinh refresh token mới
-            var newRefreshToken = _authService.GenerateRefreshToken();
-            var newRefreshTokenHash = _authService.HashToken(newRefreshToken);
-            var refreshTokenEntity = new RefreshToken
-            {
-                TokenHash = newRefreshTokenHash,
-                ExpiryTime = DateTime.UtcNow.AddDays(7),
-                UserId = storedToken.UserId,
-                CreatedByIp = HttpContext.Connection.RemoteIpAddress?.ToString(),
-                UserAgent = Request.Headers["User-Agent"].ToString()
-            };
-            _context.RefreshTokens.Add(refreshTokenEntity);
-
-            await _context.SaveChangesAsync();
-
-            // Kiểm tra tái sử dụng token
-            if (storedToken.IsUsed)
-            {
-                var tokens = _context.RefreshTokens
-                    .Where(x => x.UserId == storedToken.UserId);
-                foreach (var t in tokens)
-                {
-                    t.IsRevoked = true;
-                }
-                await _context.SaveChangesAsync();
-                return Unauthorized("Token reuse detected");
-            }
-
-            return Ok(new
-            {
-                token = newAccessToken,
-                expiresIn = 900,
-                refreshToken = newRefreshToken,
-                refreshTokenExpiry = refreshTokenEntity.ExpiryTime
-            });
-        }
-
-        public class RefreshTokenRequest
-        {
-            public string RefreshToken { get; set; }
-        }
     }
 
-    // Request DTOs
-    public class RegisterRequest
-    {
-        public string Email { get; set; }
-        public string Password { get; set; }
-        public string? FullName { get; set; }
-    }       
 
-    public class LoginRequest
-    {
-        public string Email { get; set; }
-        public string Password { get; set; }
-    }
+
+
 }

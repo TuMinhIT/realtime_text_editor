@@ -3,7 +3,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-
+using System.Diagnostics.Eventing.Reader;
 using System.Text;
 using text_editor_server.Data;
 using text_editor_server.Entities;
@@ -18,10 +18,6 @@ namespace text_editor_server
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Get JWT configuration
-            var jwtSecret = builder.Configuration["Jwt:Secret"] ?? "your-super-secret-key-that-should-be-at-least-32-characters-long";
-            var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "text-editor-server";
-            var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "text-editor-client";
 
             // Add database
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -31,7 +27,9 @@ namespace text_editor_server
                 options.UseSqlServer(connectionString));
 
             // Add services
-            builder.Services.AddScoped<IAuthService, AuthService>();
+            builder.Services.AddScoped< AuthService>();
+          
+
             builder.Services.AddScoped<IDocxParsingService, DocxParsingService>();
             builder.Services.AddScoped<IOperationalTransformService, OperationalTransformService>();
 
@@ -57,14 +55,7 @@ namespace text_editor_server
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
-                    options.TokenValidationParameters = new TokenValidationParameters
-                    {
-                        ValidateIssuerSigningKey = true,
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
-                        ValidateIssuer = false,
-                        ValidateAudience = false,
-                        ClockSkew = TimeSpan.Zero
-                    };
+     
 
                     // SignalR token from query string
                     options.Events = new JwtBearerEvents
@@ -86,6 +77,7 @@ namespace text_editor_server
             builder.Services.AddSwaggerGen();
 
             var app = builder.Build();
+            //app.UseMiddleware<JwtMiddleware>();
 
             // Migrate database
             using (var scope = app.Services.CreateScope())
@@ -102,31 +94,63 @@ namespace text_editor_server
                 }
             }
             //fake data seeding:
-           
+
+            // Migrate database và Seed dữ liệu khởi tạo
             using (var scope = app.Services.CreateScope())
             {
-                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                var authService = scope.ServiceProvider.GetRequiredService<IAuthService>();
-
-                if (!db.Users.Any())
+                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                try
                 {
-                    var passwordHash = authService.HashPassword("123456");
+                    dbContext.Database.Migrate();
+                    Console.WriteLine("✓ Database migrated successfully");
 
-                    db.Users.Add(new User
+                    // Kiểm tra xem đã có user nào trong database chưa
+                    if (!dbContext.Users.Any())
                     {
-                        Id = Guid.NewGuid(), // nhớ thêm nếu chưa có
-                        Email = "test@gmail.com",
-                        PasswordHash = passwordHash,
-                        FullName = "Test User",
-                        CreatedAt = DateTime.UtcNow,
-                        IsActive = true,
-                        Role = "Admin"
-                    });
+                        var defaultUsers = new List<User>
+                        {
+                            new User
+                            {
+                                Id = Guid.NewGuid(),
+                                Email = "admin@gmail.com",
+                                PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456"),
+                                FullName = "Admin User",
+                                CreatedAt = DateTime.UtcNow,
+                                IsActive = true,
+                                Role = "Admin" // Đảm bảo role này tương thích với Entity của bạn
+                            },
+                            new User
+                            {
+                                Id = Guid.NewGuid(),
+                                Email = "test1@gmail.com",
+                                PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456"),
+                                FullName = "Test User 1",
+                                CreatedAt = DateTime.UtcNow,
+                                IsActive = true,
+                                Role = "User"
+                            },
+                            new User
+                            {
+                                Id = Guid.NewGuid(),
+                                Email = "test2@gmail.com",
+                                PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456"),
+                                FullName = "Test User 2",
+                                CreatedAt = DateTime.UtcNow,
+                                IsActive = true,
+                                Role = "User"
+                            }
+                        };
 
-                    db.SaveChanges();
+                        dbContext.Users.AddRange(defaultUsers);
+                        dbContext.SaveChanges();
+                        Console.WriteLine("✓ 3 default users seeded successfully");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"✗ Database migration or seeding failed: {ex.Message}");
                 }
             }
-
             // Configure middleware
 
             app.UseSwagger();
@@ -152,3 +176,5 @@ namespace text_editor_server
         }
     }
 }
+
+

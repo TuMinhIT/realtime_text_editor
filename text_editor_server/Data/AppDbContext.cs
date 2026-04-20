@@ -26,6 +26,13 @@ namespace text_editor_server.Data
                 .WithMany(u => u.OwnedDocuments)
                 .HasForeignKey(d => d.CreatedBy)
                 .OnDelete(DeleteBehavior.Restrict);
+            
+            // User -> RefreshToken relationship
+            modelBuilder.Entity<RefreshToken>()
+                .HasOne(rt => rt.User)
+                .WithMany(u => u.RefreshTokens)
+                .HasForeignKey(rt => rt.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // Document -> Section relationship
             modelBuilder.Entity<Section>()
@@ -71,21 +78,6 @@ namespace text_editor_server.Data
                 .HasIndex(oc => new { oc.SectionId, oc.CreatedAt });
         }
     }
-    //Trùng lặp config với Fluent API trong OnModelCreating, có thể xóa phần này nếu đã cấu hình đầy đủ
 
-    //// Add a design-time factory to help Entity Framework Core resolve dependencies during migrations
-    //public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
-    //{
-    //    public AppDbContext CreateDbContext(string[] args)
-    //    {
-    //        // Set your connection string here or read from configuration for design-time use
-    //        var connectionString = "Data Source=THOCODE\\SQLEXPRESS;Initial Catalog=KyNang;Integrated Security=True;Persist Security Info=False;Pooling=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=True;";
-
-    //        var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
-    //        optionsBuilder.UseSqlServer(connectionString);
-
-    //        return new AppDbContext(optionsBuilder.Options);
-    //    }
-    //}
 }
 
