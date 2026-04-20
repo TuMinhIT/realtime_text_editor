@@ -10,8 +10,8 @@ import {
 } from "lucide-react";
 import DocumentUpload from "../components/DocumentUpload";
 import DashboardLayout from "../components/DashboardLayout";
-
-const STORAGE_KEY = "text-editor.recent-documents";
+import { APP_ROUTES } from "../constants/routes";
+import { documentService } from "../services/documentService";
 
 const featureCards = [
   {
@@ -49,21 +49,8 @@ const seedDocuments = [
 ];
 
 const readDocuments = () => {
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      return seedDocuments;
-    }
-
-    const parsed = JSON.parse(raw);
-    return parsed.length ? parsed : seedDocuments;
-  } catch {
-    return seedDocuments;
-  }
-};
-
-const writeDocuments = (documents) => {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(documents));
+  const storedDocuments = documentService.getRecentDocuments();
+  return storedDocuments.length ? storedDocuments : seedDocuments;
 };
 
 const formatDate = (value) =>
@@ -88,7 +75,7 @@ const DocumentsPage = () => {
   );
 
   const openDocument = (documentId) => {
-    navigate(`/editor?doc=${documentId}`);
+    navigate(`${APP_ROUTES.editor}?doc=${documentId}`);
   };
 
   const handleUpload = (file) => {
@@ -110,7 +97,7 @@ const DocumentsPage = () => {
       ].slice(0, 8);
 
       setDocuments(nextDocuments);
-      writeDocuments(nextDocuments);
+      documentService.saveRecentDocument(nextDocument);
       setIsUploading(false);
       openDocument(documentId);
     }, 650);

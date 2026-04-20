@@ -9,11 +9,14 @@ import {
   Search,
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { APP_ROUTES } from "../constants/routes";
+import { sessionService } from "../services/sessionService";
+import { userService } from "../services/userService";
 
 const navigationItems = [
-  { label: "Dashboard", path: "/dashboard", icon: LayoutGrid },
-  { label: "Documents", path: "/documents", icon: FileText },
-  { label: "Projects", path: "/projects", icon: FolderKanban },
+  { label: "Dashboard", path: APP_ROUTES.dashboard, icon: LayoutGrid },
+  { label: "Documents", path: APP_ROUTES.documents, icon: FileText },
+  { label: "Projects", path: APP_ROUTES.projects, icon: FolderKanban },
 ];
 
 const DashboardLayout = ({
@@ -24,6 +27,18 @@ const DashboardLayout = ({
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const currentUser = sessionService.getCurrentUser();
+  const userName = currentUser?.name || "Workspace user";
+  const userRole = currentUser?.email || "Product owner workspace";
+
+  const handleLogout = async () => {
+    try {
+      await userService.logout();
+    } finally {
+      sessionService.clearCurrentUser();
+      navigate(APP_ROUTES.login, { replace: true });
+    }
+  };
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.12),_transparent_24%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] text-slate-900">
@@ -69,7 +84,7 @@ const DashboardLayout = ({
               </p>
               <button
                 type="button"
-                onClick={() => navigate("/documents")}
+                onClick={() => navigate(APP_ROUTES.documents)}
                 className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-amber-300 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-amber-200"
               >
                 <Plus size={16} />
@@ -79,19 +94,17 @@ const DashboardLayout = ({
 
             <div className="mt-auto space-y-4">
               <div className="rounded-[28px] border border-white/10 bg-white/5 p-4">
-                <p className="text-sm font-medium text-white">Minh Tran</p>
-                <p className="mt-1 text-sm text-slate-400">
-                  Product owner workspace
-                </p>
+                <p className="text-sm font-medium text-white">{userName}</p>
+                <p className="mt-1 text-sm text-slate-400">{userRole}</p>
               </div>
 
               <button
                 type="button"
-                onClick={() => navigate("/login")}
+                onClick={handleLogout}
                 className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/10 px-4 py-3 text-sm font-medium text-slate-200 transition hover:bg-white/10"
               >
                 <LogOut size={16} />
-                Login page
+                Logout
               </button>
             </div>
           </div>

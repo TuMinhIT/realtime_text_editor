@@ -3,14 +3,16 @@
  * Configure this with your backend URL and authentication token
  */
 
+import { STORAGE_KEYS } from "../constants/storageKeys";
+
 const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+  import.meta.env.VITE_API_URL || "https://localhost:8001/api";
 const TIMEOUT = 30000; // 30 seconds
 
 class ApiClient {
   constructor() {
     this.baseURL = API_BASE_URL;
-    this.token = localStorage.getItem("authToken");
+    this.token = localStorage.getItem(STORAGE_KEYS.authToken);
     this.headers = {
       "Content-Type": "application/json",
     };
@@ -27,10 +29,10 @@ class ApiClient {
     this.token = token;
     if (token) {
       this.headers.Authorization = `Bearer ${token}`;
-      localStorage.setItem("authToken", token);
+      localStorage.setItem(STORAGE_KEYS.authToken, token);
     } else {
       delete this.headers.Authorization;
-      localStorage.removeItem("authToken");
+      localStorage.removeItem(STORAGE_KEYS.authToken);
     }
   }
 
@@ -47,6 +49,7 @@ class ApiClient {
 
     try {
       const response = await fetch(url, {
+        credentials: "include",
         ...options,
         headers: {
           ...this.headers,

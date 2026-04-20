@@ -7,53 +7,59 @@ import {
   Lock,
   LogIn,
   Mail,
-  PencilLine,
   ShieldCheck,
   Sparkles,
   User,
 } from "lucide-react";
+import { APP_ROUTES } from "../constants/routes";
+import { sessionService } from "../services/sessionService";
 import { userService } from "../services/userService";
 
+const INITIAL_FORM_DATA = {
+  name: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
+};
+
 const highlights = [
-  "Word-style editor workspace",
-  "Mock upload va document dashboard",
-  "San sang mo rong realtime collaboration",
+  "Chỉnh sửa tài liệu mượt mà",
+  "Đồng bộ thời gian thực",
+  "Hỗ trợ làm việc nhóm",
 ];
+
+const inputClassName =
+  "flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 transition-all focus-within:border-amber-400 focus-within:shadow-sm hover:border-slate-300";
 
 const LoginPage = () => {
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
+  const [formData, setFormData] = useState(INITIAL_FORM_DATA);
 
-  const handleChange = (event) => {
-    const { name, value } = event.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    setError("");
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (error) setError("");
   };
 
   const persistCurrentUser = (response, fallbackName, fallbackEmail) => {
-    localStorage.setItem(
-      "currentUser",
-      JSON.stringify({
-        id: response.user?.id || response.userId || fallbackEmail,
-        name: response.user?.fullName || fallbackName,
-        email: response.user?.email || fallbackEmail,
-      }),
-    );
+    sessionService.setCurrentUser({
+      id: response.user?.id || response.userId || fallbackEmail,
+      name: response.user?.fullName || fallbackName,
+      email: response.user?.email || fallbackEmail,
+    });
   };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  const handleAuthModeChange = (mode) => {
+    setIsLogin(mode === "login");
+    setError("");
+    setFormData(INITIAL_FORM_DATA);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     setLoading(true);
     setError("");
 
@@ -61,12 +67,12 @@ const LoginPage = () => {
       if (isLogin) {
         const response = await userService.login(formData.email, formData.password);
         persistCurrentUser(response, formData.email.split("@")[0], formData.email);
-        navigate("/dashboard");
+        navigate(APP_ROUTES.dashboard);
         return;
       }
 
       if (formData.password !== formData.confirmPassword) {
-        setError("Passwords do not match");
+        setError("Mật khẩu xác nhận không khớp");
         setLoading(false);
         return;
       }
@@ -76,238 +82,199 @@ const LoginPage = () => {
         formData.email,
         formData.password,
       );
-      persistCurrentUser(response, formData.name, formData.email);
-      navigate("/dashboard");
-    } catch (submitError) {
-      setError(submitError.message || "An error occurred");
+      if (response.user) {
+        persistCurrentUser(response, formData.name, formData.email);
+      }
+      navigate(response.token ? APP_ROUTES.dashboard : APP_ROUTES.login);
+    } catch (err) {
+      setError(err.message || "Đã xảy ra lỗi. Vui lòng thử lại.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.22),_transparent_25%),radial-gradient(circle_at_bottom_right,_rgba(14,165,233,0.18),_transparent_28%),linear-gradient(180deg,#fffdf8_0%,#eef2ff_100%)] px-4 py-6 text-slate-900 md:px-8 md:py-8">
-      <div className="mx-auto grid min-h-[calc(100vh-3rem)] w-full max-w-7xl gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-        <section className="relative overflow-hidden rounded-[36px] border border-white/70 bg-slate-950 p-8 text-white shadow-[0_45px_120px_-55px_rgba(15,23,42,0.8)] md:p-10">
-          <div className="absolute left-0 top-0 h-48 w-48 rounded-full bg-amber-300/20 blur-3xl" />
-          <div className="absolute bottom-0 right-0 h-56 w-56 rounded-full bg-sky-400/20 blur-3xl" />
+    <main className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-indigo-50 px-4 py-8 md:py-12 text-slate-900">
+      <div className="mx-auto max-w-7xl">
+        <div className="grid min-h-[640px] overflow-hidden rounded-3xl border border-white/60 bg-white shadow-2xl backdrop-blur-xl lg:grid-cols-[1fr_460px]">
 
-          <div className="relative flex h-full flex-col justify-between gap-8">
-            <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs font-medium uppercase tracking-[0.24em] text-slate-200">
-                <Sparkles size={14} />
-                Collaborative editor
+          {/* Left Side - Hero */}
+          <section className="relative hidden bg-slate-950 p-10 text-white lg:flex lg:flex-col lg:justify-between">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(251,191,36,0.25),transparent_50%),radial-gradient(circle_at_70%_80%,rgba(129,140,248,0.18),transparent_60%)]" />
+
+            <div className="relative">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-5 py-2 text-xs font-medium uppercase tracking-widest text-amber-200">
+                <Sparkles size={16} />
+                TXT EDITOR X
               </div>
 
-              <div className="space-y-4">
-                <h1 className="max-w-xl text-4xl font-semibold tracking-tight text-white md:text-6xl">
-                  Dang nhap vao workspace viet va review tai lieu.
-                </h1>
-                <p className="max-w-2xl text-base leading-7 text-slate-300 md:text-lg">
-                  Giao dien moi theo style editorial: dep, sach va hop voi flow
-                  dashboard, documents, editor ma ban dang xay.
-                </p>
-              </div>
-
-              <div className="grid gap-3">
-                {highlights.map((item) => (
-                  <div
-                    key={item}
-                    className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/6 px-4 py-4"
-                  >
-                    <CheckCircle2 size={18} className="text-emerald-300" />
-                    <p className="text-sm text-slate-200">{item}</p>
-                  </div>
-                ))}
-              </div>
+              <h1 className="mt-10 text-5xl font-semibold leading-tight tracking-tighter">
+                Viết và quản lý<br />tài liệu thông minh
+              </h1>
+              <p className="mt-6 max-w-md text-lg text-slate-300">
+                Giao diện đơn giản. Đồng bộ nhanh. Làm việc nhóm dễ dàng.
+              </p>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="rounded-[28px] border border-white/10 bg-white/6 px-4 py-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                  Security
-                </p>
-                <p className="mt-2 text-lg font-semibold">Safe access</p>
-              </div>
-              <div className="rounded-[28px] border border-white/10 bg-white/6 px-4 py-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                  Dashboard
-                </p>
-                <p className="mt-2 text-lg font-semibold">Unified layout</p>
-              </div>
-              <div className="rounded-[28px] border border-white/10 bg-white/6 px-4 py-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                  Editor
-                </p>
-                <p className="mt-2 text-lg font-semibold">Word-style UI</p>
-              </div>
+            {/* Highlights */}
+            <div className="relative space-y-4">
+              {highlights.map((text, index) => (
+                <div
+                  key={index}
+                  className="flex items-start gap-4 rounded-2xl border border-white/10 bg-white/5 px-6 py-5 transition hover:bg-white/10"
+                >
+                  <CheckCircle2 size={22} className="mt-0.5 flex-shrink-0 text-emerald-400" />
+                  <span className="text-[15px] text-slate-200">{text}</span>
+                </div>
+              ))}
             </div>
-          </div>
-        </section>
+          </section>
 
-        <section className="rounded-[36px] border border-white/70 bg-white/90 p-6 shadow-[0_35px_120px_-55px_rgba(15,23,42,0.45)] backdrop-blur md:p-8">
-          <div className="mx-auto flex h-full max-w-xl flex-col justify-between gap-8">
-            <div className="space-y-5">
-              <div className="flex items-center justify-between gap-4">
+          {/* Right Side - Form */}
+          <section className="flex items-center justify-center p-6 md:p-10">
+            <div className="w-full max-w-md space-y-8">
+              {/* Header */}
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-500">Welcome</p>
-                  <h2 className="mt-1 text-3xl font-semibold tracking-tight text-slate-950">
-                    {isLogin ? "Dang nhap tai khoan" : "Tao tai khoan moi"}
+                  <p className="text-sm font-medium text-slate-500">Chào mừng</p>
+                  <h2 className="mt-1 text-4xl font-semibold tracking-tight text-slate-950">
+                    {isLogin ? "Đăng nhập" : "Đăng ký"}
                   </h2>
                 </div>
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-900 text-white">
-                  <LogIn size={24} />
+                  <LogIn size={26} />
                 </div>
               </div>
 
-              <div className="inline-flex rounded-full border border-slate-200 bg-slate-100 p-1">
+              {/* Toggle */}
+              <div className="inline-flex rounded-3xl border border-slate-200 bg-slate-100 p-1">
                 <button
                   type="button"
-                  onClick={() => {
-                    setIsLogin(true);
-                    setError("");
-                  }}
-                  className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-                    isLogin
-                      ? "bg-white text-slate-950 shadow-sm"
-                      : "text-slate-500"
+                  onClick={() => handleAuthModeChange("login")}
+                  className={`rounded-3xl px-8 py-3 text-sm font-semibold transition-all ${
+                    isLogin ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
                   }`}
                 >
-                  Sign in
+                  Đăng nhập
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setIsLogin(false);
-                    setError("");
-                  }}
-                  className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-                    !isLogin
-                      ? "bg-white text-slate-950 shadow-sm"
-                      : "text-slate-500"
+                  onClick={() => handleAuthModeChange("register")}
+                  className={`rounded-3xl px-8 py-3 text-sm font-semibold transition-all ${
+                    !isLogin ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
                   }`}
                 >
-                  Sign up
+                  Đăng ký
                 </button>
               </div>
-            </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <div className="flex items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-4 text-sm text-rose-700">
-                  <AlertCircle size={18} />
-                  <span>{error}</span>
-                </div>
-              )}
+              {/* Form */}
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {error && (
+                  <div className="flex items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
+                    <AlertCircle size={20} />
+                    <span>{error}</span>
+                  </div>
+                )}
 
-              {!isLogin && (
+                {!isLogin && (
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium text-slate-600">Họ và tên</span>
+                    <div className={inputClassName}>
+                      <User size={20} className="text-slate-400" />
+                      <input
+                        type="text"
+                        name="name"
+                        placeholder="Nguyễn Văn A"
+                        value={formData.name}
+                        onChange={handleChange}
+                        disabled={loading}
+                        required
+                        className="flex-1 bg-transparent outline-none placeholder:text-slate-400"
+                      />
+                    </div>
+                  </label>
+                )}
+
                 <label className="block space-y-2">
-                  <span className="text-sm font-medium text-slate-700">Full name</span>
-                  <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 transition focus-within:border-slate-400 focus-within:bg-white">
-                    <User size={18} className="text-slate-400" />
+                  <span className="text-sm font-medium text-slate-600">Email</span>
+                  <div className={inputClassName}>
+                    <Mail size={20} className="text-slate-400" />
                     <input
-                      type="text"
-                      name="name"
-                      placeholder="Nguyen Van A"
-                      value={formData.name}
+                      type="email"
+                      name="email"
+                      placeholder="ban@example.com"
+                      value={formData.email}
                       onChange={handleChange}
                       disabled={loading}
-                      required={!isLogin}
-                      className="w-full bg-transparent text-slate-900 outline-none placeholder:text-slate-400"
+                      required
+                      className="flex-1 bg-transparent outline-none placeholder:text-slate-400"
                     />
                   </div>
                 </label>
-              )}
 
-              <label className="block space-y-2">
-                <span className="text-sm font-medium text-slate-700">Email</span>
-                <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 transition focus-within:border-slate-400 focus-within:bg-white">
-                  <Mail size={18} className="text-slate-400" />
-                  <input
-                    type="email"
-                    name="email"
-                    placeholder="ban@example.com"
-                    value={formData.email}
-                    onChange={handleChange}
-                    disabled={loading}
-                    required
-                    className="w-full bg-transparent text-slate-900 outline-none placeholder:text-slate-400"
-                  />
-                </div>
-              </label>
-
-              <label className="block space-y-2">
-                <span className="text-sm font-medium text-slate-700">Password</span>
-                <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 transition focus-within:border-slate-400 focus-within:bg-white">
-                  <Lock size={18} className="text-slate-400" />
-                  <input
-                    type="password"
-                    name="password"
-                    placeholder="Nhap mat khau"
-                    value={formData.password}
-                    onChange={handleChange}
-                    disabled={loading}
-                    required
-                    className="w-full bg-transparent text-slate-900 outline-none placeholder:text-slate-400"
-                  />
-                </div>
-              </label>
-
-              {!isLogin && (
                 <label className="block space-y-2">
-                  <span className="text-sm font-medium text-slate-700">
-                    Confirm password
-                  </span>
-                  <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 transition focus-within:border-slate-400 focus-within:bg-white">
-                    <ShieldCheck size={18} className="text-slate-400" />
+                  <span className="text-sm font-medium text-slate-600">Mật khẩu</span>
+                  <div className={inputClassName}>
+                    <Lock size={20} className="text-slate-400" />
                     <input
                       type="password"
-                      name="confirmPassword"
-                      placeholder="Nhap lai mat khau"
-                      value={formData.confirmPassword}
+                      name="password"
+                      placeholder="••••••••"
+                      value={formData.password}
                       onChange={handleChange}
                       disabled={loading}
-                      required={!isLogin}
-                      className="w-full bg-transparent text-slate-900 outline-none placeholder:text-slate-400"
+                      required
+                      className="flex-1 bg-transparent outline-none placeholder:text-slate-400"
                     />
                   </div>
                 </label>
-              )}
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-900 px-5 py-4 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
-              >
-                {loading ? (
-                  <>
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                    Dang xu ly...
-                  </>
-                ) : (
-                  <>
-                    {isLogin ? "Vao dashboard" : "Tao tai khoan"}
-                    <ArrowRight size={16} />
-                  </>
+                {!isLogin && (
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium text-slate-600">Xác nhận mật khẩu</span>
+                    <div className={inputClassName}>
+                      <ShieldCheck size={20} className="text-slate-400" />
+                      <input
+                        type="password"
+                        name="confirmPassword"
+                        placeholder="••••••••"
+                        value={formData.confirmPassword}
+                        onChange={handleChange}
+                        disabled={loading}
+                        required
+                        className="flex-1 bg-transparent outline-none placeholder:text-slate-400"
+                      />
+                    </div>
+                  </label>
                 )}
-              </button>
-            </form>
 
-            <div className="grid gap-4 rounded-[28px] border border-slate-200 bg-slate-50 p-5 md:grid-cols-[1fr_auto] md:items-center">
-              <div>
-                <p className="text-sm font-medium text-slate-900">
-                  Muon xem nhanh giao dien he thong?
-                </p>
-                <p className="mt-1 text-sm leading-6 text-slate-600">
-                  Ban co the dang nhap hoac tao tai khoan de vao dashboard va tiep tuc flow upload, documents, editor.
-                </p>
-              </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
-                <PencilLine size={20} />
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="mt-2 flex w-full items-center justify-center gap-3 rounded-2xl bg-slate-900 py-4 text-base font-semibold text-white transition hover:bg-slate-800 disabled:bg-slate-400"
+                >
+                  {loading ? (
+                    <>
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                      Đang xử lý...
+                    </>
+                  ) : (
+                    <>
+                      {isLogin ? "Đăng nhập" : "Tạo tài khoản"}
+                      <ArrowRight size={18} />
+                    </>
+                  )}
+                </button>
+              </form>
+
+              {/* Footer note */}
+              <div className="text-center text-sm text-slate-500">
+                Workspace gọn • Đồng bộ nhanh • Làm việc nhóm dễ dàng
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </div>
       </div>
     </main>
   );

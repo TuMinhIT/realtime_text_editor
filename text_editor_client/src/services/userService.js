@@ -5,18 +5,25 @@
 
 import { apiClient } from "./apiClient";
 
+const normalizeAuthResponse = (response = {}) => ({
+  user: response.user || response.User || null,
+  token: response.token || response.accessToken || response.AccessToken || null,
+  message: response.message || "",
+});
+
 export const userService = {
   /**
    * Login user
    */
   async login(email, password) {
     try {
-      const response = await apiClient.post("/auth/login", {
-        email,
-        password,
-      });
+      const response = normalizeAuthResponse(
+        await apiClient.post("/users/login", {
+          email,
+          password,
+        }),
+      );
 
-      // Save token
       if (response.token) {
         apiClient.setToken(response.token);
       }
@@ -33,13 +40,14 @@ export const userService = {
    */
   async register(name, email, password) {
     try {
-      const response = await apiClient.post("/auth/register", {
-        name,
-        email,
-        password,
-      });
+      const response = normalizeAuthResponse(
+        await apiClient.post("/users/register", {
+          email,
+          password,
+          fullName: name,
+        }),
+      );
 
-      // Save token
       if (response.token) {
         apiClient.setToken(response.token);
       }
@@ -56,7 +64,6 @@ export const userService = {
    */
   async logout() {
     try {
-      await apiClient.post("/auth/logout", {});
       apiClient.setToken(null);
     } catch (error) {
       console.error("Error logging out:", error);
@@ -106,11 +113,11 @@ export const userService = {
   /**
    * Refresh authentication token
    */
-  async refreshToken(refreshToken) {
+  async refreshToken() {
     try {
-      const response = await apiClient.post("/auth/refresh", {
-        refreshToken,
-      });
+      const response = normalizeAuthResponse(
+        await apiClient.post("/users/refresh-token", {}),
+      );
 
       if (response.token) {
         apiClient.setToken(response.token);

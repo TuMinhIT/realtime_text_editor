@@ -1,10 +1,9 @@
 import { apiClient } from "./apiClient";
-
-const RECENT_DOCUMENTS_KEY = "text-editor.recent-documents";
+import { STORAGE_KEYS } from "../constants/storageKeys";
 
 const readRecentDocuments = () => {
   try {
-    const raw = localStorage.getItem(RECENT_DOCUMENTS_KEY);
+    const raw = localStorage.getItem(STORAGE_KEYS.recentDocuments);
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
@@ -12,7 +11,7 @@ const readRecentDocuments = () => {
 };
 
 const writeRecentDocuments = (documents) => {
-  localStorage.setItem(RECENT_DOCUMENTS_KEY, JSON.stringify(documents));
+  localStorage.setItem(STORAGE_KEYS.recentDocuments, JSON.stringify(documents));
 };
 
 export const documentService = {

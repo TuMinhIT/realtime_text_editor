@@ -2,6 +2,7 @@ import React from "react";
 import { ArrowRight, FolderKanban, Layers3, TimerReset } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../components/DashboardLayout";
+import { APP_ROUTES } from "../constants/routes";
 
 const projectCards = [
   {
@@ -21,7 +22,7 @@ const projectCards = [
   },
 ];
 
-const Projects = () => {
+const ProjectsPage = () => {
   const navigate = useNavigate();
 
   return (
@@ -31,7 +32,7 @@ const Projects = () => {
       actions={
         <button
           type="button"
-          onClick={() => navigate("/documents")}
+          onClick={() => navigate(APP_ROUTES.documents)}
           className="inline-flex items-center justify-center rounded-full bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
         >
           Mo workspace
@@ -88,7 +89,7 @@ const Projects = () => {
                 </p>
                 <button
                   type="button"
-                  onClick={() => navigate("/documents")}
+                  onClick={() => navigate(APP_ROUTES.documents)}
                   className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-slate-900"
                 >
                   Xem workspace
@@ -103,4 +104,4 @@ const Projects = () => {
   );
 };
 
-export default Projects;
+export default ProjectsPage;
