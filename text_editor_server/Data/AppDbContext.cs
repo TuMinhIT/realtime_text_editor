@@ -11,6 +11,7 @@ namespace text_editor_server.Data
         public DbSet<Section> Sections { get; set; }
         public DbSet<SectionUser> SectionUsers { get; set; }
         public DbSet<OperationalChange> OperationalChanges { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options)
             : base(options) { }

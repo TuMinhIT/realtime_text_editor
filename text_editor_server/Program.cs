@@ -1,7 +1,9 @@
 
+
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+
 using System.Text;
 using text_editor_server.Data;
 using text_editor_server.Entities;
@@ -100,20 +102,25 @@ namespace text_editor_server
                 }
             }
             //fake data seeding:
+           
             using (var scope = app.Services.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var authService = scope.ServiceProvider.GetRequiredService<IAuthService>();
 
                 if (!db.Users.Any())
                 {
+                    var passwordHash = authService.HashPassword("123456");
+
                     db.Users.Add(new User
                     {
-                        Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
+                        Id = Guid.NewGuid(), // nhớ thêm nếu chưa có
                         Email = "test@gmail.com",
-                        PasswordHash = "hash",
+                        PasswordHash = passwordHash,
                         FullName = "Test User",
                         CreatedAt = DateTime.UtcNow,
-                        IsActive = true
+                        IsActive = true,
+                        Role = "Admin"
                     });
 
                     db.SaveChanges();

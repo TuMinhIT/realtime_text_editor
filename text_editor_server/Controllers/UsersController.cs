@@ -1,3 +1,4 @@
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using text_editor_server.Data;
@@ -88,8 +89,31 @@ namespace text_editor_server.Controllers
                 var jwtSecret = _configuration["Jwt:Secret"];
                 var jwtIssuer = _configuration["Jwt:Issuer"];
                 var jwtAudience = _configuration["Jwt:Audience"];
-
                 var token = _authService.GenerateJwtToken(user, jwtSecret, jwtIssuer, jwtAudience);
+
+
+                //Them oldToken de kiem tra refreshtoken cu:
+                var oldTokens = await _context.RefreshTokens
+                    .Where(x => x.UserId == user.Id && !x.IsRevoked && !x.IsUsed)
+                    .ToListAsync();
+                foreach (var t in oldTokens)
+                {
+                    t.IsRevoked = true;
+                }
+                // Generate refresh token
+                var refreshToken = _authService.GenerateRefreshToken();
+                var refreshTokenHash = _authService.HashToken(refreshToken);
+
+                var newRefreshToken = new RefreshToken
+                {
+                    TokenHash = refreshTokenHash,
+                    ExpiryTime = DateTime.UtcNow.AddDays(7),
+                    UserId = user.Id,
+                    CreatedByIp = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                    UserAgent = Request.Headers["User-Agent"].ToString()
+                };
+                _context.RefreshTokens.Add(newRefreshToken);
+                await _context.SaveChangesAsync();
 
                 return Ok(new
                 {
@@ -97,12 +121,14 @@ namespace text_editor_server.Controllers
                     email = user.Email,
                     fullName = user.FullName,
                     token,
-                    expiresIn = 86400 // 24 hours in seconds
+                    expiresIn = 900, // 15 phút
+                    refreshToken, // chỉ trả về plain text 1 lần
+                    refreshTokenExpiry = newRefreshToken.ExpiryTime
                 });
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error logging in user: {ex.Message}");
+                _logger.LogError(ex, "Error logging in user");
                 return StatusCode(500, "Failed to login");
             }
         }
@@ -110,6 +136,7 @@ namespace text_editor_server.Controllers
         /// <summary>
         /// Get current user profile
         /// </summary>
+        [Authorize]
         [HttpGet("me")]
         public async Task<IActionResult> GetProfile()
         {
@@ -191,6 +218,76 @@ namespace text_editor_server.Controllers
                 return StatusCode(500, "Failed to search users");
             }
         }
+
+        /// <summary>
+        /// Refresh JWT token
+        /// </summary>
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.RefreshToken))
+                return BadRequest("Refresh token is required");
+
+            var refreshTokenHash = _authService.HashToken(request.RefreshToken);
+            var storedToken = await _context.RefreshTokens
+                .Include(rt => rt.User)
+                .FirstOrDefaultAsync(rt => rt.TokenHash == refreshTokenHash);
+
+            if (storedToken == null || storedToken.IsUsed || storedToken.IsRevoked || storedToken.ExpiryTime < DateTime.UtcNow)
+                return Unauthorized("Invalid or expired refresh token");
+            
+            // Đánh dấu token đã dùng và đã thu hồi
+            storedToken.IsUsed = true;
+            storedToken.IsRevoked = true;
+            _context.RefreshTokens.Update(storedToken);
+
+            // Sinh access token mới
+            var jwtSecret = _configuration["Jwt:Secret"];
+            var jwtIssuer = _configuration["Jwt:Issuer"];
+            var jwtAudience = _configuration["Jwt:Audience"];
+            var newAccessToken = _authService.GenerateJwtToken(storedToken.User, jwtSecret, jwtIssuer, jwtAudience);
+
+            // (Tùy chọn) Sinh refresh token mới
+            var newRefreshToken = _authService.GenerateRefreshToken();
+            var newRefreshTokenHash = _authService.HashToken(newRefreshToken);
+            var refreshTokenEntity = new RefreshToken
+            {
+                TokenHash = newRefreshTokenHash,
+                ExpiryTime = DateTime.UtcNow.AddDays(7),
+                UserId = storedToken.UserId,
+                CreatedByIp = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                UserAgent = Request.Headers["User-Agent"].ToString()
+            };
+            _context.RefreshTokens.Add(refreshTokenEntity);
+
+            await _context.SaveChangesAsync();
+
+            // Kiểm tra tái sử dụng token
+            if (storedToken.IsUsed)
+            {
+                var tokens = _context.RefreshTokens
+                    .Where(x => x.UserId == storedToken.UserId);
+                foreach (var t in tokens)
+                {
+                    t.IsRevoked = true;
+                }
+                await _context.SaveChangesAsync();
+                return Unauthorized("Token reuse detected");
+            }
+
+            return Ok(new
+            {
+                token = newAccessToken,
+                expiresIn = 900,
+                refreshToken = newRefreshToken,
+                refreshTokenExpiry = refreshTokenEntity.ExpiryTime
+            });
+        }
+
+        public class RefreshTokenRequest
+        {
+            public string RefreshToken { get; set; }
+        }
     }
 
     // Request DTOs
@@ -199,7 +296,7 @@ namespace text_editor_server.Controllers
         public string Email { get; set; }
         public string Password { get; set; }
         public string? FullName { get; set; }
-    }
+    }       
 
     public class LoginRequest
     {
