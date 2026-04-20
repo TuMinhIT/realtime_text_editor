@@ -4,7 +4,7 @@ import { realtimeSyncService } from "../services/realtimeSyncService";
 import { Cloud, CloudOff, AlertCircle, Wifi } from "lucide-react";
 
 const SyncStatus = () => {
-  const { syncStatus, pendingChanges } = useCollaborationStore();
+  const { pendingChanges } = useCollaborationStore();
   const [connectionStatus, setConnectionStatus] = useState("connected");
 
   useEffect(() => {

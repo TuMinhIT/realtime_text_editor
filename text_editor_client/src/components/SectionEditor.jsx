@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useDocumentStore } from "../store/useDocumentStore";
 import { useCollaborationStore } from "../store/useCollaborationStore";
 import { realtimeSyncService } from "../services/realtimeSyncService";
+import { sectionService } from "../services/sectionService";
 import { Clock, Lock } from "lucide-react";
 
 const SectionEditor = () => {
@@ -19,18 +20,18 @@ const SectionEditor = () => {
   const [content, setContent] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
+  const [saveError, setSaveError] = useState("");
 
   const section = document.sections.find((s) => s.id === activeSection);
   const canEdit = section && canEditSection(section.id);
 
-  // Initialize content
   useEffect(() => {
     if (section) {
-      setContent(section.content);
+      setContent(section.content || "");
+      setSaveError("");
     }
   }, [section]);
 
-  // Notify server when user starts editing
   useEffect(() => {
     if (canEdit && activeSection && currentUser.id) {
       updateUserEditingSection(currentUser.id, activeSection);
@@ -52,8 +53,8 @@ const SectionEditor = () => {
   const handleContentChange = (e) => {
     const newContent = e.target.value;
     setContent(newContent);
+    setSaveError("");
 
-    // Add to pending changes
     addPendingChange({
       sectionId: activeSection,
       content: newContent,
@@ -65,11 +66,16 @@ const SectionEditor = () => {
     if (!section || !canEdit) return;
 
     setIsSaving(true);
-    try {
-      // Update local store
-      updateSectionContent(activeSection, content);
+    setSaveError("");
 
-      // Send to server
+    try {
+      const updatedSection = await sectionService.updateSectionContent(
+        activeSection,
+        content,
+      );
+
+      updateSectionContent(activeSection, updatedSection.content ?? content);
+
       await realtimeSyncService.sendContentUpdate(
         activeSection,
         content,
@@ -79,6 +85,7 @@ const SectionEditor = () => {
       setLastSaved(new Date());
     } catch (error) {
       console.error("Error saving content:", error);
+      setSaveError(error.message || "Failed to save section.");
     } finally {
       setIsSaving(false);
     }
@@ -98,16 +105,16 @@ const SectionEditor = () => {
         <div className="alert alert-warning gap-4">
           <Lock size={24} />
           <div>
-            <h3 className="font-bold">Section Locked</h3>
+            <h3 className="font-bold">Read-only section</h3>
             <p className="text-sm">
-              You do not have permission to edit this section. Contact the
-              document owner for access.
+              You can still review the content, but you do not currently have
+              permission to edit this section.
             </p>
           </div>
         </div>
         <div className="mt-8 p-6 bg-base-200 rounded-lg">
           <h2 className="text-2xl font-bold mb-4">{section.title}</h2>
-          <div className="prose max-w-none">
+          <div className="prose max-w-none whitespace-pre-wrap">
             <p>{section.content}</p>
           </div>
         </div>
@@ -117,7 +124,6 @@ const SectionEditor = () => {
 
   return (
     <div className="h-full flex flex-col">
-      {/* Section Header */}
       <div className="border-b border-base-300 p-4 bg-base-100">
         <h2 className="text-2xl font-bold mb-2">{section.title}</h2>
         <div className="flex items-center justify-between text-xs text-base-content/60">
@@ -131,7 +137,6 @@ const SectionEditor = () => {
         </div>
       </div>
 
-      {/* Editor Area */}
       <div className="flex-1 flex flex-col p-6 overflow-hidden">
         <textarea
           value={content}
@@ -141,11 +146,9 @@ const SectionEditor = () => {
           disabled={!canEdit}
         />
 
-        {/* Footer with Save Button */}
-        <div className="mt-4 flex items-center justify-between">
+        <div className="mt-4 flex items-center justify-between gap-4">
           <div className="text-sm text-base-content/60">
-            {content.split(" ").filter((w) => w).length} words ·{" "}
-            {content.length} characters
+            {content.split(" ").filter(Boolean).length} words · {content.length} characters
           </div>
           <button
             onClick={handleSave}
@@ -158,9 +161,14 @@ const SectionEditor = () => {
             Save Changes
           </button>
         </div>
+
+        {saveError && (
+          <div className="alert alert-error mt-4">
+            <span>{saveError}</span>
+          </div>
+        )}
       </div>
 
-      {/* Assigned Users Info */}
       {section.assignedUsers && section.assignedUsers.length > 0 && (
         <div className="border-t border-base-300 p-4 bg-base-200">
           <p className="text-xs font-semibold mb-2">Assigned Users:</p>

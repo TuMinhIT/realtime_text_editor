@@ -1,11 +1,15 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useDocumentStore } from "../store/useDocumentStore";
 import { Save, Download, Share2 } from "lucide-react";
 
-const DocumentHeader = () => {
+const DocumentHeader = ({ onSave, isSaving }) => {
   const { document, updateDocumentTitle } = useDocumentStore();
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(document.title);
+
+  useEffect(() => {
+    setTitle(document.title || "");
+  }, [document.title]);
 
   const handleTitleChange = () => {
     if (title.trim()) {
@@ -48,18 +52,28 @@ const DocumentHeader = () => {
 
       {/* Action Buttons */}
       <div className="flex items-center gap-2">
-        <button className="btn btn-sm btn-ghost gap-2" title="Save document">
+        <button
+          className="btn btn-sm btn-ghost gap-2"
+          title="Save current section"
+          onClick={onSave}
+          disabled={!onSave || isSaving}
+        >
           <Save size={18} />
-          Save
+          {isSaving ? "Saving..." : "Save"}
         </button>
         <button
           className="btn btn-sm btn-ghost gap-2"
           title="Download as .docx"
+          disabled
         >
           <Download size={18} />
           Download
         </button>
-        <button className="btn btn-sm btn-primary gap-2" title="Share document">
+        <button
+          className="btn btn-sm btn-primary gap-2"
+          title="Share document"
+          disabled
+        >
           <Share2 size={18} />
           Share
         </button>

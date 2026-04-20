@@ -1,164 +1,283 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  ArrowRight,
+  Clock3,
+  Files,
+  LayoutTemplate,
+  PencilLine,
+  Users,
+} from "lucide-react";
 import DocumentUpload from "../components/DocumentUpload";
-import { FileText, Users, Clock, Trash2, Eye } from "lucide-react";
+import DashboardLayout from "../components/DashboardLayout";
+
+const STORAGE_KEY = "text-editor.recent-documents";
+
+const featureCards = [
+  {
+    icon: LayoutTemplate,
+    title: "Landing ro rang",
+    description: "Mot trang bat dau de upload file va quan ly document gan day.",
+  },
+  {
+    icon: PencilLine,
+    title: "Editor tap trung",
+    description: "Mot man hinh word-style de chinh sua, xem thong tin va mock save.",
+  },
+  {
+    icon: Users,
+    title: "De mo rong realtime",
+    description: "Cau truc UI tach rieng de sau nay noi collaboration va permission.",
+  },
+];
+
+const seedDocuments = [
+  {
+    id: "demo-proposal",
+    title: "Product Proposal",
+    description: "Bo cuc de xuat san pham theo style Word hien dai.",
+    updatedAt: "2026-04-20T10:00:00.000Z",
+    sections: 6,
+  },
+  {
+    id: "demo-contract",
+    title: "Internal Guideline",
+    description: "Tai lieu noi bo voi heading, section va ghi chu ro rang.",
+    updatedAt: "2026-04-19T15:30:00.000Z",
+    sections: 8,
+  },
+];
+
+const readDocuments = () => {
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      return seedDocuments;
+    }
+
+    const parsed = JSON.parse(raw);
+    return parsed.length ? parsed : seedDocuments;
+  } catch {
+    return seedDocuments;
+  }
+};
+
+const writeDocuments = (documents) => {
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(documents));
+};
+
+const formatDate = (value) =>
+  new Date(value).toLocaleDateString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
 
 const DocumentsPage = () => {
   const navigate = useNavigate();
-  const [documents, setDocuments] = useState([
-    {
-      id: "doc-001",
-      title: "Collaborative Document",
-      description: "A sample collaborative document for testing",
-      createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-      updatedAt: new Date(Date.now() - 1 * 60 * 60 * 1000),
-      sections: 4,
-      activeUsers: 2,
-      owner: "John Doe",
-    },
-    {
-      id: "doc-002",
-      title: "Project Proposal",
-      description: "Q1 Project Proposal Document",
-      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-      updatedAt: new Date(Date.now() - 12 * 60 * 60 * 1000),
-      sections: 6,
-      activeUsers: 0,
-      owner: "Jane Smith",
-    },
-  ]);
-
+  const [documents, setDocuments] = useState(readDocuments);
   const [isUploading, setIsUploading] = useState(false);
 
-  const handleUpload = async (file) => {
-    setIsUploading(true);
-    try {
-      // Simulate file upload and parsing
-      setTimeout(() => {
-        const newDocument = {
-          id: `doc-${Date.now()}`,
-          title: file.name.replace(/\.[^/.]+$/, ""),
-          description: "Newly uploaded document",
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          sections: Math.floor(Math.random() * 5) + 2,
-          activeUsers: 0,
-          owner: "You",
-        };
+  const stats = useMemo(
+    () => [
+      { label: "Workspace", value: `${documents.length}+` },
+      { label: "Mock template", value: "02" },
+      { label: "Word style", value: "Ready" },
+    ],
+    [documents.length],
+  );
 
-        setDocuments([newDocument, ...documents]);
-        alert("Document uploaded successfully!");
-      }, 1500);
-    } catch (error) {
-      console.error("Upload error:", error);
-      alert("Failed to upload document");
-    } finally {
-      setIsUploading(false);
-    }
+  const openDocument = (documentId) => {
+    navigate(`/editor?doc=${documentId}`);
   };
 
-  const handleDelete = (docId) => {
-    if (confirm("Are you sure you want to delete this document?")) {
-      setDocuments(documents.filter((d) => d.id !== docId));
-    }
+  const handleUpload = (file) => {
+    setIsUploading(true);
+
+    window.setTimeout(() => {
+      const documentId = `mock-${Date.now()}`;
+      const nextDocument = {
+        id: documentId,
+        title: file.name.replace(/\.docx$/i, ""),
+        description: "Tai lieu moi tu upload mock, san sang mo trong editor.",
+        updatedAt: new Date().toISOString(),
+        sections: 5,
+      };
+
+      const nextDocuments = [
+        nextDocument,
+        ...documents.filter((item) => item.id !== documentId),
+      ].slice(0, 8);
+
+      setDocuments(nextDocuments);
+      writeDocuments(nextDocuments);
+      setIsUploading(false);
+      openDocument(documentId);
+    }, 650);
   };
 
   return (
-    <div className="min-h-screen bg-base-100">
-      <div className="max-w-6xl mx-auto p-6">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Documents</h1>
-          <p className="text-base-content/60">
-            Manage and collaborate on your documents in real-time
-          </p>
-        </div>
+    <DashboardLayout
+      title="Document workspace"
+      subtitle="Trang nay giu vai tro upload file mock, mo document gan day va dieu huong sang man editor theo flow dashboard."
+    >
+      <div className="grid gap-6">
+        <section className="overflow-hidden rounded-[36px] border border-white/70 bg-white/90 p-6 shadow-[0_35px_120px_-55px_rgba(15,23,42,0.45)] backdrop-blur md:p-8">
+          <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
+            <div className="space-y-6">
+              <div className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-amber-700">
+                Tailwind Word Workspace
+              </div>
 
-        {/* Upload Section */}
-        <div className="mb-12">
-          <h2 className="text-xl font-bold mb-4">Create New Document</h2>
-          <DocumentUpload onUpload={handleUpload} isLoading={isUploading} />
-        </div>
+              <div className="space-y-4">
+                <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-slate-950 md:text-6xl">
+                  Mot trang upload va mot trang editor, bo cuc gon va de code tiep.
+                </h1>
+                <p className="max-w-2xl text-base leading-7 text-slate-600 md:text-lg">
+                  Flow hien tai tap trung vao giao dien: vao workspace, upload file
+                  Word mock, mo editor va chinh sua trong layout giong Word.
+                </p>
+              </div>
 
-        {/* Documents Grid */}
-        <div className="mb-8">
-          <h2 className="text-xl font-bold mb-4">Recent Documents</h2>
-          {documents.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-base-content/50">
-                No documents yet. Start by uploading one!
-              </p>
+              <div className="flex flex-wrap gap-3">
+                {stats.map((item) => (
+                  <div
+                    key={item.label}
+                    className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
+                  >
+                    <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                      {item.label}
+                    </p>
+                    <p className="mt-1 text-xl font-semibold">{item.value}</p>
+                  </div>
+                ))}
+              </div>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {documents.map((doc) => (
-                <div
-                  key={doc.id}
-                  className="card bg-base-100 border border-base-300 hover:shadow-lg transition-shadow cursor-pointer"
+
+            <div className="grid gap-4">
+              {featureCards.map((feature) => (
+                <article
+                  key={feature.title}
+                  className="rounded-[28px] border border-slate-200 bg-slate-50 p-5"
                 >
-                  <div className="card-body">
-                    {/* Title and Icon */}
-                    <div className="flex items-start gap-3 mb-3">
-                      <FileText className="text-primary shrink-0" size={24} />
-                      <div className="flex-1 min-w-0">
-                        <h3
-                          className="font-bold text-lg truncate hover:text-primary"
-                          onClick={() => navigate(`/editor?doc=${doc.id}`)}
-                        >
-                          {doc.title}
-                        </h3>
-                        <p className="text-sm text-base-content/60 truncate">
-                          {doc.description}
-                        </p>
-                      </div>
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-900 text-white">
+                      <feature.icon size={22} />
                     </div>
-
-                    {/* Metadata */}
-                    <div className="space-y-2 text-sm mb-4">
-                      <div className="flex items-center gap-2 text-base-content/60">
-                        <FileText size={14} />
-                        {doc.sections} sections
-                      </div>
-                      <div className="flex items-center gap-2 text-base-content/60">
-                        <Users size={14} />
-                        {doc.activeUsers} active
-                        {doc.activeUsers > 0 && (
-                          <span className="badge badge-sm badge-success">
-                            Live
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 text-base-content/60">
-                        <Clock size={14} />
-                        Updated {new Date(doc.updatedAt).toLocaleDateString()}
-                      </div>
-                    </div>
-
-                    {/* Footer */}
-                    <div className="card-actions justify-between">
-                      <button
-                        onClick={() => navigate(`/editor?doc=${doc.id}`)}
-                        className="btn btn-primary btn-sm gap-2"
-                      >
-                        <Eye size={16} />
-                        Open
-                      </button>
-                      <button
-                        onClick={() => handleDelete(doc.id)}
-                        className="btn btn-ghost btn-sm"
-                        title="Delete"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                    <div>
+                      <h2 className="text-lg font-semibold">{feature.title}</h2>
+                      <p className="mt-1 text-sm leading-6 text-slate-600">
+                        {feature.description}
+                      </p>
                     </div>
                   </div>
-                </div>
+                </article>
               ))}
             </div>
-          )}
-        </div>
+          </div>
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+          <DocumentUpload
+            onUpload={handleUpload}
+            isLoading={isUploading}
+            title="Tao document moi"
+            description="Keo tha hoac bam de chon file .docx. Sau khi upload, app se tao document mock va dieu huong sang trang editor."
+          />
+
+          <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.45)]">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium text-slate-500">Quick start</p>
+                <h2 className="mt-1 text-2xl font-semibold">
+                  Mo nhanh mot workspace mau
+                </h2>
+              </div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-900 text-white">
+                <Files size={22} />
+              </div>
+            </div>
+
+            <div className="mt-6 space-y-4">
+              {seedDocuments.map((doc) => (
+                <button
+                  key={doc.id}
+                  type="button"
+                  onClick={() => openDocument(doc.id)}
+                  className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-left transition hover:border-slate-400 hover:bg-white"
+                >
+                  <div>
+                    <h3 className="font-semibold text-slate-900">{doc.title}</h3>
+                    <p className="mt-1 text-sm text-slate-600">{doc.description}</p>
+                  </div>
+                  <ArrowRight size={18} className="text-slate-500" />
+                </button>
+              ))}
+            </div>
+          </section>
+        </section>
+
+        <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.45)] md:p-8">
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-500">Recent documents</p>
+              <h2 className="mt-1 text-3xl font-semibold text-slate-950">
+                Danh sach document gan day
+              </h2>
+            </div>
+            <p className="max-w-2xl text-sm leading-6 text-slate-600">
+              Phan nay dang dung local storage de mock workspace, nen ban co the
+              test giao dien ma khong can backend upload.
+            </p>
+          </div>
+
+          <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {documents.map((doc) => (
+              <article
+                key={doc.id}
+                className="rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-5"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-100 text-sky-700">
+                    <Files size={22} />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => openDocument(doc.id)}
+                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400"
+                  >
+                    Open
+                    <ArrowRight size={15} />
+                  </button>
+                </div>
+
+                <div className="mt-5 space-y-2">
+                  <h3 className="text-xl font-semibold text-slate-950">{doc.title}</h3>
+                  <p className="text-sm leading-6 text-slate-600">{doc.description}</p>
+                </div>
+
+                <div className="mt-6 grid grid-cols-2 gap-3 text-sm text-slate-600">
+                  <div className="rounded-2xl bg-slate-50 px-3 py-3">
+                    <p className="flex items-center gap-2 font-medium text-slate-700">
+                      <Clock3 size={15} />
+                      Updated
+                    </p>
+                    <p className="mt-2">{formatDate(doc.updatedAt)}</p>
+                  </div>
+                  <div className="rounded-2xl bg-slate-50 px-3 py-3">
+                    <p className="flex items-center gap-2 font-medium text-slate-700">
+                      <PencilLine size={15} />
+                      Sections
+                    </p>
+                    <p className="mt-2">{doc.sections}</p>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
       </div>
-    </div>
+    </DashboardLayout>
   );
 };
 

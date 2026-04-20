@@ -29,12 +29,9 @@ const SectionPanel = () => {
                 isActive
                   ? "bg-primary text-primary-content shadow-md"
                   : "bg-base-300 hover:bg-base-300/80"
-              } ${!canEdit && "opacity-60"}`}
-              disabled={!canEdit}
+              } ${!canEdit && "opacity-80"}`}
               title={
-                !canEdit
-                  ? "You do not have permission to edit this section"
-                  : ""
+                !canEdit ? "You can open this section in read-only mode" : ""
               }
             >
               <div className="flex items-start justify-between gap-2">
@@ -47,8 +44,8 @@ const SectionPanel = () => {
                   </p>
                 </div>
                 {!canEdit && (
-                  <span className="badge badge-sm badge-error shrink-0">
-                    Locked
+                  <span className="badge badge-sm badge-warning shrink-0">
+                    Read only
                   </span>
                 )}
               </div>

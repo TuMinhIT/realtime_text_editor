@@ -1,9 +1,10 @@
 import React from "react";
+import { useSearchParams } from "react-router-dom";
 import DocumentEditor from "../components/DocumentEditor";
 
 const EditorPage = () => {
-  // Get document ID from URL params or use default
-  const documentId = "doc-001";
+  const [searchParams] = useSearchParams();
+  const documentId = searchParams.get("doc") || "mock-doc-001";
 
   return <DocumentEditor documentId={documentId} />;
 };
