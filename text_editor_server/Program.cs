@@ -1,5 +1,3 @@
-
-
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -55,26 +53,57 @@ namespace text_editor_server
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
-     
-
-                    // SignalR token from query string
-                    options.Events = new JwtBearerEvents
+                    var config = builder.Configuration;
+                    options.TokenValidationParameters = new TokenValidationParameters
                     {
-                        OnMessageReceived = context =>
-                        {
-                            var accessToken = context.Request.Query["access_token"];
-                            if (!string.IsNullOrEmpty(accessToken) && context.HttpContext.WebSockets.IsWebSocketRequest)
-                            {
-                                context.Token = accessToken;
-                            }
-                            return Task.CompletedTask;
-                        }
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = config["Jwt:Issuer"],
+                        ValidAudience = config["Jwt:Audience"],
+                        IssuerSigningKey = new SymmetricSecurityKey(
+                            Encoding.UTF8.GetBytes(config["Jwt:Key"])
+                        ),
+                        ClockSkew = TimeSpan.Zero
                     };
                 });
 
             builder.Services.AddAuthorization();
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            builder.Services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+                {
+                    Title = "Text Editor API",
+                    Version = "v1"
+                });
+
+                c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                {
+                    Name = "Authorization",
+                    Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    BearerFormat = "JWT",
+                    In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+                    Description = "Enter: Bearer {your JWT token}"
+                });
+
+                c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
+    });
+            });
 
             var app = builder.Build();
             //app.UseMiddleware<JwtMiddleware>();
@@ -85,7 +114,6 @@ namespace text_editor_server
                 var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 try
                 {
-                    dbContext.Database.Migrate();
                     Console.WriteLine("Database migrated successfully");
                 }
                 catch (Exception ex)
@@ -154,9 +182,9 @@ namespace text_editor_server
             // Configure middleware
 
             app.UseSwagger();
-                app.UseSwaggerUI();
-       
+            app.UseSwaggerUI();
 
+            app.UseRouting();
             app.UseHttpsRedirection();
 
             app.UseCors("AllowReact");

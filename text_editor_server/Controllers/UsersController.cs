@@ -8,6 +8,7 @@ using text_editor_server.Services;
 
 namespace text_editor_server.Controllers
 {
+    
     [ApiController]
     [Route("api/[controller]")]
     public class UsersController : ControllerBase
@@ -108,8 +109,8 @@ namespace text_editor_server.Controllers
             Response.Cookies.Append("refreshToken", newTokens.RefreshToken, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.None, //  FIX QUAN TRỌNG
+                Secure = false,
+                SameSite = SameSiteMode.Lax, //  FIX QUAN TRỌNG
                 Expires = DateTime.UtcNow.AddDays(7)
             });
 
@@ -139,8 +140,8 @@ namespace text_editor_server.Controllers
             Response.Cookies.Append("refreshToken", refreshToken!, new CookieOptions
             {
                 HttpOnly = true,    
-                Secure = true,       
-                SameSite = SameSiteMode.Strict,
+                Secure = false,       
+                SameSite = SameSiteMode.Lax,
                 Expires = DateTime.UtcNow.AddDays(7)
             });
 
@@ -157,33 +158,31 @@ namespace text_editor_server.Controllers
         /// <summary>
         /// Get current user profile
         /// </summary>
-        [Authorize]
+      
         [HttpGet("me")]
-        public async Task<IActionResult> GetProfile()
+        public async Task<IActionResult> GetMe()
         {
-            try
-            {
-                var userIdClaim = User.FindFirst("sub");
-                if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
-                    return Unauthorized();
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
-                var user = await _context.Users.FindAsync(userId);
-                if (user == null)
-                    return NotFound();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
 
-                return Ok(new
-                {
-                    user.Id,
-                    user.Email,
-                    user.FullName,
-                    user.CreatedAt
-                });
-            }
-            catch (Exception ex)
+            if (!Guid.TryParse(userId, out var guid))
+                return Unauthorized("Invalid user id");
+
+            var user = await _context.Users
+                .FirstOrDefaultAsync(x => x.Id == guid);
+
+            if (user == null)
+                return NotFound();
+
+            return Ok(new
             {
-                _logger.LogError($"Error getting profile: {ex.Message}");
-                return StatusCode(500, "Failed to get profile");
-            }
+                user.Id,
+                user.Email,
+                user.FullName,
+                user.CreatedAt
+            });
         }
 
         /// <summary>
