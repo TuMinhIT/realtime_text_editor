@@ -54,33 +54,69 @@ namespace text_editor_server.Controllers
 
 
 
+        //[HttpPost("refresh-token")]
+        //public async Task<IActionResult> RefreshToken()
+        //{
+
+        //    var refreshToken = Request.Cookies["refreshToken"];
+        //    if (string.IsNullOrEmpty(refreshToken))
+
+        //        return Unauthorized("Refresh token is missing");
+        //    var  newTokens = await _authService.RefreshTokenAsync(refreshToken) ;
+        //    if (newTokens == null)
+        //        return Unauthorized("Invalid refresh token");
+
+
+        //        // set lại cookie mới (rotate)
+        //        Response.Cookies.Append("refreshToken", newTokens.RefreshToken, new CookieOptions
+        //        {
+        //            HttpOnly = true,
+        //            Secure = true,
+        //            SameSite = SameSiteMode.Strict,
+        //            Expires = DateTime.UtcNow.AddDays(7)
+        //        });
+
+        //    return Ok(new
+        //    {
+        //        AccessToken = newTokens.AccessToken,
+        //        message = "Token refreshed successfully"
+        //    });   
+        //}
+
+
         [HttpPost("refresh-token")]
         public async Task<IActionResult> RefreshToken()
         {
-
             var refreshToken = Request.Cookies["refreshToken"];
-            if (string.IsNullOrEmpty(refreshToken))
-           
-                return Unauthorized("Refresh token is missing");
-            RefreshTokenRes newTokens = await _authService.RefreshTokenAsync(refreshToken) as RefreshTokenRes;
-            if (newTokens == null)
-                return Unauthorized("Invalid refresh token");
 
-            
-                // set lại cookie mới (rotate)
-                Response.Cookies.Append("refreshToken", newTokens.RefreshToken, new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = true,
-                    SameSite = SameSiteMode.Strict,
-                    Expires = DateTime.UtcNow.AddDays(7)
-                });
+            if (string.IsNullOrEmpty(refreshToken))
+            {
+                return Unauthorized("Refresh token is missing");
+            }
+
+            var newTokens = await _authService.RefreshTokenAsync(refreshToken);
+
+            if (newTokens == null)
+            {
+                // xóa cookie cũ
+                Response.Cookies.Delete("refreshToken");
+
+                return Unauthorized("Invalid refresh token");
+            }
+
+            // set cookie mới
+            Response.Cookies.Append("refreshToken", newTokens.RefreshToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None, //  FIX QUAN TRỌNG
+                Expires = DateTime.UtcNow.AddDays(7)
+            });
 
             return Ok(new
             {
-                AccessToken = newTokens.accessToken,
-                message = "Token refreshed successfully"
-            });   
+                AccessToken = newTokens.AccessToken
+            });
         }
         /// <summary>
         /// Login user
@@ -178,7 +214,29 @@ namespace text_editor_server.Controllers
             }
         }
 
-    
+        
+        /// <summary>
+        /// Logout
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            var refreshToken = Request.Cookies["refreshToken"];
+
+            if (string.IsNullOrEmpty(refreshToken))
+                return BadRequest("No refresh token");
+
+            var result = await _authService.Logout(refreshToken);
+
+            if (!result)
+                return BadRequest("Invalid token");
+
+            Response.Cookies.Delete("refreshToken");
+
+            return Ok(new { message = "Logged out" });
+        }
+
 
     }
 

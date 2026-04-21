@@ -10,7 +10,7 @@ namespace text_editor_server.Entities
         public Guid UserId { get; set; }
 
         // Operation type: insert, delete, replace
-        public string OperationType { get; set; } // "insert", "delete", "replace"
+        public string OperationType { get; set; } 
 
         // Text content
         public string Text { get; set; }

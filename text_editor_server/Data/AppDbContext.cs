@@ -19,6 +19,11 @@ namespace text_editor_server.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+            //Them index de truy van nhanh hon
+
+            modelBuilder.Entity<RefreshToken>()
+                .HasIndex(rt => rt.TokenId)
+                .IsUnique();
 
             // User -> Document relationship
             modelBuilder.Entity<Document>()

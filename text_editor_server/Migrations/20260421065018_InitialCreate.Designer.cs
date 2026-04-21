@@ -12,7 +12,7 @@ using text_editor_server.Data;
 namespace text_editor_server.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260420153540_InitialCreate")]
+    [Migration("20260421065018_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -119,14 +119,27 @@ namespace text_editor_server.Migrations
                     b.Property<bool>("IsRevoked")
                         .HasColumnType("bit");
 
-                    b.Property<string>("Token")
+                    b.Property<string>("ReplacedByToken")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TokenHash")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TokenId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("TokenId")
+                        .IsUnique();
 
                     b.HasIndex("UserId");
 

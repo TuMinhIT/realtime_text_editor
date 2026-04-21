@@ -3,13 +3,13 @@
     public class Document
     {
         public Guid Id { get; set; }
-        public string Title { get; set; }
+        public string Title { get; set; } = string.Empty;
         public Guid CreatedBy { get; set; } // UserId
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public string? SourceFilePath { get; set; } // Path to original .docx file
 
         // Navigation properties
-        public User Creator { get; set; }
+        public User Creator { get; set; } = default!;
         public ICollection<Section> Sections { get; set; } = new List<Section>();
     }
 }

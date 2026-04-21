@@ -54,10 +54,13 @@ namespace text_editor_server.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Token = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    TokenId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    TokenHash = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ExpiresAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     IsRevoked = table.Column<bool>(type: "bit", nullable: false),
+                    ReplacedByToken = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    RevokedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedByIp = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Device = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
@@ -169,6 +172,12 @@ namespace text_editor_server.Migrations
                 name: "IX_OperationalChanges_UserId",
                 table: "OperationalChanges",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RefreshTokens_TokenId",
+                table: "RefreshTokens",
+                column: "TokenId",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_RefreshTokens_UserId",

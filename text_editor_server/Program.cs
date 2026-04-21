@@ -28,7 +28,7 @@ namespace text_editor_server
 
             // Add services
             builder.Services.AddScoped< AuthService>();
-          
+            builder.Services.AddHttpContextAccessor();
 
             builder.Services.AddScoped<IDocxParsingService, DocxParsingService>();
             builder.Services.AddScoped<IOperationalTransformService, OperationalTransformService>();
@@ -86,11 +86,11 @@ namespace text_editor_server
                 try
                 {
                     dbContext.Database.Migrate();
-                    Console.WriteLine("✓ Database migrated successfully");
+                    Console.WriteLine("Database migrated successfully");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"✗ Database migration failed: {ex.Message}");
+                    Console.WriteLine($" Database migration failed: {ex.Message}");
                 }
             }
             //fake data seeding:
@@ -102,7 +102,7 @@ namespace text_editor_server
                 try
                 {
                     dbContext.Database.Migrate();
-                    Console.WriteLine("✓ Database migrated successfully");
+                    Console.WriteLine(" Database migrated successfully");
 
                     // Kiểm tra xem đã có user nào trong database chưa
                     if (!dbContext.Users.Any())
