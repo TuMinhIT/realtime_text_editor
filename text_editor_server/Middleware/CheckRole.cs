@@ -7,7 +7,6 @@ namespace text_editor_server.Middleware
     }
 }
 
-
 public class JwtMiddleware
 {
     private readonly RequestDelegate _next;

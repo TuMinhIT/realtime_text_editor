@@ -1,8 +1,3 @@
-/**
- * API Client for .NET Backend
- * Configure this with your backend URL and authentication token
- */
-
 import { STORAGE_KEYS } from "../constants/storageKeys";
 
 const API_BASE_URL =

@@ -35,3 +35,4 @@ TestResults/
 *.nupkg
 *.snupkg
 artifacts/
+.env
