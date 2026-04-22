@@ -4,12 +4,14 @@
     {
         public Guid Id { get; set; }
         public string Title { get; set; } = string.Empty;
-        public Guid CreatedBy { get; set; } // UserId
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public string? SourceFilePath { get; set; } // Path to original .docx file
 
-        // Navigation properties
-        public User Creator { get; set; } = default!;
+        public string Content { get; set; } = string.Empty;
+        public string? SourceFilePath { get; set; }
+
+        public Guid CreatedBy { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public User? Creator { get; set; }
         public ICollection<Section> Sections { get; set; } = new List<Section>();
     }
 }

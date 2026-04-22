@@ -29,6 +29,7 @@ namespace text_editor_server
             builder.Services.AddHttpContextAccessor();
 
             builder.Services.AddScoped<IDocxParsingService, DocxParsingService>();
+            builder.Services.AddScoped<IDocumentService, DocumentService>();
             builder.Services.AddScoped<IOperationalTransformService, OperationalTransformService>();
 
             // Add controllers
@@ -90,19 +91,19 @@ namespace text_editor_server
                 });
 
                 c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
-    {
-        {
-            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-            {
-                Reference = new Microsoft.OpenApi.Models.OpenApiReference
-                {
-                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            new string[] {}
-        }
-    });
+                    {
+                        {
+                            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                            {
+                                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                                {
+                                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                                    Id = "Bearer"
+                                }
+                            },
+                            new string[] {}
+                        }
+                    });
             });
 
             var app = builder.Build();

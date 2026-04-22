@@ -9,7 +9,8 @@ import {
   Upload,
 } from "lucide-react";
 import { APP_ROUTES } from "../constants/routes";
-import { documentService } from "../services/documentService";
+
+import { http } from "../services/http";
 import { sessionService } from "../services/sessionService";
 
 const seedDocuments = [
@@ -43,8 +44,9 @@ const seedDocuments = [
 ];
 
 const readDocuments = () => {
-  const storedDocuments = documentService.getRecentDocuments();
-  return storedDocuments.length ? storedDocuments : seedDocuments;
+  // gọi api
+  // const storedDocuments = documentService.getRecentDocuments();
+  return seedDocuments;
 };
 
 const formatDate = (value) =>
@@ -53,11 +55,6 @@ const formatDate = (value) =>
     month: "2-digit",
     year: "numeric",
   });
-
-import {
-  DocumentEditorComponent,
-  Toolbar,
-} from "@syncfusion/ej2-react-documenteditor";
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -106,7 +103,8 @@ const HomePage = () => {
       ].slice(0, 8);
 
       setDocuments(nextDocuments);
-      documentService.saveRecentDocument(nextDocument);
+      // save;
+      // documentService.saveRecentDocument(nextDocument);
       setIsUploading(false);
       openDocument(documentId);
     }, 650);
@@ -134,8 +132,18 @@ const HomePage = () => {
     };
     const nextDocuments = [nextDocument, ...documents].slice(0, 20);
     setDocuments(nextDocuments);
-    documentService.saveRecentDocument(nextDocument);
+    // lại save
+    // documentService.saveRecentDocument(nextDocument);
     openDocument(documentId);
+  };
+
+  const handleLogout = () => {
+    sessionService.clearStore();
+    http.setToken(null);
+    window.localStorage.removeItem("accessToken");
+    window.localStorage.removeItem("user");
+
+    navigate("/login", { replace: true });
   };
 
   return (
@@ -165,6 +173,14 @@ const HomePage = () => {
           <div className="hidden rounded-full bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700 md:block">
             {currentUser?.name || "Workspace user"}
           </div>
+
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="hidden rounded-full bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-red-500 hover:text-white md:block"
+          >
+            logout
+          </button>
         </div>
       </header>
 

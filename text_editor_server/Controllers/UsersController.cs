@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using text_editor_server.Data;
 using text_editor_server.DTOs.req;
-using text_editor_server.DTOs.res;
 using text_editor_server.Services;
 
 namespace text_editor_server.Controllers
@@ -52,37 +51,6 @@ namespace text_editor_server.Controllers
                 return StatusCode(500, "Failed to register user");
             }
         }
-
-
-
-        //[HttpPost("refresh-token")]
-        //public async Task<IActionResult> RefreshToken()
-        //{
-
-        //    var refreshToken = Request.Cookies["refreshToken"];
-        //    if (string.IsNullOrEmpty(refreshToken))
-
-        //        return Unauthorized("Refresh token is missing");
-        //    var  newTokens = await _authService.RefreshTokenAsync(refreshToken) ;
-        //    if (newTokens == null)
-        //        return Unauthorized("Invalid refresh token");
-
-
-        //        // set lại cookie mới (rotate)
-        //        Response.Cookies.Append("refreshToken", newTokens.RefreshToken, new CookieOptions
-        //        {
-        //            HttpOnly = true,
-        //            Secure = true,
-        //            SameSite = SameSiteMode.Strict,
-        //            Expires = DateTime.UtcNow.AddDays(7)
-        //        });
-
-        //    return Ok(new
-        //    {
-        //        AccessToken = newTokens.AccessToken,
-        //        message = "Token refreshed successfully"
-        //    });   
-        //}
 
 
         [HttpPost("refresh-token")]

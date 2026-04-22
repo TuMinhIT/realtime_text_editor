@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace text_editor_server.Migrations
 {
     /// <inheritdoc />
-    public partial class init : Migration
+    public partial class initdatabase : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -34,9 +34,10 @@ namespace text_editor_server.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    SourceFilePath = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    SourceFilePath = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -77,6 +78,55 @@ namespace text_editor_server.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "DocumentBlocks",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    DocumentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    RangeKey = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Order = table.Column<int>(type: "int", nullable: false),
+                    Metadata = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DocumentBlocks", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_DocumentBlocks_Documents_DocumentId",
+                        column: x => x.DocumentId,
+                        principalTable: "Documents",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "DocumentPermissions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    DocumentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Role = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    EditableRanges = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DocumentPermissions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_DocumentPermissions_Documents_DocumentId",
+                        column: x => x.DocumentId,
+                        principalTable: "Documents",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_DocumentPermissions_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Sections",
                 columns: table => new
                 {
@@ -94,6 +144,32 @@ namespace text_editor_server.Migrations
                         name: "FK_Sections_Documents_DocumentId",
                         column: x => x.DocumentId,
                         principalTable: "Documents",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "BlockPermissions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    BlockId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Role = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BlockPermissions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_BlockPermissions_DocumentBlocks_BlockId",
+                        column: x => x.BlockId,
+                        principalTable: "DocumentBlocks",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_BlockPermissions_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -159,6 +235,33 @@ namespace text_editor_server.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_BlockPermissions_BlockId_UserId",
+                table: "BlockPermissions",
+                columns: new[] { "BlockId", "UserId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BlockPermissions_UserId",
+                table: "BlockPermissions",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DocumentBlocks_DocumentId_Order",
+                table: "DocumentBlocks",
+                columns: new[] { "DocumentId", "Order" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DocumentPermissions_DocumentId_UserId",
+                table: "DocumentPermissions",
+                columns: new[] { "DocumentId", "UserId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DocumentPermissions_UserId",
+                table: "DocumentPermissions",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Documents_CreatedBy",
                 table: "Documents",
                 column: "CreatedBy");
@@ -204,6 +307,12 @@ namespace text_editor_server.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "BlockPermissions");
+
+            migrationBuilder.DropTable(
+                name: "DocumentPermissions");
+
+            migrationBuilder.DropTable(
                 name: "OperationalChanges");
 
             migrationBuilder.DropTable(
@@ -211,6 +320,9 @@ namespace text_editor_server.Migrations
 
             migrationBuilder.DropTable(
                 name: "SectionUsers");
+
+            migrationBuilder.DropTable(
+                name: "DocumentBlocks");
 
             migrationBuilder.DropTable(
                 name: "Sections");

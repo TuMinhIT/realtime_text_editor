@@ -1,36 +1,30 @@
-import { STORAGE_KEYS } from "../constants/storageKeys";
-
-const sanitizeUser = (user = {}) => ({
-  id: user.id || user.userId || user.email || "",
-  name: user.name || user.fullName || "",
-  email: user.email || "",
-});
-
 export const sessionService = {
   getAuthToken() {
-    return window.localStorage.getItem(STORAGE_KEYS.authToken);
+    return window.localStorage.getItem("accessToken");
   },
 
   getCurrentUser() {
     try {
-      const raw = window.localStorage.getItem(STORAGE_KEYS.currentUser);
-      return raw ? sanitizeUser(JSON.parse(raw)) : null;
+      const raw = window.localStorage.getItem("user");
+      return raw ? JSON.parse(raw) : null;
     } catch {
       return null;
     }
   },
 
   setCurrentUser(user) {
-    const nextUser = sanitizeUser(user);
-    window.localStorage.setItem(
-      STORAGE_KEYS.currentUser,
-      JSON.stringify(nextUser),
-    );
-    return nextUser;
+    window.localStorage.setItem("user", JSON.stringify(user));
+    return user;
+  },
+  setLogin(user, accessToken) {
+    window.localStorage.setItem("accessToken", accessToken);
+    window.localStorage.setItem("user", JSON.stringify(user));
+    return user;
   },
 
-  clearCurrentUser() {
-    window.localStorage.removeItem(STORAGE_KEYS.currentUser);
+  clearStore() {
+    window.localStorage.removeItem("user");
+    window.localStorage.removeItem("accessToken");
   },
 
   isAuthenticated() {

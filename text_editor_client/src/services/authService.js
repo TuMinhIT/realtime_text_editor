@@ -1,10 +1,10 @@
 import { http } from "./http";
 
-const resource = "/document";
+const resource = "/auth";
 
 const toError = (err) => err?.response?.data || err;
 
-export const documentService = {
+export const authService = {
   async loginUser({ email, password }) {
     try {
       const res = await http.post(resource + "/login", {

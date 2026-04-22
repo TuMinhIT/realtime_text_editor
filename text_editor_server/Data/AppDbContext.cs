@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Design;
 using text_editor_server.Entities;
 
 namespace text_editor_server.Data
@@ -12,6 +11,9 @@ namespace text_editor_server.Data
         public DbSet<SectionUser> SectionUsers { get; set; }
         public DbSet<OperationalChange> OperationalChanges { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<DocumentBlock> DocumentBlocks { get; set; }
+        public DbSet<DocumentPermission> DocumentPermissions { get; set; }
+        public DbSet<BlockPermission> BlockPermissions { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options)
             : base(options) { }
@@ -72,6 +74,39 @@ namespace text_editor_server.Data
                 .HasForeignKey(oc => oc.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // DocumentBlock relationships
+            modelBuilder.Entity<DocumentBlock>()
+                .HasOne<Document>()
+                .WithMany()
+                .HasForeignKey(db => db.DocumentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // DocumentPermission relationships
+            modelBuilder.Entity<DocumentPermission>()
+                .HasOne<Document>()
+                .WithMany()
+                .HasForeignKey(dp => dp.DocumentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<DocumentPermission>()
+                .HasOne<User>()
+                .WithMany()
+                .HasForeignKey(dp => dp.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // BlockPermission relationships
+            modelBuilder.Entity<BlockPermission>()
+                .HasOne<DocumentBlock>()
+                .WithMany()
+                .HasForeignKey(bp => bp.BlockId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<BlockPermission>()
+                .HasOne<User>()
+                .WithMany()
+                .HasForeignKey(bp => bp.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             // Indexes for performance
             modelBuilder.Entity<Section>()
                 .HasIndex(s => s.DocumentId);
@@ -81,6 +116,17 @@ namespace text_editor_server.Data
 
             modelBuilder.Entity<OperationalChange>()
                 .HasIndex(oc => new { oc.SectionId, oc.CreatedAt });
+
+            modelBuilder.Entity<DocumentBlock>()
+                .HasIndex(db => new { db.DocumentId, db.Order });
+
+            modelBuilder.Entity<DocumentPermission>()
+                .HasIndex(dp => new { dp.DocumentId, dp.UserId })
+                .IsUnique();
+
+            modelBuilder.Entity<BlockPermission>()
+                .HasIndex(bp => new { bp.BlockId, bp.UserId })
+                .IsUnique();
         }
     }
 
