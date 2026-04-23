@@ -1,9 +1,9 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { APP_ROUTES } from "./constants/routes";
-import EditorPage from "./pages/EditorPage";
 import LoginPage from "./pages/LoginPage";
 import HomePage from "./pages/HomePage";
 import { sessionService } from "./services/sessionService";
+import DocumentEditor from "./components/DocumentEditor";
 
 function ProtectedRoute({ children }) {
   if (!sessionService.isAuthenticated()) {
@@ -24,7 +24,7 @@ function App() {
   return (
     <Routes>
       <Route
-        path={APP_ROUTES.login}
+        path={"/login"}
         element={
           <GuestRoute>
             <LoginPage />
@@ -33,7 +33,7 @@ function App() {
       />
 
       <Route
-        path={APP_ROUTES.home}
+        path={"/"}
         element={
           <ProtectedRoute>
             <HomePage />
@@ -42,10 +42,10 @@ function App() {
       />
 
       <Route
-        path={`${APP_ROUTES.editor}/:documentId`}
+        path={`document/:documentId`}
         element={
           <ProtectedRoute>
-            <EditorPage />
+            <DocumentEditor />
           </ProtectedRoute>
         }
       />

@@ -26,10 +26,10 @@ namespace text_editor_server
 
             // Add services
             builder.Services.AddScoped< AuthService>();
+            builder.Services.AddScoped<DocumentService>();
             builder.Services.AddHttpContextAccessor();
 
             builder.Services.AddScoped<IDocxParsingService, DocxParsingService>();
-            builder.Services.AddScoped<IDocumentService, DocumentService>();
             builder.Services.AddScoped<IOperationalTransformService, OperationalTransformService>();
 
             // Add controllers

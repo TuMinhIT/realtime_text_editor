@@ -81,7 +81,9 @@ const buildSections = (documentTitle) => [
   },
 ];
 
-const DocumentEditor = ({ documentId }) => {
+const DocumentEditor = () => {
+  const documentId = "mock-doc-001";
+
   const navigate = useNavigate();
   const editorRef = useRef(null);
   const currentUser = sessionService.getCurrentUser();
@@ -262,7 +264,7 @@ const DocumentEditor = ({ documentId }) => {
   const canEditActiveSection = canEditSection(activeSection, currentUserRole);
 
   return (
-    <main className="h-screen overflow-hidden bg-[#f1f3f4] text-slate-900">
+    <main className=" overflow-hidden bg-[#f1f3f4] text-slate-900">
       <header className="border-b border-slate-200 bg-white">
         <div className="flex h-16 items-center gap-3 px-4 md:px-6">
           <button
@@ -299,22 +301,21 @@ const DocumentEditor = ({ documentId }) => {
               <Save size={16} />
               Save
             </button>
-            <button
-              type="button"
-              className="inline-flex items-center gap-2 rounded-full bg-[#1a73e8] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#185abc]"
-            >
-              <Share2 size={15} />
-              Share
-            </button>
+            <div className="border-b border-slate-200 bg-white px-4 py-3 md:px-6">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-slate-600">
+                <span>Editing</span>
+              </div>
+            </div>
           </div>
         </div>
       </header>
 
-      <div className="flex h-[calc(100vh-64px)] min-h-0">
+      <div className="flex h-[calc(100vh-32px)] min-h-0">
         <aside className="hidden w-[300px] shrink-0 overflow-y-auto border-r border-slate-200 bg-white p-4 lg:block">
           <p className="text-xs uppercase tracking-wide text-slate-500">
             Outline
           </p>
+
           <div className="mt-3 space-y-3">
             {sections.map((section) => {
               const isActive = section.id === activeSection?.id;
@@ -366,24 +367,8 @@ const DocumentEditor = ({ documentId }) => {
         </aside>
 
         <section className="flex min-w-0 flex-1 flex-col">
-          <div className="border-b border-slate-200 bg-white px-4 py-3 md:px-6">
-            <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-slate-600">
-              <span>
-                Editing: <strong>{activeSection?.title}</strong>
-              </span>
-              <span className="inline-flex items-center gap-2">
-                {canEditActiveSection ? (
-                  <Clock3 size={14} />
-                ) : (
-                  <Lock size={14} />
-                )}
-                {status} - {lastSavedAt}
-              </span>
-            </div>
-          </div>
-
-          <div className="min-h-0 flex-1 overflow-hidden bg-[#eef2ff] p-3 md:p-5">
-            <div className="h-full rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_40px_100px_-65px_rgba(15,23,42,0.7)] md:p-3">
+          <div className="min-h-0 flex-1 overflow-hidden bg-[#eef2ff]">
+            <div className="h-full  p-1 shadow-[0_40px_100px_-65px_rgba(15,23,42,0.7)] md:p-2">
               <div className="h-full overflow-hidden rounded-xl border border-slate-200">
                 <DocumentEditorContainerComponent
                   ref={editorRef}

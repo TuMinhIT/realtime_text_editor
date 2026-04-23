@@ -1,19 +1,13 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using text_editor_server.Data;
+using text_editor_server.DTOs.res;
 using text_editor_server.Entities;
 
 namespace text_editor_server.Services
 {
-	public interface IDocumentService
-	{
-		Task<ServiceResult<DocumentUploadRes>> UploadDocumentAsync(IFormFile? file, string? title, Guid currentUserId);
-		Task<DocumentBlocksRes?> GetDocumentBlocksAsync(Guid documentId);
-		Task<ServiceResult<BlockPermissionRes>> AssignUserToBlockAsync(Guid sectionId, Guid userId, PermissionLevel permission);
-		Task<ServiceResult<bool>> RemoveUserFromBlockAsync(Guid sectionId, Guid userId);
-		Task<ServiceResult<List<BlockPermissionRes>>> GetBlockUsersAsync(Guid sectionId);
-	}
 
-	public class DocumentService : IDocumentService
+
+	public class DocumentService
 	{
 		private readonly AppDbContext _context;
 		private readonly IDocxParsingService _docxParsingService;
@@ -26,7 +20,46 @@ namespace text_editor_server.Services
 			_logger = logger;
 		}
 
-		public async Task<ServiceResult<DocumentUploadRes>> UploadDocumentAsync(IFormFile? file, string? title, Guid currentUserId)
+        public async Task<List<DocumentRes>?> GetAllDocumentAsync()
+        {
+			try
+			{
+				var documents = await _context.Documents
+					.AsNoTracking()
+					.Select(d => new DocumentRes
+					{
+						Id = d.Id,
+						Title = d.Title,
+						Content = d.Content,
+						SourceFilePath = d.SourceFilePath,
+						CreatedBy = d.CreatedBy,
+						CreatedAt = d.CreatedAt,
+						Creator = d.Creator == null
+							? null
+							: new UserRes
+							{
+								Id = d.Creator.Id,
+								Email = d.Creator.Email,
+								FullName = d.Creator.FullName,
+								CreatedAt = d.Creator.CreatedAt,
+								IsActive = d.Creator.IsActive,
+								Role = d.Creator.Role
+							}
+					})
+					.ToListAsync();
+
+				return documents;
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "Failed to get documents");
+				return null;
+			}
+
+       
+        }
+
+        public async Task<ServiceResult<DocumentUploadRes>> UploadDocumentAsync(IFormFile? file, string? title, Guid currentUserId)
 		{
 			if (file == null || file.Length == 0)
 			{
@@ -236,51 +269,6 @@ namespace text_editor_server.Services
 		}
 	}
 
-	public class ServiceResult<T>
-	{
-		public bool Success { get; private set; }
-		public string Message { get; private set; } = string.Empty;
-		public T? Data { get; private set; }
 
-		public static ServiceResult<T> Ok(T data)
-		{
-			return new ServiceResult<T> { Success = true, Data = data };
-		}
 
-		public static ServiceResult<T> Fail(string message)
-		{
-			return new ServiceResult<T> { Success = false, Message = message };
-		}
-	}
-
-	public class DocumentUploadRes
-	{
-		public Guid DocumentId { get; set; }
-		public string Title { get; set; } = string.Empty;
-		public List<DocumentBlockItemRes> Blocks { get; set; } = new();
-	}
-
-	public class DocumentBlocksRes
-	{
-		public Guid DocumentId { get; set; }
-		public string Title { get; set; } = string.Empty;
-		public List<DocumentBlockItemRes> Blocks { get; set; } = new();
-	}
-
-	public class DocumentBlockItemRes
-	{
-		public Guid SectionId { get; set; }
-		public string Name { get; set; } = string.Empty;
-		public int Order { get; set; }
-		public string Preview { get; set; } = string.Empty;
-	}
-
-	public class BlockPermissionRes
-	{
-		public Guid SectionId { get; set; }
-		public Guid UserId { get; set; }
-		public string UserEmail { get; set; } = string.Empty;
-		public string Permission { get; set; } = string.Empty;
-		public DateTime AssignedAt { get; set; }
-	}
 }
