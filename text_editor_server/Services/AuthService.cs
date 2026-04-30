@@ -16,7 +16,7 @@ namespace text_editor_server.Services
         private readonly AppDbContext _context;
         private readonly IConfiguration _configuration;
         private readonly ILogger<AuthService> _logger;
-        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IHttpContextAccessor _httpContextAccessor; //Lấy IP + device info
 
         public AuthService(
             AppDbContext context,
@@ -119,7 +119,7 @@ namespace text_editor_server.Services
         // REFRESH
         public async Task<RefreshTokenRes?> RefreshTokenAsync(string refreshToken)
         {
-            var parts = refreshToken.Split('.');
+            var parts = refreshToken.Split('.'); //Tách TokenId và phần random của refresh token
             if (parts.Length != 2)
             {
                 _logger.LogWarning("Invalid refresh token format");

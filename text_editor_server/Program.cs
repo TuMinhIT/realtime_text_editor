@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using System.Diagnostics.Eventing.Reader;
+//using System.Diagnostics.Eventing.Reader;
 using System.Text;
 using text_editor_server.Data;
 using text_editor_server.Entities;
-using text_editor_server.Hubs;
+//using text_editor_server.Hubs;
 using text_editor_server.Services;
 
 namespace text_editor_server
@@ -196,7 +196,7 @@ namespace text_editor_server
             app.MapControllers();
 
             // Map SignalR hub
-            app.MapHub<DocumentHub>("/hubs/document");
+           // app.MapHub<DocumentHub>("/hubs/document");
 
             // Health check
             app.MapGet("/health", () => Results.Ok("Server is running"));

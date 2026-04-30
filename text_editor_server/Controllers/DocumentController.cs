@@ -23,8 +23,8 @@ namespace text_editor_server.Controllers
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> UploadDocument(IFormFile file, [FromForm] string? title)
         {
-
             var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
 
             if (string.IsNullOrWhiteSpace(userIdClaim) || !Guid.TryParse(userIdClaim, out var currentUserId))
             {
@@ -73,6 +73,19 @@ namespace text_editor_server.Controllers
             }
 
             return Ok(blocks);
+        }
+
+
+        //Lấy nội dung một tài liệu:
+        [HttpGet("{documentId:guid}/content")]
+        public async Task<IActionResult> GetDocumentContent(Guid documentId)
+        {
+            var sfdt = await _documentService.GetDocumentContentAsync(documentId);
+
+            if (sfdt == null)
+                return NotFound();
+
+            return Content(sfdt, "application/json"); // 👈 chuẩn
         }
     }
 }

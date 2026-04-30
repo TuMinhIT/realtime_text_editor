@@ -4,93 +4,66 @@ const resource = "/document";
 
 const toError = (err) => err?.response?.data || err;
 
+const normalizeListResponse = (payload) => {
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  if (Array.isArray(payload?.data)) {
+    return payload.data;
+  }
+
+  if (Array.isArray(payload?.documents)) {
+    return payload.documents;
+  }
+
+  return [];
+};
+
 export const documentService = {
-  async loginUser({ email, password }) {
+  async uploadDocument(file, title) {
     try {
-      const res = await http.post(resource + "/login", {
-        email,
-        password,
+      const formData = new FormData();
+      formData.append("file", file);
+
+      if (title?.trim()) {
+        formData.append("title", title.trim());
+      }
+
+      const res = await http.post(`${resource}/upload`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
+
       return res.data;
     } catch (err) {
       throw toError(err);
     }
   },
 
-  async googleLogin({ credential }) {
+  async getAllDocuments() {
     try {
-      const res = await http.post(resource + "/google", { credential });
+      const res = await http.get(`${resource}/getAll`);
+      return normalizeListResponse(res.data);
+    } catch (err) {
+      throw toError(err);
+    }
+  },
+
+  async getDocumentBlocks(documentId) {
+    try {
+      const res = await http.get(`${resource}/${documentId}/blocks`);
       return res.data;
     } catch (err) {
       throw toError(err);
     }
   },
 
-  async loginAdmin({ email, password }) {
+  async getDocumentContent(documentId) {
     try {
-      const res = await http.post(resource + "/login-admin", {
-        email,
-        password,
-      });
-      return res.data;
-    } catch (err) {
-      throw toError(err);
-    }
-  },
-
-  async refreshToken(refreshToken) {
-    try {
-      const res = await http.post(resource + "/refresh-token", {
-        refreshToken,
-      });
-      return res.data;
-    } catch (err) {
-      throw toError(err);
-    }
-  },
-
-  async logout(refreshToken) {
-    try {
-      const res = await http.post(resource + "/logout", {
-        refreshToken,
-      });
-      return res.data;
-    } catch (err) {
-      throw toError(err);
-    }
-  },
-
-  async verifyOTP({ email, otp, type = "password_reset" }) {
-    try {
-      const res = await http.post("/email/verify-otp", {
-        email,
-        otp,
-        type,
-      });
-      return res.data;
-    } catch (err) {
-      throw toError(err);
-    }
-  },
-
-  async changePassword({ userId, oldPassword, newPassword }) {
-    try {
-      const res = await http.post(resource + "/change-password", {
-        userId,
-        oldPassword,
-        newPassword,
-      });
-      return res.data;
-    } catch (err) {
-      throw toError(err);
-    }
-  },
-
-  async resetPassword({ email, newPassword }) {
-    try {
-      const res = await http.post(resource + "/reset-password", {
-        email,
-        newPassword,
+      const res = await http.get(`${resource}/${documentId}/content`, {
+        responseType: "text",
       });
       return res.data;
     } catch (err) {
@@ -98,3 +71,5 @@ export const documentService = {
     }
   },
 };
+
+export default documentService;

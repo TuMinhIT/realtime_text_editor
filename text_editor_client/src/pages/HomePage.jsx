@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Clock3,
@@ -9,64 +9,70 @@ import {
   Upload,
 } from "lucide-react";
 import { APP_ROUTES } from "../constants/routes";
-
 import { http } from "../services/http";
 import { sessionService } from "../services/sessionService";
+import { documentService } from "../services/documentService";
+import { mapUploadResponseToRecentDocument } from "../utils/documentMappers";
 
-const seedDocuments = [
-  {
-    id: "brief-q2-2026",
-    title: "Q2 Product Brief",
-    description: "Ke hoach phat trien tinh nang cho quy 2.",
-    updatedAt: "2026-04-20T10:00:00.000Z",
-    sections: 7,
-    owner: "Minh",
-    lastEditor: "Lan",
-  },
-  {
-    id: "meeting-notes",
-    title: "Weekly Meeting Notes",
-    description: "Tong hop ghi chu hop team theo tuan.",
-    updatedAt: "2026-04-19T15:30:00.000Z",
-    sections: 4,
-    owner: "Lan",
-    lastEditor: "Minh",
-  },
-  {
-    id: "ux-research",
-    title: "UX Research Summary",
-    description: "Tong hop phan hoi nguoi dung va de xuat cai tien.",
-    updatedAt: "2026-04-18T09:00:00.000Z",
-    sections: 9,
-    owner: "Huy",
-    lastEditor: "Huy",
-  },
-];
+const formatDate = (value) => {
+  if (!value) {
+    return "-";
+  }
 
-const readDocuments = () => {
-  // gọi api
-  // const storedDocuments = documentService.getRecentDocuments();
-  return seedDocuments;
-};
-
-const formatDate = (value) =>
-  new Date(value).toLocaleDateString("vi-VN", {
+  return new Date(value).toLocaleDateString("vi-VN", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
   });
+};
+
+const mapDocumentListItem = (doc, fallbackOwner) => ({
+  id: doc.documentId || doc.id,
+  title: doc.title || doc.documentTitle || "Untitled document",
+  description: doc.description || doc.originalFileName || "Tai lieu da tai len",
+  updatedAt:
+    doc.updatedAt || doc.lastModifiedAt || doc.createdAt || new Date().toISOString(),
+  sections:
+    doc.sectionsCount || doc.sectionCount || doc.sections?.length || doc.blocks?.length || "-",
+  owner: doc.ownerName || doc.owner || fallbackOwner,
+  lastEditor: doc.lastEditorName || doc.lastEditor || fallbackOwner,
+});
 
 const HomePage = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
   const currentUser = sessionService.getCurrentUser();
-  const [documents, setDocuments] = useState(readDocuments);
+  const [documents, setDocuments] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [isLoadingDocuments, setIsLoadingDocuments] = useState(true);
   const [keyword, setKeyword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const openDocument = (documentId) => {
     navigate(`${APP_ROUTES.editor}/${documentId}`);
   };
+
+  const loadDocuments = async () => {
+    setIsLoadingDocuments(true);
+    setErrorMessage("");
+
+    try {
+      const items = await documentService.getAllDocuments();
+      setDocuments(
+        items
+          .map((doc) => mapDocumentListItem(doc, currentUser?.name || "Workspace"))
+          .filter((doc) => doc.id),
+      );
+    } catch (error) {
+      setErrorMessage(error?.message || "Khong tai duoc danh sach tai lieu.");
+    } finally {
+      setIsLoadingDocuments(false);
+    }
+  };
+
+  useEffect(() => {
+    loadDocuments();
+  }, []);
 
   const filteredDocuments = useMemo(() => {
     if (!keyword.trim()) {
@@ -82,32 +88,31 @@ const HomePage = () => {
     });
   }, [documents, keyword]);
 
-  const handleUpload = (file) => {
+  const handleUpload = async (file) => {
+    const isDocx = file.name.toLowerCase().endsWith(".docx");
+    if (!isDocx) {
+      window.alert("Vui long chon file .docx");
+      return;
+    }
+
     setIsUploading(true);
+    setErrorMessage("");
 
-    window.setTimeout(() => {
-      const documentId = `mock-${Date.now()}`;
-      const nextDocument = {
-        id: documentId,
-        title: file.name.replace(/\.docx$/i, ""),
-        description: "Tai lieu moi duoc tao tu file upload.",
-        updatedAt: new Date().toISOString(),
-        sections: 5,
-        owner: currentUser?.name || "Workspace",
-        lastEditor: currentUser?.name || "Workspace",
-      };
+    try {
+      const response = await documentService.uploadDocument(file);
+      const uploadedDocument = mapUploadResponseToRecentDocument(response, file.name);
 
-      const nextDocuments = [
-        nextDocument,
-        ...documents.filter((item) => item.id !== documentId),
-      ].slice(0, 8);
+      setDocuments((current) => [
+        uploadedDocument,
+        ...current.filter((item) => item.id !== uploadedDocument.id),
+      ]);
 
-      setDocuments(nextDocuments);
-      // save;
-      // documentService.saveRecentDocument(nextDocument);
+      openDocument(uploadedDocument.id);
+    } catch (error) {
+      setErrorMessage(error?.message || "Upload that bai. Hay kiem tra token va API.");
+    } finally {
       setIsUploading(false);
-      openDocument(documentId);
-    }, 650);
+    }
   };
 
   const handleFileChange = (event) => {
@@ -115,26 +120,15 @@ const HomePage = () => {
     if (!file) {
       return;
     }
+
     handleUpload(file);
     event.target.value = "";
   };
 
   const handleCreateBlank = () => {
-    const documentId = `doc-${Date.now()}`;
-    const nextDocument = {
-      id: documentId,
-      title: "Untitled document",
-      description: "Tai lieu moi.",
-      updatedAt: new Date().toISOString(),
-      sections: 1,
-      owner: currentUser?.name || "Workspace",
-      lastEditor: currentUser?.name || "Workspace",
-    };
-    const nextDocuments = [nextDocument, ...documents].slice(0, 20);
-    setDocuments(nextDocuments);
-    // lại save
-    // documentService.saveRecentDocument(nextDocument);
-    openDocument(documentId);
+    window.alert(
+      "Backend hien tai moi co upload/getAll/content. Neu muon tao file trang, ban can them endpoint tao document rong tra ve SFDT mac dinh.",
+    );
   };
 
   const handleLogout = () => {
@@ -251,6 +245,12 @@ const HomePage = () => {
             </span>
           </div>
 
+          {errorMessage ? (
+            <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {errorMessage}
+            </div>
+          ) : null}
+
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-[760px] border-collapse">
               <thead>
@@ -273,50 +273,70 @@ const HomePage = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredDocuments.map((doc) => (
-                  <tr
-                    key={doc.id}
-                    className="text-sm text-slate-700 hover:bg-[#f8fafc]"
-                  >
-                    <td className="border-b border-slate-100 px-4 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#e8f0fe] text-[#1a73e8]">
-                          <FileText size={16} />
-                        </div>
-                        <div>
-                          <p className="font-medium text-slate-900">
-                            {doc.title}
-                          </p>
-                          <p className="text-xs text-slate-500">
-                            {doc.description}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="border-b border-slate-100 px-4 py-4">
-                      {doc.owner || "Workspace"}
-                    </td>
-                    <td className="border-b border-slate-100 px-4 py-4">
-                      <span className="inline-flex items-center gap-2">
-                        <Clock3 size={14} />
-                        {formatDate(doc.updatedAt)}
-                      </span>
-                    </td>
-                    <td className="border-b border-slate-100 px-4 py-4">
-                      {doc.sections || "-"}
-                    </td>
-                    <td className="border-b border-slate-100 px-4 py-4">
-                      <button
-                        type="button"
-                        onClick={() => openDocument(doc.id)}
-                        className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-3 py-1.5 text-sm font-medium transition hover:border-[#1a73e8] hover:text-[#1a73e8]"
-                      >
-                        <FolderOpen size={15} />
-                        Open
-                      </button>
+                {isLoadingDocuments ? (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className="border-b border-slate-100 px-4 py-8 text-center text-sm text-slate-500"
+                    >
+                      Dang tai danh sach tai lieu...
                     </td>
                   </tr>
-                ))}
+                ) : filteredDocuments.length ? (
+                  filteredDocuments.map((doc) => (
+                    <tr
+                      key={doc.id}
+                      className="text-sm text-slate-700 hover:bg-[#f8fafc]"
+                    >
+                      <td className="border-b border-slate-100 px-4 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#e8f0fe] text-[#1a73e8]">
+                            <FileText size={16} />
+                          </div>
+                          <div>
+                            <p className="font-medium text-slate-900">
+                              {doc.title}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              {doc.description}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="border-b border-slate-100 px-4 py-4">
+                        {doc.owner || "Workspace"}
+                      </td>
+                      <td className="border-b border-slate-100 px-4 py-4">
+                        <span className="inline-flex items-center gap-2">
+                          <Clock3 size={14} />
+                          {formatDate(doc.updatedAt)}
+                        </span>
+                      </td>
+                      <td className="border-b border-slate-100 px-4 py-4">
+                        {doc.sections || "-"}
+                      </td>
+                      <td className="border-b border-slate-100 px-4 py-4">
+                        <button
+                          type="button"
+                          onClick={() => openDocument(doc.id)}
+                          className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-3 py-1.5 text-sm font-medium transition hover:border-[#1a73e8] hover:text-[#1a73e8]"
+                        >
+                          <FolderOpen size={15} />
+                          Open
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className="border-b border-slate-100 px-4 py-8 text-center text-sm text-slate-500"
+                    >
+                      Chua co tai lieu nao. Hay upload file `.docx` dau tien.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

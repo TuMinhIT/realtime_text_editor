@@ -1,196 +1,108 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   DocumentEditorContainerComponent,
   Inject,
   Toolbar,
 } from "@syncfusion/ej2-react-documenteditor";
-import {
-  Clock3,
-  FileText,
-  Home,
-  Lock,
-  Save,
-  Share2,
-  ShieldCheck,
-  Users,
-} from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { FileText, Home, Save } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
 import { APP_ROUTES } from "../constants/routes";
-import { sessionService } from "../services/sessionService";
+import { documentService } from "../services/documentService";
 
 const SERVICE_URL =
   "https://ej2services.syncfusion.com/production/web-services/api/documenteditor/";
 
-const ROLE_WEIGHT = {
-  Viewer: 1,
-  Editor: 2,
-  Owner: 3,
-};
+const extractTitleFromSfdt = (sfdt, fallbackTitle) => {
+  try {
+    const parsed = JSON.parse(sfdt);
+    const firstBlock =
+      parsed?.sections?.[0]?.blocks?.find((block) => Array.isArray(block?.inlines)) ||
+      parsed?.sections?.[0]?.blocks?.[0];
 
-const SECTION_PERMISSION_OPTIONS = [
-  { value: "viewer", label: "View only" },
-  { value: "editor", label: "Owner + Editor can edit" },
-  { value: "owner", label: "Owner only" },
-];
+    const titleText =
+      firstBlock?.inlines
+        ?.map((inline) => inline.text || "")
+        .join("")
+        .trim() || "";
 
-const permissionLabel = {
-  viewer: "View only",
-  editor: "Editable by Owner + Editor",
-  owner: "Editable by Owner",
-};
-
-const resolveRequiredRole = (permission) => {
-  if (permission === "owner") {
-    return "Owner";
+    return titleText || fallbackTitle;
+  } catch {
+    return fallbackTitle;
   }
-  if (permission === "editor") {
-    return "Editor";
-  }
-  return null;
 };
-
-const defaultMembers = [
-  { id: "u1", name: "Minh", role: "Owner" },
-  { id: "u2", name: "Lan", role: "Editor" },
-  { id: "u3", name: "Huy", role: "Viewer" },
-];
-
-const buildSections = (documentTitle) => [
-  {
-    id: "intro",
-    name: "01",
-    title: "Tong quan tai lieu",
-    permission: "editor",
-    content: `${documentTitle}\n\nDay la khung noi dung mock de ban test giao dien Word editor.\n\n- Heading ro rang\n- Khu vuc viet noi dung lon\n- De mo rong upload, autosave va realtime`,
-  },
-  {
-    id: "scope",
-    name: "02",
-    title: "Pham vi va yeu cau",
-    permission: "owner",
-    content:
-      "Pham vi va yeu cau\n\nSection nay phu hop de dat requirement, acceptance criteria va ghi chu cho PM, dev, QA.",
-  },
-  {
-    id: "delivery",
-    name: "03",
-    title: "Ke hoach trien khai",
-    permission: "viewer",
-    content:
-      "Ke hoach trien khai\n\n1. Chuan bi file\n2. Chinh sua noi dung\n3. Luu version\n4. Dong bo backend sau",
-  },
-];
 
 const DocumentEditor = () => {
-  const documentId = "mock-doc-001";
-
+  const { documentId } = useParams();
   const navigate = useNavigate();
   const editorRef = useRef(null);
-  const currentUser = sessionService.getCurrentUser();
   const [documentTitle, setDocumentTitle] = useState("Untitled document");
-  const [sections, setSections] = useState(() =>
-    buildSections("Untitled document"),
-  );
-  const [activeSectionId, setActiveSectionId] = useState("intro");
-  const [lastSavedAt, setLastSavedAt] = useState("Not saved");
-  const [status, setStatus] = useState("All changes saved");
+  const [lastSavedAt, setLastSavedAt] = useState("Chua luu");
+  const [status, setStatus] = useState("Dang tai tai lieu...");
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [sfdtContent, setSfdtContent] = useState("");
 
-  const members = useMemo(() => {
-    if (!currentUser?.name) {
-      return defaultMembers;
-    }
-
-    const exists = defaultMembers.some(
-      (member) => member.name.toLowerCase() === currentUser.name.toLowerCase(),
-    );
-
-    if (exists) {
-      return defaultMembers;
-    }
-
-    return [
-      { id: currentUser.id || "me", name: currentUser.name, role: "Editor" },
-      ...defaultMembers,
-    ];
-  }, [currentUser]);
-
-  const currentUserRole = useMemo(() => {
-    if (!currentUser?.name) {
-      return "Owner";
-    }
-
-    const member = members.find(
-      (item) => item.name.toLowerCase() === currentUser.name.toLowerCase(),
-    );
-    return member?.role || "Viewer";
-  }, [currentUser, members]);
-
-  const activeSection = useMemo(
-    () =>
-      sections.find((section) => section.id === activeSectionId) ?? sections[0],
-    [activeSectionId, sections],
-  );
-
-  const canEditSection = (section, role) => {
-    if (!section) {
-      return false;
-    }
-
-    const requiredRole = resolveRequiredRole(section.permission);
-    if (!requiredRole) {
-      return false;
-    }
-
-    return ROLE_WEIGHT[role] >= ROLE_WEIGHT[requiredRole];
-  };
-
-  const applySectionPermission = (section) => {
+  const openDocumentContent = (sfdt) => {
     const editor = editorRef.current?.documentEditor;
-    if (!editor || !section) {
+    if (!editor || !sfdt) {
       return;
     }
 
-    editor.isReadOnly = !canEditSection(section, currentUserRole);
-  };
-
-  const openSectionContent = (section) => {
-    const editor = editorRef.current?.documentEditor;
-    if (!editor || !section) {
-      return;
-    }
-
-    if (section.serializedContent) {
-      editor.open(section.serializedContent);
-      applySectionPermission(section);
-      return;
-    }
-
-    editor.openBlank();
-    if (editor.editor && section.content) {
-      editor.editor.insertText(section.content);
-    }
-    applySectionPermission(section);
+    editor.open(sfdt);
   };
 
   useEffect(() => {
-    setDocumentTitle(`Document ${documentId}`);
-    setSections(buildSections(`Document ${documentId}`));
-    setActiveSectionId("intro");
-    setStatus("All changes saved");
+    let isMounted = true;
+
+    const loadDocument = async () => {
+      if (!documentId) {
+        setErrorMessage("Khong tim thay documentId tren route.");
+        setStatus("Khong mo duoc tai lieu");
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      setErrorMessage("");
+      setStatus("Dang tai tai lieu...");
+
+      try {
+        const sfdt = await documentService.getDocumentContent(documentId);
+        if (!isMounted) {
+          return;
+        }
+
+        setSfdtContent(sfdt);
+        setDocumentTitle(extractTitleFromSfdt(sfdt, `Document ${documentId}`));
+        setStatus("Da tai xong, san sang chinh sua");
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        setErrorMessage(
+          error?.message || "Khong tai duoc noi dung tai lieu tu backend.",
+        );
+        setStatus("Khong mo duoc tai lieu");
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadDocument();
+
+    return () => {
+      isMounted = false;
+    };
   }, [documentId]);
 
   useEffect(() => {
-    if (!activeSection) {
-      return;
+    if (!isLoading && sfdtContent) {
+      openDocumentContent(sfdtContent);
     }
-
-    openSectionContent(activeSection);
-    setStatus(
-      canEditSection(activeSection, currentUserRole)
-        ? "Editing"
-        : "Read-only by section permission",
-    );
-  }, [activeSection, currentUserRole]);
+  }, [isLoading, sfdtContent]);
 
   const handleCreated = () => {
     const editor = editorRef.current?.documentEditor;
@@ -199,72 +111,33 @@ const DocumentEditor = () => {
     }
 
     editor.serviceUrl = SERVICE_URL;
-    openSectionContent(activeSection);
-  };
 
-  const persistCurrentSection = () => {
-    if (!activeSection || !canEditSection(activeSection, currentUserRole)) {
-      return;
+    if (sfdtContent) {
+      openDocumentContent(sfdtContent);
     }
-
-    const editor = editorRef.current?.documentEditor;
-    const serialized = editor?.serialize?.();
-
-    setSections((current) =>
-      current.map((section) =>
-        section.id === activeSection.id
-          ? {
-              ...section,
-              serializedContent: serialized || section.serializedContent,
-            }
-          : section,
-      ),
-    );
   };
 
   const handleSave = () => {
-    if (!canEditSection(activeSection, currentUserRole)) {
-      setStatus("You do not have permission to save this section");
+    const editor = editorRef.current?.documentEditor;
+    if (!editor) {
       return;
     }
 
-    persistCurrentSection();
+    const serialized = editor.serialize();
+    setSfdtContent(serialized);
     setLastSavedAt(
       new Date().toLocaleTimeString("vi-VN", {
         hour: "2-digit",
         minute: "2-digit",
       }),
     );
-    setStatus("All changes saved");
-  };
-
-  const handleSectionClick = (sectionId) => {
-    persistCurrentSection();
-    setActiveSectionId(sectionId);
-  };
-
-  const handlePermissionChange = (sectionId, permission) => {
-    setSections((current) =>
-      current.map((section) =>
-        section.id === sectionId ? { ...section, permission } : section,
-      ),
+    setStatus(
+      "Da serialize SFDT o client. De luu that, ban nen them endpoint PUT /api/Document/{id}/content.",
     );
-
-    if (sectionId === activeSectionId) {
-      const nextSection =
-        sections.find((section) => section.id === sectionId) || activeSection;
-      const updatedSection = { ...nextSection, permission };
-
-      const hasAccess = canEditSection(updatedSection, currentUserRole);
-      applySectionPermission(updatedSection);
-      setStatus(hasAccess ? "Editing" : "Read-only by section permission");
-    }
   };
-
-  const canEditActiveSection = canEditSection(activeSection, currentUserRole);
 
   return (
-    <main className=" overflow-hidden bg-[#f1f3f4] text-slate-900">
+    <main className="overflow-hidden bg-[#f1f3f4] text-slate-900">
       <header className="border-b border-slate-200 bg-white">
         <div className="flex h-16 items-center gap-3 px-4 md:px-6">
           <button
@@ -288,102 +161,43 @@ const DocumentEditor = () => {
             />
           </div>
 
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex items-center gap-3 text-sm text-slate-600">
             <span className="hidden rounded-full bg-[#e8f0fe] px-3 py-1 text-xs font-medium text-[#1967d2] xl:inline-flex">
               ID {documentId}
             </span>
+            <span className="hidden md:inline">{status}</span>
+            <span className="hidden lg:inline">Luu luc {lastSavedAt}</span>
             <button
               type="button"
               onClick={handleSave}
-              className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={!canEditActiveSection}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400"
             >
               <Save size={16} />
               Save
             </button>
-            <div className="border-b border-slate-200 bg-white px-4 py-3 md:px-6">
-              <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-slate-600">
-                <span>Editing</span>
-              </div>
-            </div>
           </div>
         </div>
       </header>
 
-      <div className="flex h-[calc(100vh-32px)] min-h-0">
-        <aside className="hidden w-[300px] shrink-0 overflow-y-auto border-r border-slate-200 bg-white p-4 lg:block">
-          <p className="text-xs uppercase tracking-wide text-slate-500">
-            Outline
-          </p>
-
-          <div className="mt-3 space-y-3">
-            {sections.map((section) => {
-              const isActive = section.id === activeSection?.id;
-
-              return (
-                <div
-                  key={section.id}
-                  className={`rounded-xl border p-3 ${
-                    isActive
-                      ? "border-[#1a73e8] bg-[#e8f0fe]"
-                      : "border-slate-200 bg-white"
-                  }`}
-                >
-                  <button
-                    type="button"
-                    onClick={() => handleSectionClick(section.id)}
-                    className="w-full text-left"
-                  >
-                    <p className="text-xs text-slate-500">
-                      Section {section.name}
-                    </p>
-                    <p className="mt-1 text-sm font-medium text-slate-900">
-                      {section.title}
-                    </p>
-                  </button>
-
-                  <label className="mt-3 block">
-                    <span className="mb-1 inline-flex items-center gap-1 text-xs text-slate-500">
-                      <ShieldCheck size={12} /> Permission
-                    </span>
-                    <select
-                      value={section.permission}
-                      onChange={(event) =>
-                        handlePermissionChange(section.id, event.target.value)
-                      }
-                      className="w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs outline-none focus:border-[#1a73e8]"
-                    >
-                      {SECTION_PERMISSION_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-              );
-            })}
+      <section className="h-[calc(100vh-64px)] min-h-0 bg-[#eef2ff] p-2 md:p-3">
+        {errorMessage ? (
+          <div className="mx-auto mb-3 max-w-[1400px] rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {errorMessage}
           </div>
-        </aside>
+        ) : null}
 
-        <section className="flex min-w-0 flex-1 flex-col">
-          <div className="min-h-0 flex-1 overflow-hidden bg-[#eef2ff]">
-            <div className="h-full  p-1 shadow-[0_40px_100px_-65px_rgba(15,23,42,0.7)] md:p-2">
-              <div className="h-full overflow-hidden rounded-xl border border-slate-200">
-                <DocumentEditorContainerComponent
-                  ref={editorRef}
-                  height="100%"
-                  enableToolbar
-                  serviceUrl={SERVICE_URL}
-                  created={handleCreated}
-                >
-                  <Inject services={[Toolbar]} />
-                </DocumentEditorContainerComponent>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
+        <div className="mx-auto h-full max-w-[1400px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_40px_100px_-65px_rgba(15,23,42,0.7)]">
+          <DocumentEditorContainerComponent
+            ref={editorRef}
+            height="100%"
+            enableToolbar
+            serviceUrl={SERVICE_URL}
+            created={handleCreated}
+          >
+            <Inject services={[Toolbar]} />
+          </DocumentEditorContainerComponent>
+        </div>
+      </section>
     </main>
   );
 };

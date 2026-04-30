@@ -1,8 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
+using Syncfusion.EJ2.DocumentEditor;
 using text_editor_server.Data;
 using text_editor_server.DTOs.res;
 using text_editor_server.Entities;
-
 namespace text_editor_server.Services
 {
 
@@ -58,99 +59,139 @@ namespace text_editor_server.Services
 
        
         }
+        public async Task<ServiceResult<DocumentUploadRes>> UploadDocumentAsync(
+       IFormFile? file,
+       string? title,
+       Guid currentUserId)
+        {
+            if (file == null || file.Length == 0)
+                return ServiceResult<DocumentUploadRes>.Fail("File is required");
 
-        public async Task<ServiceResult<DocumentUploadRes>> UploadDocumentAsync(IFormFile? file, string? title, Guid currentUserId)
-		{
-			if (file == null || file.Length == 0)
-			{
-				return ServiceResult<DocumentUploadRes>.Fail("File is required");
-			}
+            if (!Path.GetExtension(file.FileName)
+                .Equals(".docx", StringComparison.OrdinalIgnoreCase))
+                return ServiceResult<DocumentUploadRes>.Fail("Only .docx files are supported");
 
-			if (!Path.GetExtension(file.FileName).Equals(".docx", StringComparison.OrdinalIgnoreCase))
-			{
-				return ServiceResult<DocumentUploadRes>.Fail("Only .docx files are supported");
-			}
+            try
+            {
+                await using var stream = new MemoryStream();
+                await file.CopyToAsync(stream);
 
-			try
-			{
-				await using var stream = new MemoryStream();
-				await file.CopyToAsync(stream);
-				stream.Position = 0;
+                if (stream.Length == 0)
+                    return ServiceResult<DocumentUploadRes>.Fail("File is empty");
 
-				var parseResult = await _docxParsingService.ParseDocxAsync(stream);
+                // ======================
+                // Parse sections
+                // ======================
+                stream.Position = 0;
+                var (sections, plainText) =
+                    await _docxParsingService.ParseDocxAsync(stream);
 
-				var document = new Document
-				{
-					Id = Guid.NewGuid(),
-					Title = string.IsNullOrWhiteSpace(title) ? Path.GetFileNameWithoutExtension(file.FileName) : title.Trim(),
-					Content = parseResult.plainText,
-					SourceFilePath = file.FileName,
-					CreatedBy = currentUserId,
-					CreatedAt = DateTime.UtcNow
-				};
+                var sectionsList = sections ?? new List<Section>();
 
-				_context.Documents.Add(document);
+                // ======================
+                // Convert DOCX -> SFDT JSON (KHÔNG NÉN)
+                // ======================
+                stream.Position = 0;
 
-				var sections = parseResult.sections;
-				if (sections.Count == 0)
-				{
-					sections.Add(new Section
-					{
-						Id = Guid.NewGuid(),
-						Name = "1",
-						Content = parseResult.plainText,
-						DocumentId = document.Id,
-						Version = 0,
-						Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
-					});
-				}
+                using var wordDoc = new Syncfusion.DocIO.DLS.WordDocument(
+                    stream,
+                    Syncfusion.DocIO.FormatType.Docx);
 
-				for (var i = 0; i < sections.Count; i++)
-				{
-					sections[i].Id = sections[i].Id == Guid.Empty ? Guid.NewGuid() : sections[i].Id;
-					sections[i].DocumentId = document.Id;
-					sections[i].Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-					sections[i].Version = 0;
-				}
+                var editorDoc = Syncfusion.EJ2.DocumentEditor.WordDocument.Load(wordDoc);
 
-				_context.Sections.AddRange(sections);
+                // ✅ QUAN TRỌNG: đây mới là JSON thật
+                string sfdtJson = JsonConvert.SerializeObject(editorDoc);
 
-				var ownerAssignments = sections.Select(s => new SectionUser
-				{
-					Id = Guid.NewGuid(),
-					SectionId = s.Id,
-					UserId = currentUserId,
-					Permission = PermissionLevel.Admin,
-					AssignedAt = DateTime.UtcNow
-				});
+                editorDoc.Dispose();
 
-				_context.SectionUsers.AddRange(ownerAssignments);
+                // ======================
+                // Save DB
+                // ======================
+                var document = new Document
+                {
+                    Id = Guid.NewGuid(),
+                    Title = string.IsNullOrWhiteSpace(title)
+                        ? Path.GetFileNameWithoutExtension(file.FileName)
+                        : title.Trim(),
 
-				await _context.SaveChangesAsync();
+                    Content = sfdtJson,
+                    SourceFilePath = file.FileName,
+                    CreatedBy = currentUserId,
+                    CreatedAt = DateTime.UtcNow
+                };
 
-				var response = new DocumentUploadRes
-				{
-					DocumentId = document.Id,
-					Title = document.Title,
-					Blocks = sections.Select((s, index) => new DocumentBlockItemRes
-					{
-						SectionId = s.Id,
-						Name = s.Name,
-						Order = index + 1,
-						Preview = s.Content.Length > 200 ? s.Content[..200] : s.Content
-					}).ToList()
-				};
+                _context.Documents.Add(document);
 
-				return ServiceResult<DocumentUploadRes>.Ok(response);
-			}
-			catch (Exception ex)
-			{
-				_logger.LogError(ex, "Failed to upload docx for user {UserId}", currentUserId);
-				return ServiceResult<DocumentUploadRes>.Fail("Failed to parse and save document");
-			}
-		}
+                // ======================
+                // Default section
+                // ======================
+                if (!sectionsList.Any())
+                {
+                    sectionsList.Add(new Section
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = "1",
+                        Content = plainText ?? "",
+                        DocumentId = document.Id,
+                        Version = 0,
+                        Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+                    });
+                }
 
-		public async Task<DocumentBlocksRes?> GetDocumentBlocksAsync(Guid documentId)
+                foreach (var section in sectionsList)
+                {
+                    if (section.Id == Guid.Empty)
+                        section.Id = Guid.NewGuid();
+
+                    section.DocumentId = document.Id;
+                    section.Version = 0;
+                    section.Timestamp =
+                        DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                }
+
+                _context.Sections.AddRange(sectionsList);
+
+                var permissions = sectionsList.Select(s => new SectionUser
+                {
+                    Id = Guid.NewGuid(),
+                    SectionId = s.Id,
+                    UserId = currentUserId,
+                    Permission = PermissionLevel.Admin,
+                    AssignedAt = DateTime.UtcNow
+                });
+
+                _context.SectionUsers.AddRange(permissions);
+
+                await _context.SaveChangesAsync();
+
+                return ServiceResult<DocumentUploadRes>.Ok(
+                    new DocumentUploadRes
+                    {
+                        DocumentId = document.Id,
+                        Title = document.Title,
+                        Blocks = sectionsList
+                            .Select((s, index) => new DocumentBlockItemRes
+                            {
+                                SectionId = s.Id,
+                                Name = s.Name,
+                                Order = index + 1,
+                                Preview = string.IsNullOrEmpty(s.Content)
+                                    ? ""
+                                    : s.Content.Length > 200
+                                        ? s.Content.Substring(0, 200)
+                                        : s.Content
+                            })
+                            .ToList()
+                    });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Upload failed");
+                return ServiceResult<DocumentUploadRes>.Fail("Upload failed");
+            }
+        }
+
+        public async Task<DocumentBlocksRes?> GetDocumentBlocksAsync(Guid documentId)
 		{
 			var document = await _context.Documents
 				.AsNoTracking()
@@ -267,7 +308,18 @@ namespace text_editor_server.Services
 
 			return ServiceResult<List<BlockPermissionRes>>.Ok(users);
 		}
-	}
+
+		//Tạo thêm service để lấy nội dung:
+		public async Task<string?> GetDocumentContentAsync(Guid documentId)
+		{
+			var content = await _context.Documents
+				.AsNoTracking()
+				.Where(d => d.Id == documentId)
+				.Select(d => d.Content)
+				.FirstOrDefaultAsync();
+			return content;
+        }
+    }
 
 
 
