@@ -7,7 +7,7 @@
         Admin = 2
     }
 
-    public class SectionUser
+    public class SectionPermission
     {
         public Guid Id { get; set; }
         public Guid SectionId { get; set; }
@@ -17,6 +17,5 @@
 
         // Navigation properties
         public Section Section { get; set; }
-        public User User { get; set; }
     }
 }

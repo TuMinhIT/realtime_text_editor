@@ -14,14 +14,13 @@ namespace text_editor_server.Controllers
     {
         private readonly AppDbContext _context;
       private readonly AuthService _authService;
-        private readonly IConfiguration _configuration;
+      
         private readonly ILogger<UsersController> _logger;
 
-        public UsersController(AppDbContext context, AuthService authService, IConfiguration configuration, ILogger<UsersController> logger)
+        public UsersController(AppDbContext context, AuthService authService,ILogger<UsersController> logger)
         {
             _context = context;
             _authService = authService;
-            _configuration = configuration;
             _logger = logger;
         }
 

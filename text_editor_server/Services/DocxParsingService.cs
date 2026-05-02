@@ -51,7 +51,7 @@ namespace text_editor_server.Services
                                 sections.Add(new Section
                                 {
                                     Id = Guid.NewGuid(),
-                                    Name = currentSectionName,
+                                    Title = currentSectionName,
                                     Content = contentBuilder.ToString()
                                 });
                                 contentBuilder.Clear();
@@ -81,7 +81,7 @@ namespace text_editor_server.Services
                         sections.Add(new Section
                         {
                             Id = Guid.NewGuid(),
-                            Name = currentSectionName,
+                            Title = currentSectionName,
                             Content = contentBuilder.ToString()
                         });
                     }
@@ -95,6 +95,7 @@ namespace text_editor_server.Services
             }
         }
 
+ 
         public string ExtractTextFromParagraph(Paragraph paragraph)
         {
             var text = new System.Text.StringBuilder();

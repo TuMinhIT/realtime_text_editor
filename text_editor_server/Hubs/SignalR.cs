@@ -9,13 +9,12 @@ namespace text_editor_server.Hubs
     public class DocumentHub : Hub
     {
         private readonly AppDbContext _context;
-        private readonly IOperationalTransformService _otService;
+    
         private readonly ILogger<DocumentHub> _logger;
 
-        public DocumentHub(AppDbContext context, IOperationalTransformService otService, ILogger<DocumentHub> logger)
+        public DocumentHub(AppDbContext context, ILogger<DocumentHub> logger)
         {
             _context = context;
-            _otService = otService;
             _logger = logger;
         }
 
@@ -33,14 +32,14 @@ namespace text_editor_server.Hubs
                 }
 
                 // Verify user has permission to access this section
-                var hasPermission = await _context.SectionUsers
-                    .AnyAsync(su => su.SectionId == sectionGuid && su.UserId == userGuid);
+                //var hasPermission = await _context.SectionUsers
+                //    .AnyAsync(su => su.SectionId == sectionGuid && su.UserId == userGuid);
 
-                if (!hasPermission)
-                {
-                    await Clients.Caller.SendAsync("Error", "You don't have permission to access this section");
-                    return;
-                }
+                //if (!hasPermission)
+                //{
+                //    await Clients.Caller.SendAsync("Error", "You don't have permission to access this section");
+                //    return;
+                //}
 
                 await Groups.AddToGroupAsync(Context.ConnectionId, sectionId);
                 
@@ -104,78 +103,78 @@ namespace text_editor_server.Hubs
                     return;
                 }
 
-                var section = await _context.Sections
-                    .Include(s => s.ChangeLog)
-                    .FirstOrDefaultAsync(s => s.Id == sectionGuid);
+                //var section = await _context.Sections
+                //    .Include(s => s.ChangeLog)
+                //    .FirstOrDefaultAsync(s => s.Id == sectionGuid);
 
-                if (section == null)
-                {
-                    await Clients.Caller.SendAsync("Error", "Section not found");
-                    return;
-                }
+                //if (section == null)
+                //{
+                //    await Clients.Caller.SendAsync("Error", "Section not found");
+                //    return;
+                //}
 
                 // Verify user permission
-                var hasEditPermission = await _context.SectionUsers
-                    .AnyAsync(su => su.SectionId == sectionGuid && su.UserId == userGuid 
-                        && su.Permission >= PermissionLevel.Edit);
+                //var hasEditPermission = await _context.SectionUsers
+                //    .AnyAsync(su => su.SectionId == sectionGuid && su.UserId == userGuid 
+                //        && su.Permission >= PermissionLevel.Edit);
 
-                if (!hasEditPermission)
-                {
-                    await Clients.Caller.SendAsync("Error", "You don't have edit permission");
-                    return;
-                }
+                //if (!hasEditPermission)
+                //{
+                //    await Clients.Caller.SendAsync("Error", "You don't have edit permission");
+                //    return;
+                //}
 
                 // Create operational change
-                var change = new OperationalChange
-                {
-                    Id = Guid.NewGuid(),
-                    SectionId = sectionGuid,
-                    UserId = userGuid,
-                    OperationType = operationType,
-                    Text = text,
-                    Position = position,
-                    Length = length,
-                    VersionBefore = versionBefore,
-                    VersionAfter = versionBefore + 1,
-                    Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
-                };
+                //var change = new OperationalChange
+                //{
+                //    Id = Guid.NewGuid(),
+                //    SectionId = sectionGuid,
+                //    UserId = userGuid,
+                //    OperationType = operationType,
+                //    Text = text,
+                //    Position = position,
+                //    Length = length,
+                //    VersionBefore = versionBefore,
+                //    VersionAfter = versionBefore + 1,
+                //    Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+                //};
 
-                // Get changes from other users that haven't been acknowledged yet
-                var pendingChanges = section.ChangeLog
-                    .Where(c => c.VersionAfter > versionBefore)
-                    .ToList();
+                //// Get changes from other users that haven't been acknowledged yet
+                //var pendingChanges = section.ChangeLog
+                //    .Where(c => c.VersionAfter > versionBefore)
+                //    .ToList();
 
-                // Apply OT transformation
-                var transformedChange = _otService.TransformOperation(change, pendingChanges);
+                //// Apply OT transformation
+                //var transformedChange = _otService.TransformOperation(change, pendingChanges);
 
-                // Apply operation to content
-                if (_otService.IsOperationValid(section.Content, transformedChange))
-                {
-                    section.Content = _otService.ApplyOperation(section.Content, transformedChange);
-                    section.Version++;
-                    transformedChange.VersionAfter = section.Version;
+                //// Apply operation to content
+                //if (_otService.IsOperationValid(section.Content, transformedChange))
+                //{
+                //    section.Content = _otService.ApplyOperation(section.Content, transformedChange);
+                //    section.Version++;
+                //    transformedChange.VersionAfter = section.Version;
 
-                    // Save changes
-                    _context.OperationalChanges.Add(transformedChange);
-                    await _context.SaveChangesAsync();
+                //    // Save changes
+                //    _context.OperationalChanges.Add(transformedChange);
+                //    await _context.SaveChangesAsync();
 
-                    // Broadcast to other users in the section
-                    await Clients.OthersInGroup(sectionId).SendAsync("ReceiveChange", new
-                    {
-                        changeId = transformedChange.Id,
-                        operationType = transformedChange.OperationType,
-                        text = transformedChange.Text,
-                        position = transformedChange.Position,
-                        length = transformedChange.Length,
-                        version = transformedChange.VersionAfter,
-                        userId
-                    });
-                }
-                else
-                {
-                    _logger.LogWarning($"Invalid operation on section {sectionId}");
-                    await Clients.Caller.SendAsync("Error", "Operation could not be applied");
-                }
+                //    // Broadcast to other users in the section
+                //    await Clients.OthersInGroup(sectionId).SendAsync("ReceiveChange", new
+                //    {
+                //        changeId = transformedChange.Id,
+                //        operationType = transformedChange.OperationType,
+                //        text = transformedChange.Text,
+                //        position = transformedChange.Position,
+                //        length = transformedChange.Length,
+                //        version = transformedChange.VersionAfter,
+                //        userId
+                //    });
+                //}
+                //else
+                //{
+                //    _logger.LogWarning($"Invalid operation on section {sectionId}");
+                //    await Clients.Caller.SendAsync("Error", "Operation could not be applied");
+                //}
             }
             catch (Exception ex)
             {
@@ -197,23 +196,23 @@ namespace text_editor_server.Hubs
                     return;
                 }
 
-                var changes = await _context.OperationalChanges
-                    .Where(c => c.SectionId == sectionGuid && c.VersionAfter > fromVersion)
-                    .OrderBy(c => c.VersionAfter)
-                    .Select(c => new
-                    {
-                        c.Id,
-                        c.OperationType,
-                        c.Text,
-                        c.Position,
-                        c.Length,
-                        c.VersionBefore,
-                        c.VersionAfter,
-                        UserId = c.UserId
-                    })
-                    .ToListAsync();
+                //var changes = await _context.OperationalChanges
+                //    .Where(c => c.SectionId == sectionGuid && c.VersionAfter > fromVersion)
+                //    .OrderBy(c => c.VersionAfter)
+                //    .Select(c => new
+                //    {
+                //        c.Id,
+                //        c.OperationType,
+                //        c.Text,
+                //        c.Position,
+                //        c.Length,
+                //        c.VersionBefore,
+                //        c.VersionAfter,
+                //        UserId = c.UserId
+                //    })
+                //    .ToListAsync();
 
-                await Clients.Caller.SendAsync("ChangeHistory", changes);
+                //await Clients.Caller.SendAsync("ChangeHistory", changes);
             }
             catch (Exception ex)
             {

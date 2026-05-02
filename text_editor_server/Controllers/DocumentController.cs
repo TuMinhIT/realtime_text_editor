@@ -41,6 +41,8 @@ namespace text_editor_server.Controllers
             return Ok(result.Data);
         }
 
+
+
         [Authorize]
         [HttpGet("getAll")]
         public async Task<IActionResult> GetAllDocument()
@@ -63,7 +65,7 @@ namespace text_editor_server.Controllers
         }
 
 
-        [HttpGet("{documentId:guid}/blocks")]
+        [HttpGet("{documentId:guid}/sections")]
         public async Task<IActionResult> GetDocumentBlocks(Guid documentId)
         {
             var blocks = await _documentService.GetDocumentBlocksAsync(documentId);

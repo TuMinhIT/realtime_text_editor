@@ -13,6 +13,9 @@ import { http } from "../services/http";
 import { sessionService } from "../services/sessionService";
 import { documentService } from "../services/documentService";
 import { mapUploadResponseToRecentDocument } from "../utils/documentMappers";
+import { CgSpinner } from "react-icons/cg";
+import { ClipLoader } from "react-spinners";
+import { toast } from "react-toastify";
 
 const formatDate = (value) => {
   if (!value) {
@@ -31,9 +34,16 @@ const mapDocumentListItem = (doc, fallbackOwner) => ({
   title: doc.title || doc.documentTitle || "Untitled document",
   description: doc.description || doc.originalFileName || "Tai lieu da tai len",
   updatedAt:
-    doc.updatedAt || doc.lastModifiedAt || doc.createdAt || new Date().toISOString(),
+    doc.updatedAt ||
+    doc.lastModifiedAt ||
+    doc.createdAt ||
+    new Date().toISOString(),
   sections:
-    doc.sectionsCount || doc.sectionCount || doc.sections?.length || doc.blocks?.length || "-",
+    doc.sectionsCount ||
+    doc.sectionCount ||
+    doc.sections?.length ||
+    doc.blocks?.length ||
+    "-",
   owner: doc.ownerName || doc.owner || fallbackOwner,
   lastEditor: doc.lastEditorName || doc.lastEditor || fallbackOwner,
 });
@@ -48,10 +58,6 @@ const HomePage = () => {
   const [keyword, setKeyword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
-  const openDocument = (documentId) => {
-    navigate(`${APP_ROUTES.editor}/${documentId}`);
-  };
-
   const loadDocuments = async () => {
     setIsLoadingDocuments(true);
     setErrorMessage("");
@@ -60,7 +66,9 @@ const HomePage = () => {
       const items = await documentService.getAllDocuments();
       setDocuments(
         items
-          .map((doc) => mapDocumentListItem(doc, currentUser?.name || "Workspace"))
+          .map((doc) =>
+            mapDocumentListItem(doc, currentUser?.name || "Workspace"),
+          )
           .filter((doc) => doc.id),
       );
     } catch (error) {
@@ -70,6 +78,7 @@ const HomePage = () => {
     }
   };
 
+  // mới dô load data lên đi
   useEffect(() => {
     loadDocuments();
   }, []);
@@ -100,16 +109,13 @@ const HomePage = () => {
 
     try {
       const response = await documentService.uploadDocument(file);
-      const uploadedDocument = mapUploadResponseToRecentDocument(response, file.name);
-
-      setDocuments((current) => [
-        uploadedDocument,
-        ...current.filter((item) => item.id !== uploadedDocument.id),
-      ]);
-
-      openDocument(uploadedDocument.id);
+      if (response) {
+        loadDocuments();
+      }
     } catch (error) {
-      setErrorMessage(error?.message || "Upload that bai. Hay kiem tra token va API.");
+      setErrorMessage(
+        error?.message || "Upload that bai. Hay kiem tra token va API.",
+      );
     } finally {
       setIsUploading(false);
     }
@@ -164,14 +170,14 @@ const HomePage = () => {
             />
           </label>
 
-          <div className="hidden rounded-full bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700 md:block">
-            {currentUser?.name || "Workspace user"}
+          <div className="hidden px-3 py-2 text-sm font-medium text-black md:block">
+            {currentUser?.fullName}
           </div>
 
           <button
             type="button"
             onClick={handleLogout}
-            className="hidden rounded-full bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-red-500 hover:text-white md:block"
+            className="hidden rounded-full bg-red-500 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-500 hover:text-white md:block"
           >
             logout
           </button>
@@ -194,37 +200,21 @@ const HomePage = () => {
               </div>
               <p className="text-sm font-medium">Blank document</p>
             </button>
-
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="flex h-40 flex-col items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white transition hover:border-[#1a73e8] hover:shadow-sm"
-              disabled={isUploading}
-            >
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#e8f0fe] text-[#1a73e8]">
-                <Upload size={20} />
-              </div>
-              <p className="text-sm font-medium">Upload .docx</p>
-              <p className="text-xs text-slate-500">
-                {isUploading ? "Dang tai len..." : "Mo file Word de chinh sua"}
-              </p>
-            </button>
-
-            <article className="flex h-40 flex-col justify-between rounded-2xl border border-slate-200 bg-[#fff8e1] p-4">
-              <p className="text-sm font-medium text-slate-700">Project plan</p>
-              <p className="text-xs text-slate-500">
-                Template cho task va milestone
-              </p>
-            </article>
-
-            <article className="flex h-40 flex-col justify-between rounded-2xl border border-slate-200 bg-[#e8f5e9] p-4">
-              <p className="text-sm font-medium text-slate-700">
-                Meeting notes
-              </p>
-              <p className="text-xs text-slate-500">
-                Template ghi chu hop nhanh
-              </p>
-            </article>
+            {isUploading ? (
+              <ClipLoader color="red" />
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex h-40 flex-col items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white transition hover:border-[#1a73e8] hover:shadow-sm"
+                disabled={isUploading}
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#e8f0fe] text-[#1a73e8]">
+                  <Upload size={20} />
+                </div>
+                <p className="text-sm font-medium">Upload .docx</p>
+              </button>
+            )}
           </div>
           <input
             ref={fileInputRef}

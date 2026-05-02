@@ -8,11 +8,11 @@ namespace text_editor_server.Controllers
 
     [ApiController]
     [Route("api/[controller]")]
-    public class BlockController : ControllerBase
+    public class SectionController : ControllerBase
     {
         private readonly DocumentService _documentService;
 
-        public BlockController(DocumentService documentService)
+        public SectionController(DocumentService documentService)
         {
             _documentService = documentService;
         }

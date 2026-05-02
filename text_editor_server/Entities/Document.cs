@@ -1,4 +1,5 @@
-﻿namespace text_editor_server.Entities
+﻿
+namespace text_editor_server.Entities
 {
     public class Document
     {
@@ -14,6 +15,4 @@
         public User? Creator { get; set; }
         public ICollection<Section> Sections { get; set; } = new List<Section>();
     }
-
-    
 }

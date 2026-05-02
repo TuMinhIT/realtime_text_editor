@@ -16,8 +16,9 @@ const extractTitleFromSfdt = (sfdt, fallbackTitle) => {
   try {
     const parsed = JSON.parse(sfdt);
     const firstBlock =
-      parsed?.sections?.[0]?.blocks?.find((block) => Array.isArray(block?.inlines)) ||
-      parsed?.sections?.[0]?.blocks?.[0];
+      parsed?.sections?.[0]?.blocks?.find((block) =>
+        Array.isArray(block?.inlines),
+      ) || parsed?.sections?.[0]?.blocks?.[0];
 
     const titleText =
       firstBlock?.inlines

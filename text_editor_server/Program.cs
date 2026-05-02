@@ -1,10 +1,14 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.ComponentModel.Design;
+
 //using System.Diagnostics.Eventing.Reader;
 using System.Text;
 using text_editor_server.Data;
 using text_editor_server.Entities;
+using text_editor_server.Middleware;
+
 //using text_editor_server.Hubs;
 using text_editor_server.Services;
 
@@ -27,11 +31,13 @@ namespace text_editor_server
             // Add services
             builder.Services.AddScoped< AuthService>();
             builder.Services.AddScoped<DocumentService>();
+            //builder.Services.AddScoped<SyncfusionService>();
+            builder.Services.AddScoped<SectionService>();
+
             builder.Services.AddHttpContextAccessor();
 
             builder.Services.AddScoped<IDocxParsingService, DocxParsingService>();
-            builder.Services.AddScoped<IOperationalTransformService, OperationalTransformService>();
-
+   
             // Add controllers
             builder.Services.AddControllers();
 
@@ -107,7 +113,8 @@ namespace text_editor_server
             });
 
             var app = builder.Build();
-            //app.UseMiddleware<JwtMiddleware>();
+      
+            app.UseMiddleware<ExceptionHandlingMiddleware>();
 
             // Migrate database
             using (var scope = app.Services.CreateScope())

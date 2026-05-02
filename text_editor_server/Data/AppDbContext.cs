@@ -8,127 +8,94 @@ namespace text_editor_server.Data
         public DbSet<User> Users { get; set; }
         public DbSet<Document> Documents { get; set; }
         public DbSet<Section> Sections { get; set; }
-        public DbSet<SectionUser> SectionUsers { get; set; }
-        public DbSet<OperationalChange> OperationalChanges { get; set; }
+        public DbSet<SectionPermission> SectionPermissions { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
-        public DbSet<DocumentBlock> DocumentBlocks { get; set; }
-        public DbSet<DocumentPermission> DocumentPermissions { get; set; }
-        public DbSet<BlockPermission> BlockPermissions { get; set; }
-
+ 
+        public DbSet<DocumentSnapshot> DocumentSnapshots { get; set; }
+        public DbSet<SectionSnapshot> SectionSnapshots { get; set; }
+        
         public AppDbContext(DbContextOptions<AppDbContext> options)
             : base(options) { }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            //Them index de truy van nhanh hon
-
+            
+            // Them index de truy van nhanh hon
             modelBuilder.Entity<RefreshToken>()
                 .HasIndex(rt => rt.TokenId)
                 .IsUnique();
 
-            // User -> Document relationship
-            modelBuilder.Entity<Document>()
-                .HasOne(d => d.Creator)
-                .WithMany(u => u.OwnedDocuments)
-                .HasForeignKey(d => d.CreatedBy)
-                .OnDelete(DeleteBehavior.Restrict);
-            
-            // User -> RefreshToken relationship
+            // 1. User -> RefreshToken relationship
             modelBuilder.Entity<RefreshToken>()
                 .HasOne(rt => rt.User)
                 .WithMany(u => u.RefreshTokens)
                 .HasForeignKey(rt => rt.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Document -> Section relationship
+            // 2. Document -> User (Creator) relationship
+            modelBuilder.Entity<Document>()
+                .HasOne(d => d.Creator)
+                .WithMany()
+                .HasForeignKey(d => d.CreatedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // 3. Document -> Section relationship
+            // Section không có navigation property về Document (chỉ có DocumentId)
             modelBuilder.Entity<Section>()
-                .HasOne(s => s.Document)
+                .HasOne<Document>()
                 .WithMany(d => d.Sections)
                 .HasForeignKey(s => s.DocumentId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // SectionUser relationships
-            modelBuilder.Entity<SectionUser>()
-                .HasOne(su => su.Section)
+            // 4. Section -> SectionPermission relationship
+            modelBuilder.Entity<SectionPermission>()
+                .HasOne(sp => sp.Section)
                 .WithMany(s => s.Assignments)
-                .HasForeignKey(su => su.SectionId)
+                .HasForeignKey(sp => sp.SectionId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<SectionUser>()
-                .HasOne(su => su.User)
-                .WithMany(u => u.SectionAssignments)
-                .HasForeignKey(su => su.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            // OperationalChange relationships
-            modelBuilder.Entity<OperationalChange>()
-                .HasOne(oc => oc.Section)
-                .WithMany(s => s.ChangeLog)
-                .HasForeignKey(oc => oc.SectionId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<OperationalChange>()
-                .HasOne(oc => oc.User)
-                .WithMany(u => u.Changes)
-                .HasForeignKey(oc => oc.UserId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // DocumentBlock relationships
-            modelBuilder.Entity<DocumentBlock>()
-                .HasOne<Document>()
-                .WithMany()
-                .HasForeignKey(db => db.DocumentId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            // DocumentPermission relationships
-            modelBuilder.Entity<DocumentPermission>()
-                .HasOne<Document>()
-                .WithMany()
-                .HasForeignKey(dp => dp.DocumentId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<DocumentPermission>()
+            // SectionPermission -> User relationship 
+            // SectionPermission không có navigation property User (chỉ có UserId)
+            modelBuilder.Entity<SectionPermission>()
                 .HasOne<User>()
                 .WithMany()
-                .HasForeignKey(dp => dp.UserId)
+                .HasForeignKey(sp => sp.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // BlockPermission relationships
-            modelBuilder.Entity<BlockPermission>()
-                .HasOne<DocumentBlock>()
+            // 5. Document -> DocumentSnapshot relationship
+            modelBuilder.Entity<DocumentSnapshot>()
+                .HasOne<Document>()
                 .WithMany()
-                .HasForeignKey(bp => bp.BlockId)
+                .HasForeignKey(ds => ds.DocumentId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<BlockPermission>()
+            // 6. Section & User -> SectionSnapshot relationship
+            modelBuilder.Entity<SectionSnapshot>()
+                .HasOne<Section>()
+                .WithMany()
+                .HasForeignKey(ss => ss.SectionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<SectionSnapshot>()
                 .HasOne<User>()
                 .WithMany()
-                .HasForeignKey(bp => bp.UserId)
+                .HasForeignKey(ss => ss.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             // Indexes for performance
             modelBuilder.Entity<Section>()
                 .HasIndex(s => s.DocumentId);
 
-            modelBuilder.Entity<SectionUser>()
-                .HasIndex(su => new { su.SectionId, su.UserId });
-
-            modelBuilder.Entity<OperationalChange>()
-                .HasIndex(oc => new { oc.SectionId, oc.CreatedAt });
-
-            modelBuilder.Entity<DocumentBlock>()
-                .HasIndex(db => new { db.DocumentId, db.Order });
-
-            modelBuilder.Entity<DocumentPermission>()
-                .HasIndex(dp => new { dp.DocumentId, dp.UserId })
-                .IsUnique();
-
-            modelBuilder.Entity<BlockPermission>()
-                .HasIndex(bp => new { bp.BlockId, bp.UserId })
-                .IsUnique();
+            modelBuilder.Entity<SectionPermission>()
+                .HasIndex(sp => new { sp.SectionId, sp.UserId });
+                
+            modelBuilder.Entity<DocumentSnapshot>()
+                .HasIndex(ds => ds.DocumentId);
+                
+            modelBuilder.Entity<SectionSnapshot>()
+                .HasIndex(ss => new { ss.SectionId, ss.UserId });
         }
     }
-
 }
 

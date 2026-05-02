@@ -6,8 +6,6 @@ using text_editor_server.DTOs.res;
 using text_editor_server.Entities;
 namespace text_editor_server.Services
 {
-
-
 	public class DocumentService
 	{
 		private readonly AppDbContext _context;
@@ -30,8 +28,7 @@ namespace text_editor_server.Services
 					.Select(d => new DocumentRes
 					{
 						Id = d.Id,
-						Title = d.Title,
-						Content = d.Content,
+						Title = d.Title,					
 						SourceFilePath = d.SourceFilePath,
 						CreatedBy = d.CreatedBy,
 						CreatedAt = d.CreatedAt,
@@ -42,8 +39,7 @@ namespace text_editor_server.Services
 								Id = d.Creator.Id,
 								Email = d.Creator.Email,
 								FullName = d.Creator.FullName,
-								CreatedAt = d.Creator.CreatedAt,
-								IsActive = d.Creator.IsActive,
+								CreatedAt = d.Creator.CreatedAt,								
 								Role = d.Creator.Role
 							}
 					})
@@ -55,14 +51,13 @@ namespace text_editor_server.Services
 			{
 				_logger.LogError(ex, "Failed to get documents");
 				return null;
-			}
-
-       
+			}		
         }
-        public async Task<ServiceResult<DocumentUploadRes>> UploadDocumentAsync(
-       IFormFile? file,
-       string? title,
-       Guid currentUserId)
+      
+		public async Task<ServiceResult<DocumentUploadRes>> UploadDocumentAsync(
+		   IFormFile? file,
+		   string? title,
+		   Guid currentUserId)
         {
             if (file == null || file.Length == 0)
                 return ServiceResult<DocumentUploadRes>.Fail("File is required");
@@ -79,14 +74,6 @@ namespace text_editor_server.Services
                 if (stream.Length == 0)
                     return ServiceResult<DocumentUploadRes>.Fail("File is empty");
 
-                // ======================
-                // Parse sections
-                // ======================
-                stream.Position = 0;
-                var (sections, plainText) =
-                    await _docxParsingService.ParseDocxAsync(stream);
-
-                var sectionsList = sections ?? new List<Section>();
 
                 // ======================
                 // Convert DOCX -> SFDT JSON (KHÔNG NÉN)
@@ -97,13 +84,12 @@ namespace text_editor_server.Services
                     stream,
                     Syncfusion.DocIO.FormatType.Docx);
 
-                var editorDoc = Syncfusion.EJ2.DocumentEditor.WordDocument.Load(wordDoc);
+                var editorDoc = WordDocument.Load(wordDoc);
 
-                // ✅ QUAN TRỌNG: đây mới là JSON thật
+                // QUAN TRỌNG: đây mới là JSON thật
                 string sfdtJson = JsonConvert.SerializeObject(editorDoc);
 
                 editorDoc.Dispose();
-
                 // ======================
                 // Save DB
                 // ======================
@@ -113,75 +99,98 @@ namespace text_editor_server.Services
                     Title = string.IsNullOrWhiteSpace(title)
                         ? Path.GetFileNameWithoutExtension(file.FileName)
                         : title.Trim(),
-
                     Content = sfdtJson,
                     SourceFilePath = file.FileName,
                     CreatedBy = currentUserId,
                     CreatedAt = DateTime.UtcNow
                 };
 
+				
                 _context.Documents.Add(document);
+
+                var documentSnapshot = new DocumentSnapshot
+                {
+                    Id = Guid.NewGuid(),
+                    Title = document.Title,
+                    Content = sfdtJson,
+                    DocumentId = document.Id,
+                    Version = 0,
+                };
+                _context.DocumentSnapshots.Add(documentSnapshot);
+
+
+                await _context.SaveChangesAsync();
+
+                //CẦN CHUYỂN ĐỔI CHẠY BACKGROUND
+                // ======================
+                // Parse sections
+                // ======================
+                //stream.Position = 0;
+                //            var (sections, plainText) =
+                //                await _docxParsingService.ParseDocxAsync(stream);
+
+                //            var sectionsList = sections ?? new List<Section>();
 
                 // ======================
                 // Default section
                 // ======================
-                if (!sectionsList.Any())
-                {
-                    sectionsList.Add(new Section
-                    {
-                        Id = Guid.NewGuid(),
-                        Name = "1",
-                        Content = plainText ?? "",
-                        DocumentId = document.Id,
-                        Version = 0,
-                        Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
-                    });
-                }
+                //if (!sectionsList.Any())
+                //{
+                //    sectionsList.Add(new Section
+                //    {
+                //        Id = Guid.NewGuid(),
+                //        Title = "1",
+                //        Content = plainText ?? "",
+                //        DocumentId = document.Id,
+                //        Version = 0,
+                //        Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+                //    });
+                //}
 
-                foreach (var section in sectionsList)
-                {
-                    if (section.Id == Guid.Empty)
-                        section.Id = Guid.NewGuid();
+                //foreach (var section in sectionsList)
+                //{
+                //    if (section.Id == Guid.Empty)
+                //        section.Id = Guid.NewGuid();
 
-                    section.DocumentId = document.Id;
-                    section.Version = 0;
-                    section.Timestamp =
-                        DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                }
+                //    section.DocumentId = document.Id;
+                //    section.Version = 0;
+                //    section.Timestamp =
+                //        DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                //}
 
-                _context.Sections.AddRange(sectionsList);
+                //_context.Sections.AddRange(sectionsList);
 
-                var permissions = sectionsList.Select(s => new SectionUser
-                {
-                    Id = Guid.NewGuid(),
-                    SectionId = s.Id,
-                    UserId = currentUserId,
-                    Permission = PermissionLevel.Admin,
-                    AssignedAt = DateTime.UtcNow
-                });
+                //var permissions = sectionsList.Select(s => new SectionPermission
+                //{
+                //    Id = Guid.NewGuid(),
+                //    SectionId = s.Id,
+                //    UserId = currentUserId,
+                //    Permission = PermissionLevel.Admin,
+                //    AssignedAt = DateTime.UtcNow
+                //});
 
-                _context.SectionUsers.AddRange(permissions);
+                //_context.SectionPermissions.AddRange(permissions);
 
-                await _context.SaveChangesAsync();
+
 
                 return ServiceResult<DocumentUploadRes>.Ok(
                     new DocumentUploadRes
                     {
                         DocumentId = document.Id,
                         Title = document.Title,
-                        Blocks = sectionsList
-                            .Select((s, index) => new DocumentBlockItemRes
-                            {
-                                SectionId = s.Id,
-                                Name = s.Name,
-                                Order = index + 1,
-                                Preview = string.IsNullOrEmpty(s.Content)
-                                    ? ""
-                                    : s.Content.Length > 200
-                                        ? s.Content.Substring(0, 200)
-                                        : s.Content
-                            })
-                            .ToList()
+                        //Blocks = sectionsList
+                        //    .Select((s, index) => new DocumentBlockItemRes
+                        //    {
+                        //        SectionId = s.Id,
+                        //        Title = s.Title,
+                        //        Order = index + 1,
+                        //        Preview = string.IsNullOrEmpty(s.Content)
+                        //            ? ""
+                        //            : s.Content.Length > 200
+                        //                ? s.Content.Substring(0, 200)
+                        //                : s.Content
+                        //    })
+                        //    .ToList()
                     });
             }
             catch (Exception ex)
@@ -191,93 +200,96 @@ namespace text_editor_server.Services
             }
         }
 
+
         public async Task<DocumentBlocksRes?> GetDocumentBlocksAsync(Guid documentId)
 		{
-			var document = await _context.Documents
-				.AsNoTracking()
-				.Where(d => d.Id == documentId)
-				.Select(d => new DocumentBlocksRes
-				{
-					DocumentId = d.Id,
-					Title = d.Title,
-					Blocks = d.Sections
-						.OrderBy(s => s.Name)
-						.Select((s, index) => new DocumentBlockItemRes
-						{
-							SectionId = s.Id,
-							Name = s.Name,
-							Order = index + 1,
-							//mở này ra
-							//Preview = s.Content.Length > 200 ? s.Content[..200] : s.Content
-						}).ToList()
-				})
-				.FirstOrDefaultAsync();
+			//var document = await _context.Documents
+			//	.AsNoTracking()
+			//	.Where(d => d.Id == documentId)
+			//	.Select(d => new DocumentBlocksRes
+			//	{
+			//		DocumentId = d.Id,
+			//		Title = d.Title,
+			//		Blocks = d.Sections
+			//			.OrderBy(s => s.Name)
+			//			.Select((s, index) => new DocumentBlockItemRes
+			//			{
+			//				SectionId = s.Id,
+			//				Name = s.Name,
+			//				Order = index + 1,
+			//				//mở này ra
+			//				//Preview = s.Content.Length > 200 ? s.Content[..200] : s.Content
+			//			}).ToList()
+			//	})
+			//	.FirstOrDefaultAsync();
 
-			return document;
-		}
+			//return document;
+			return null;
+        }
 
 		public async Task<ServiceResult<BlockPermissionRes>> AssignUserToBlockAsync(Guid sectionId, Guid userId, PermissionLevel permission)
 		{
-			var sectionExists = await _context.Sections.AnyAsync(s => s.Id == sectionId);
-			if (!sectionExists)
-			{
-				return ServiceResult<BlockPermissionRes>.Fail("Block not found");
-			}
+			//var sectionExists = await _context.Sections.AnyAsync(s => s.Id == sectionId);
+			//if (!sectionExists)
+			//{
+			//	return ServiceResult<BlockPermissionRes>.Fail("Block not found");
+			//}
 
-			var user = await _context.Users
-				.AsNoTracking()
-				.FirstOrDefaultAsync(u => u.Id == userId);
+			//var user = await _context.Users
+			//	.AsNoTracking()
+			//	.FirstOrDefaultAsync(u => u.Id == userId);
 
-			if (user == null)
-			{
-				return ServiceResult<BlockPermissionRes>.Fail("User not found");
-			}
+			//if (user == null)
+			//{
+			//	return ServiceResult<BlockPermissionRes>.Fail("User not found");
+			//}
 
-			var assignment = await _context.SectionUsers
-				.FirstOrDefaultAsync(su => su.SectionId == sectionId && su.UserId == userId);
+			//var assignment = await _context.SectionUsers
+			//	.FirstOrDefaultAsync(su => su.SectionId == sectionId && su.UserId == userId);
 
-			if (assignment == null)
-			{
-				assignment = new SectionUser
-				{
-					Id = Guid.NewGuid(),
-					SectionId = sectionId,
-					UserId = userId,
-					Permission = permission,
-					AssignedAt = DateTime.UtcNow
-				};
-				_context.SectionUsers.Add(assignment);
-			}
-			else
-			{
-				assignment.Permission = permission;
-				assignment.AssignedAt = DateTime.UtcNow;
-			}
+			//if (assignment == null)
+			//{
+			//	assignment = new SectionPermission
+			//	{
+			//		Id = Guid.NewGuid(),
+			//		SectionId = sectionId,
+			//		UserId = userId,
+			//		Permission = permission,
+			//		AssignedAt = DateTime.UtcNow
+			//	};
+			//	_context.SectionUsers.Add(assignment);
+			//}
+			//else
+			//{
+			//	assignment.Permission = permission;
+			//	assignment.AssignedAt = DateTime.UtcNow;
+			//}
 
-			await _context.SaveChangesAsync();
+			//await _context.SaveChangesAsync();
 
-			return ServiceResult<BlockPermissionRes>.Ok(new BlockPermissionRes
-			{
-				SectionId = sectionId,
-				UserId = userId,
-				UserEmail = user.Email,
-				Permission = permission.ToString(),
-				AssignedAt = assignment.AssignedAt
-			});
+			//return ServiceResult<BlockPermissionRes>.Ok(new BlockPermissionRes
+			//{
+			//	SectionId = sectionId,
+			//	UserId = userId,
+			//	UserEmail = user.Email,
+			//	Permission = permission.ToString(),
+			//	AssignedAt = assignment.AssignedAt
+			//});
+			return null;
 		}
 
 		public async Task<ServiceResult<bool>> RemoveUserFromBlockAsync(Guid sectionId, Guid userId)
 		{
-			var assignment = await _context.SectionUsers
-				.FirstOrDefaultAsync(su => su.SectionId == sectionId && su.UserId == userId);
+			//var assignment = await _context.SectionUsers
+			//	.FirstOrDefaultAsync(su => su.SectionId == sectionId && su.UserId == userId);
 
-			if (assignment == null)
-			{
-				return ServiceResult<bool>.Fail("Permission assignment not found");
-			}
+			//if (assignment == null)
+			//{
+			//	return ServiceResult<bool>.Fail("Permission assignment not found");
+			//}
 
-			_context.SectionUsers.Remove(assignment);
-			await _context.SaveChangesAsync();
+			//_context.SectionUsers.Remove(assignment);
+			//await _context.SaveChangesAsync();
 
 			return ServiceResult<bool>.Ok(true);
 		}
@@ -290,23 +302,23 @@ namespace text_editor_server.Services
 				return ServiceResult<List<BlockPermissionRes>>.Fail("Block not found");
 			}
 
-			var users = await _context.SectionUsers
-				.Where(su => su.SectionId == sectionId)
-				.Join(
-					_context.Users,
-					su => su.UserId,
-					u => u.Id,
-					(su, u) => new BlockPermissionRes
-					{
-						SectionId = su.SectionId,
-						UserId = su.UserId,
-						UserEmail = u.Email,
-						Permission = su.Permission.ToString(),
-						AssignedAt = su.AssignedAt
-					})
-				.ToListAsync();
+			//var users = await _context.SectionUsers
+			//	.Where(su => su.SectionId == sectionId)
+			//	.Join(
+			//		_context.Users,
+			//		su => su.UserId,
+			//		u => u.Id,
+			//		(su, u) => new BlockPermissionRes
+			//		{
+			//			SectionId = su.SectionId,
+			//			UserId = su.UserId,
+			//			UserEmail = u.Email,
+			//			Permission = su.Permission.ToString(),
+			//			AssignedAt = su.AssignedAt
+			//		})
+			//	.ToListAsync();
 
-			return ServiceResult<List<BlockPermissionRes>>.Ok(users);
+			return ServiceResult<List<BlockPermissionRes>>.Ok(null);
 		}
 
 		//Tạo thêm service để lấy nội dung:
