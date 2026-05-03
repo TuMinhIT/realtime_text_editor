@@ -8,7 +8,7 @@ namespace text_editor_server.Entities
         public Guid SectionId { get; set; }
         public Guid UserId { get; set; }
         public int Version { get; set; } = 0; // For Operational Transformation 
-        public string SfdtContent { get; set; } = string.Empty; // JSON
+        public string JsonContent { get; set; } = string.Empty; // JSON
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

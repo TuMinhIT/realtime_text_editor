@@ -62,9 +62,16 @@ export const documentService = {
 
   async getDocumentContent(documentId) {
     try {
-      const res = await http.get(`${resource}/${documentId}/content`, {
-        responseType: "text",
-      });
+      const res = await http.get(`${resource}/${documentId}/content`);
+      return res.data;
+    } catch (err) {
+      throw toError(err);
+    }
+  },
+
+  async deleteDocument(id) {
+    try {
+      const res = await http.post(`${resource}/remove/${id}`);
       return res.data;
     } catch (err) {
       throw toError(err);

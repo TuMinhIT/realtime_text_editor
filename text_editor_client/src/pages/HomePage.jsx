@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Clock3,
+  DeleteIcon,
   FileText,
   FolderOpen,
   Plus,
@@ -135,6 +136,29 @@ const HomePage = () => {
     window.alert(
       "Backend hien tai moi co upload/getAll/content. Neu muon tao file trang, ban can them endpoint tao document rong tra ve SFDT mac dinh.",
     );
+  };
+
+  const handleDelete = async (id) => {
+    const isConfirmed = window.confirm("Bạn có chắc muốn xóa tài liệu này?");
+
+    if (!isConfirmed) return;
+
+    try {
+      const response = await documentService.deleteDocument(id);
+
+      if (response) {
+        toast.success("Đã xóa!");
+        loadDocuments();
+      }
+    } catch (error) {
+      setErrorMessage(
+        error?.message || "Xóa thất bại. Hãy kiểm tra token và API.",
+      );
+    }
+  };
+
+  const openDocument = (documentId) => {
+    navigate(`document/${documentId}`);
   };
 
   const handleLogout = () => {
@@ -313,6 +337,14 @@ const HomePage = () => {
                         >
                           <FolderOpen size={15} />
                           Open
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(doc.id)}
+                          className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-3 py-1.5 text-sm font-medium transition hover:bg-red-400"
+                        >
+                          <DeleteIcon size={15} />
+                          Delete
                         </button>
                       </td>
                     </tr>

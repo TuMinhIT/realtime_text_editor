@@ -70,7 +70,7 @@ namespace text_editor_server.Services
                     Title = string.IsNullOrWhiteSpace(title)
                         ? Path.GetFileNameWithoutExtension(file.FileName)
                         : title.Trim(),
-                    Content = sfdtJson,
+                    JsonContent = sfdtJson,
                     SourceFilePath = file.FileName,
                     CreatedBy = currentUserId,
                     CreatedAt = DateTime.UtcNow
@@ -87,7 +87,7 @@ namespace text_editor_server.Services
                     {
                         Id = Guid.NewGuid(),
                         Title = "1",
-                        Content = plainText ?? "",
+                        JsonContent = plainText ?? "",
                         DocumentId = document.Id,
                         Version = 0,
                         Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
@@ -131,11 +131,11 @@ namespace text_editor_server.Services
                                 SectionId = s.Id,
                                 Title = s.Title,
                                 Order = index + 1,
-                                Preview = string.IsNullOrEmpty(s.Content)
+                                Preview = string.IsNullOrEmpty(s.JsonContent)
                                     ? ""
-                                    : s.Content.Length > 200
-                                        ? s.Content.Substring(0, 200)
-                                        : s.Content
+                                    : s.JsonContent.Length > 200
+                                        ? s.JsonContent.Substring(0, 200)
+                                        : s.JsonContent
                             })
                             .ToList()
                     });

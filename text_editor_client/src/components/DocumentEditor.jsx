@@ -4,10 +4,11 @@ import {
   Inject,
   Toolbar,
 } from "@syncfusion/ej2-react-documenteditor";
-import { FileText, Home, Save } from "lucide-react";
+import { FileText, Home, PanelLeft, Save } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { APP_ROUTES } from "../constants/routes";
 import { documentService } from "../services/documentService";
+import { toast } from "react-toastify";
 
 const SERVICE_URL =
   "https://ej2services.syncfusion.com/production/web-services/api/documenteditor/";
@@ -38,10 +39,11 @@ const DocumentEditor = () => {
   const editorRef = useRef(null);
   const [documentTitle, setDocumentTitle] = useState("Untitled document");
   const [lastSavedAt, setLastSavedAt] = useState("Chua luu");
-  const [status, setStatus] = useState("Dang tai tai lieu...");
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [sfdtContent, setSfdtContent] = useState("");
+  const [selectedStyle, setSelectedStyle] = useState("Normal");
+  const [showNavigationPane, setShowNavigationPane] = useState(true);
 
   const openDocumentContent = (sfdt) => {
     const editor = editorRef.current?.documentEditor;
@@ -52,51 +54,36 @@ const DocumentEditor = () => {
     editor.open(sfdt);
   };
 
+  const loadDocument = async () => {
+    if (!documentId) {
+      setErrorMessage("Khong tim thay documentId tren route.");
+      setIsLoading(false);
+      return;
+    }
+    setIsLoading(true);
+    setErrorMessage("");
+
+    try {
+      const result = await documentService.getDocumentContent(documentId);
+      if (result.success) {
+        const loadedDocument = result.data;
+
+        setSfdtContent(loadedDocument.jsonContent);
+        setDocumentTitle(loadedDocument.title);
+      } else {
+        setErrorMessage(result.message || "Khong tai duoc noi dung tai lieu.");
+      }
+    } catch (error) {
+      setErrorMessage(
+        error?.message || "Khong tai duoc noi dung tai lieu tu backend.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    let isMounted = true;
-
-    const loadDocument = async () => {
-      if (!documentId) {
-        setErrorMessage("Khong tim thay documentId tren route.");
-        setStatus("Khong mo duoc tai lieu");
-        setIsLoading(false);
-        return;
-      }
-
-      setIsLoading(true);
-      setErrorMessage("");
-      setStatus("Dang tai tai lieu...");
-
-      try {
-        const sfdt = await documentService.getDocumentContent(documentId);
-        if (!isMounted) {
-          return;
-        }
-
-        setSfdtContent(sfdt);
-        setDocumentTitle(extractTitleFromSfdt(sfdt, `Document ${documentId}`));
-        setStatus("Da tai xong, san sang chinh sua");
-      } catch (error) {
-        if (!isMounted) {
-          return;
-        }
-
-        setErrorMessage(
-          error?.message || "Khong tai duoc noi dung tai lieu tu backend.",
-        );
-        setStatus("Khong mo duoc tai lieu");
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
     loadDocument();
-
-    return () => {
-      isMounted = false;
-    };
   }, [documentId]);
 
   useEffect(() => {
@@ -132,10 +119,41 @@ const DocumentEditor = () => {
         minute: "2-digit",
       }),
     );
-    setStatus(
+    toast.info(
       "Da serialize SFDT o client. De luu that, ban nen them endpoint PUT /api/Document/{id}/content.",
     );
   };
+
+  const handleToggleNavigationPane = () => {
+    const nextValue = !showNavigationPane;
+    setShowNavigationPane(nextValue);
+
+    const editor = editorRef.current?.documentEditor;
+    if (editor?.documentEditorSettings) {
+      editor.documentEditorSettings.showNavigationPane = nextValue;
+      editor.focusIn();
+    }
+  };
+
+  const handleApplyHeading = (event) => {
+    const styleName = event.target.value;
+    setSelectedStyle(styleName);
+
+    const editor = editorRef.current?.documentEditor;
+    const selectionEditor = editor?.editor;
+    if (!selectionEditor) {
+      return;
+    }
+
+    selectionEditor.applyStyle(styleName);
+  };
+
+  useEffect(() => {
+    const editor = editorRef.current?.documentEditor;
+    if (editor?.documentEditorSettings) {
+      editor.documentEditorSettings.showNavigationPane = showNavigationPane;
+    }
+  }, [showNavigationPane]);
 
   return (
     <main className="overflow-hidden bg-[#f1f3f4] text-slate-900">
@@ -157,17 +175,41 @@ const DocumentEditor = () => {
             <input
               value={documentTitle}
               onChange={(event) => setDocumentTitle(event.target.value)}
-              className="w-[240px] rounded-md px-2 py-1.5 text-lg font-medium outline-none hover:bg-slate-100 focus:bg-slate-100 md:w-[360px]"
+              className="w-60  px-2 py-1.5 text-lg font-medium outline-none hover:bg-slate-100 focus:bg-slate-100 md:w-[360px]"
               placeholder="Untitled document"
             />
+
+            <select
+              value={selectedStyle}
+              onChange={handleApplyHeading}
+              className="ml-2 rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-700 outline-none focus:border-slate-400"
+              aria-label="Chon style heading"
+            >
+              <option value="Normal">Normal</option>
+              <option value="Heading 1">Heading 1</option>
+              <option value="Heading 2">Heading 2</option>
+              <option value="Heading 3">Heading 3</option>
+            </select>
           </div>
 
           <div className="ml-auto flex items-center gap-3 text-sm text-slate-600">
-            <span className="hidden rounded-full bg-[#e8f0fe] px-3 py-1 text-xs font-medium text-[#1967d2] xl:inline-flex">
+            {/* <span className="hidden rounded-full bg-[#e8f0fe] px-3 py-1 text-xs font-medium text-[#1967d2] xl:inline-flex">
               ID {documentId}
+            </span> */}
+
+            <span className="hidden text-xs text-slate-500 md:inline-flex">
+              Luu luc {lastSavedAt}
             </span>
-            <span className="hidden md:inline">{status}</span>
-            <span className="hidden lg:inline">Luu luc {lastSavedAt}</span>
+
+            <button
+              type="button"
+              onClick={handleToggleNavigationPane}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400"
+            >
+              <PanelLeft size={16} />
+              {showNavigationPane ? "An heading" : "Hien heading"}
+            </button>
+
             <button
               type="button"
               onClick={handleSave}
@@ -187,11 +229,14 @@ const DocumentEditor = () => {
           </div>
         ) : null}
 
-        <div className="mx-auto h-full max-w-[1400px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_40px_100px_-65px_rgba(15,23,42,0.7)]">
+        <div className="mx-auto h-full  overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_40px_100px_-65px_rgba(15,23,42,0.7)]">
           <DocumentEditorContainerComponent
             ref={editorRef}
             height="100%"
             enableToolbar
+            documentEditorSettings={{
+              showNavigationPane,
+            }}
             serviceUrl={SERVICE_URL}
             created={handleCreated}
           >

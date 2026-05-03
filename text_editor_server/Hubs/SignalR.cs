@@ -50,7 +50,7 @@ namespace text_editor_server.Hubs
                     await Clients.Caller.SendAsync("LoadSection", new
                     {
                         sectionId = section.Id,
-                        content = section.Content,
+                        content = section.JsonContent,
                         version = section.Version
                     });
                 }
@@ -148,9 +148,9 @@ namespace text_editor_server.Hubs
                 //var transformedChange = _otService.TransformOperation(change, pendingChanges);
 
                 //// Apply operation to content
-                //if (_otService.IsOperationValid(section.Content, transformedChange))
+                //if (_otService.IsOperationValid(section.JsonContent, transformedChange))
                 //{
-                //    section.Content = _otService.ApplyOperation(section.Content, transformedChange);
+                //    section.JsonContent = _otService.ApplyOperation(section.JsonContent, transformedChange);
                 //    section.Version++;
                 //    transformedChange.VersionAfter = section.Version;
 

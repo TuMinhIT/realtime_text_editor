@@ -53,8 +53,29 @@ namespace text_editor_server.Services
 				return null;
 			}		
         }
-      
-		public async Task<ServiceResult<DocumentUploadRes>> UploadDocumentAsync(
+
+        public async Task<bool> RemoveDocumentAsync(Guid id)
+        {
+            try
+            {
+                var document = await _context.Documents.FindAsync(id);
+
+                if (document == null)
+                    return false;
+
+                _context.Documents.Remove(document);
+                await _context.SaveChangesAsync();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to remove document");
+                return false;
+            }
+        }
+
+        public async Task<ServiceResult<DocumentUploadRes>> UploadDocumentAsync(
 		   IFormFile? file,
 		   string? title,
 		   Guid currentUserId)
@@ -99,26 +120,23 @@ namespace text_editor_server.Services
                     Title = string.IsNullOrWhiteSpace(title)
                         ? Path.GetFileNameWithoutExtension(file.FileName)
                         : title.Trim(),
-                    Content = sfdtJson,
+                    JsonContent = "no content it saved in snaphot",
                     SourceFilePath = file.FileName,
                     CreatedBy = currentUserId,
                     CreatedAt = DateTime.UtcNow
                 };
-
-				
-                _context.Documents.Add(document);
-
                 var documentSnapshot = new DocumentSnapshot
                 {
                     Id = Guid.NewGuid(),
                     Title = document.Title,
-                    Content = sfdtJson,
+                    JsonContent = sfdtJson,
                     DocumentId = document.Id,
                     Version = 0,
                 };
+
+                _context.Documents.Add(document);
+                await _context.SaveChangesAsync();
                 _context.DocumentSnapshots.Add(documentSnapshot);
-
-
                 await _context.SaveChangesAsync();
 
                 //CẦN CHUYỂN ĐỔI CHẠY BACKGROUND
@@ -140,7 +158,7 @@ namespace text_editor_server.Services
                 //    {
                 //        Id = Guid.NewGuid(),
                 //        Title = "1",
-                //        Content = plainText ?? "",
+                //        JsonContent = plainText ?? "",
                 //        DocumentId = document.Id,
                 //        Version = 0,
                 //        Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
@@ -184,11 +202,11 @@ namespace text_editor_server.Services
                         //        SectionId = s.Id,
                         //        Title = s.Title,
                         //        Order = index + 1,
-                        //        Preview = string.IsNullOrEmpty(s.Content)
+                        //        Preview = string.IsNullOrEmpty(s.JsonContent)
                         //            ? ""
-                        //            : s.Content.Length > 200
-                        //                ? s.Content.Substring(0, 200)
-                        //                : s.Content
+                        //            : s.JsonContent.Length > 200
+                        //                ? s.JsonContent.Substring(0, 200)
+                        //                : s.JsonContent
                         //    })
                         //    .ToList()
                     });
@@ -218,7 +236,7 @@ namespace text_editor_server.Services
 			//				Name = s.Name,
 			//				Order = index + 1,
 			//				//mở này ra
-			//				//Preview = s.Content.Length > 200 ? s.Content[..200] : s.Content
+			//				//Preview = s.JsonContent.Length > 200 ? s.JsonContent[..200] : s.JsonContent
 			//			}).ToList()
 			//	})
 			//	.FirstOrDefaultAsync();
@@ -321,15 +339,15 @@ namespace text_editor_server.Services
 			return ServiceResult<List<BlockPermissionRes>>.Ok(null);
 		}
 
-		//Tạo thêm service để lấy nội dung:
-		public async Task<string?> GetDocumentContentAsync(Guid documentId)
+		//lấy snapshot của document
+		public async Task<ServiceResult<DocumentSnapshot>> GetDocumentSnapshotAsync(Guid documentId)
 		{
-			var content = await _context.Documents
+			var content = await _context.DocumentSnapshots
 				.AsNoTracking()
-				.Where(d => d.Id == documentId)
-				.Select(d => d.Content)
+				.Where(d => d.DocumentId == documentId)
 				.FirstOrDefaultAsync();
-			return content;
+
+			return ServiceResult<DocumentSnapshot>.Ok(content);
         }
     }
 

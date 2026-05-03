@@ -418,7 +418,7 @@
 //            {
 //                var client = new HttpClient(); ;
 //                var response = await client.GetAsync(url);
-//                var rawStream = await response.Content.ReadAsStreamAsync();
+//                var rawStream = await response.JsonContent.ReadAsStreamAsync();
 //                if (response.IsSuccessStatusCode)
 //                {
 //                    MemoryStream docStream = new MemoryStream();
@@ -499,7 +499,7 @@
 //                {
 //                    name = "Document1.doc";
 //                }
-//                WDocument document = WordDocument.Save(data.Content);
+//                WDocument document = WordDocument.Save(data.JsonContent);
 //                FileStream fileStream = new FileStream(name, FileMode.OpenOrCreate, FileAccess.ReadWrite);
 //                document.Save(fileStream, GetWFormatType(format));
 //                document.Close();
@@ -518,7 +518,7 @@
 //                {
 //                    name = "Document1.doc";
 //                }
-//                WDocument document = WordDocument.Save(data.Content);
+//                WDocument document = WordDocument.Save(data.JsonContent);
 //                return SaveDocument(document, format, name);
 //            }
 
@@ -532,7 +532,7 @@
 
 //            public class SaveParameter
 //            {
-//                public string Content { get; set; }
+//                public string JsonContent { get; set; }
 //                public string FileName { get; set; }
 //            }
 

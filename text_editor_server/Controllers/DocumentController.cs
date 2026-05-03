@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using DocumentFormat.OpenXml.Office2010.Word;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using text_editor_server.Services;
@@ -65,6 +67,22 @@ namespace text_editor_server.Controllers
         }
 
 
+        [Authorize]
+        [HttpPost("remove/{documentId:guid}")]
+        public async Task<IActionResult> RemoveDocument(Guid documentId)
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrWhiteSpace(userIdClaim) || !Guid.TryParse(userIdClaim, out var currentUserId))
+            {
+                return Unauthorized("Invalid token payload");
+            }
+
+            var result = await _documentService.RemoveDocumentAsync(documentId);
+
+            return Ok(result);
+        }
+
         [HttpGet("{documentId:guid}/sections")]
         public async Task<IActionResult> GetDocumentBlocks(Guid documentId)
         {
@@ -78,16 +96,12 @@ namespace text_editor_server.Controllers
         }
 
 
-        //Lấy nội dung một tài liệu:
+        //Lấy document snapshots
         [HttpGet("{documentId:guid}/content")]
         public async Task<IActionResult> GetDocumentContent(Guid documentId)
         {
-            var sfdt = await _documentService.GetDocumentContentAsync(documentId);
-
-            if (sfdt == null)
-                return NotFound();
-
-            return Content(sfdt, "application/json"); // 👈 chuẩn
+            var result = await _documentService.GetDocumentSnapshotAsync(documentId);
+            return Ok(result);
         }
     }
 }
