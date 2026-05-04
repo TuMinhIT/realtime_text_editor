@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace text_editor_server.Migrations
 {
     /// <inheritdoc />
-    public partial class init_database : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -105,9 +105,12 @@ namespace text_editor_server.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     DocumentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Level = table.Column<int>(type: "int", nullable: false),
                     OrderIndex = table.Column<int>(type: "int", nullable: false),
                     ParentSectionId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    JsonContent = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    StartParagraphIndex = table.Column<int>(type: "int", nullable: false),
+                    EndParagraphIndex = table.Column<int>(type: "int", nullable: false),
+                    Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Version = table.Column<int>(type: "int", nullable: false),
                     Timestamp = table.Column<long>(type: "bigint", nullable: false)
                 },
@@ -120,6 +123,11 @@ namespace text_editor_server.Migrations
                         principalTable: "Documents",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Sections_Sections_ParentSectionId",
+                        column: x => x.ParentSectionId,
+                        principalTable: "Sections",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -143,34 +151,6 @@ namespace text_editor_server.Migrations
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_SectionPermissions_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "SectionSnapshots",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SectionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Version = table.Column<int>(type: "int", nullable: false),
-                    JsonContent = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SectionSnapshots", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_SectionSnapshots_Sections_SectionId",
-                        column: x => x.SectionId,
-                        principalTable: "Sections",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_SectionSnapshots_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "Id",
@@ -214,14 +194,9 @@ namespace text_editor_server.Migrations
                 column: "DocumentId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_SectionSnapshots_SectionId_UserId",
-                table: "SectionSnapshots",
-                columns: new[] { "SectionId", "UserId" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SectionSnapshots_UserId",
-                table: "SectionSnapshots",
-                column: "UserId");
+                name: "IX_Sections_ParentSectionId",
+                table: "Sections",
+                column: "ParentSectionId");
         }
 
         /// <inheritdoc />
@@ -235,9 +210,6 @@ namespace text_editor_server.Migrations
 
             migrationBuilder.DropTable(
                 name: "SectionPermissions");
-
-            migrationBuilder.DropTable(
-                name: "SectionSnapshots");
 
             migrationBuilder.DropTable(
                 name: "Sections");

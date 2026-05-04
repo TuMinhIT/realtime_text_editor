@@ -133,18 +133,27 @@ namespace text_editor_server.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<Guid>("DocumentId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("JsonContent")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("EndParagraphIndex")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("int");
 
                     b.Property<int>("OrderIndex")
                         .HasColumnType("int");
 
                     b.Property<Guid?>("ParentSectionId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("StartParagraphIndex")
+                        .HasColumnType("int");
 
                     b.Property<long>("Timestamp")
                         .HasColumnType("bigint");
@@ -159,6 +168,8 @@ namespace text_editor_server.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("DocumentId");
+
+                    b.HasIndex("ParentSectionId");
 
                     b.ToTable("Sections");
                 });
@@ -188,37 +199,6 @@ namespace text_editor_server.Migrations
                     b.HasIndex("SectionId", "UserId");
 
                     b.ToTable("SectionPermissions");
-                });
-
-            modelBuilder.Entity("text_editor_server.Entities.SectionSnapshot", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("JsonContent")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid>("SectionId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("Version")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("SectionId", "UserId");
-
-                    b.ToTable("SectionSnapshots");
                 });
 
             modelBuilder.Entity("text_editor_server.Entities.User", b =>
@@ -292,6 +272,12 @@ namespace text_editor_server.Migrations
                         .HasForeignKey("DocumentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("text_editor_server.Entities.Section", "ParentSection")
+                        .WithMany("Children")
+                        .HasForeignKey("ParentSectionId");
+
+                    b.Navigation("ParentSection");
                 });
 
             modelBuilder.Entity("text_editor_server.Entities.SectionPermission", b =>
@@ -311,21 +297,6 @@ namespace text_editor_server.Migrations
                     b.Navigation("Section");
                 });
 
-            modelBuilder.Entity("text_editor_server.Entities.SectionSnapshot", b =>
-                {
-                    b.HasOne("text_editor_server.Entities.Section", null)
-                        .WithMany()
-                        .HasForeignKey("SectionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("text_editor_server.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("text_editor_server.Entities.Document", b =>
                 {
                     b.Navigation("Sections");
@@ -334,6 +305,8 @@ namespace text_editor_server.Migrations
             modelBuilder.Entity("text_editor_server.Entities.Section", b =>
                 {
                     b.Navigation("Assignments");
+
+                    b.Navigation("Children");
                 });
 
             modelBuilder.Entity("text_editor_server.Entities.User", b =>

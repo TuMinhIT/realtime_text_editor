@@ -1,4 +1,5 @@
-﻿using DocumentFormat.OpenXml.Spreadsheet;
+﻿using DocumentFormat.OpenXml.Office2010.Word;
+using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Syncfusion.EJ2.DocumentEditor;
@@ -12,12 +13,15 @@ namespace text_editor_server.Services
 		private readonly AppDbContext _context;
 		private readonly DocxParsingService _docxParsingService;
 		private readonly ILogger<DocumentService> _logger;
+        private readonly SectionParser _sectionParser;
 
-		public DocumentService(AppDbContext context, DocxParsingService docxParsingService, ILogger<DocumentService> logger)
+        public DocumentService(AppDbContext context, DocxParsingService docxParsingService, ILogger<DocumentService> logger, SectionParser sectionParser)
 		{
 			_context = context;
 			_docxParsingService = docxParsingService;
 			_logger = logger;
+			_sectionParser = sectionParser;
+			
 		}
 
         public async Task<List<DocumentRes>?> GetAllDocumentAsync()
@@ -124,7 +128,7 @@ namespace text_editor_server.Services
                 _context.DocumentSnapshots.Add(documentSnapshot);
                 await _context.SaveChangesAsync();
 
-
+         
 
                 // ======================
                 // CẦN CHUYỂN ĐỔI CHẠY BACKGROUND
@@ -181,7 +185,7 @@ namespace text_editor_server.Services
                 //    });
 
                 //_context.SectionPermissions.AddRange(permissions);
-                
+
                 //// Commit tất cả xuống database
                 //await _context.SaveChangesAsync();
 
@@ -353,22 +357,23 @@ namespace text_editor_server.Services
         {
             try
             {             
-                // Tìm DocumentSnapshot tương ứng
                 var documentSnapshot = await _context.DocumentSnapshots
                     .FirstOrDefaultAsync(ds => ds.DocumentId == documentId);
 
                 if (documentSnapshot != null)
                 {
-                    documentSnapshot.JsonContent= newContent;
+                    documentSnapshot.JsonContent = newContent;
                 }
-                // Lưu thay đổi vào DB
                 await _context.SaveChangesAsync();
+
+                // Trigger background section parsing
+                await _sectionParser.ParseNow(documentId);
 
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Failed to update title for document {documentId}");
+                _logger.LogError(ex, $"Failed to update content for document {documentId}");
                 return false;
             }
         }

@@ -1,19 +1,20 @@
-﻿
-
-namespace text_editor_server.Entities
+﻿namespace text_editor_server.Entities
 {
     public class Section
     {
         public Guid Id { get; set; }
         public Guid DocumentId { get; set; }
-        public int Level { get; set; } // 1 = H1, 2 = H2
         public string Title { get; set; }
-        public int OrderIndex { get; set; } // For ordering sections within a document
-        public Guid? ParentSectionId { get; set; } // For hierarchical sections
-        public string JsonContent { get; set; } = ""; // SFDT JSON or rich text
-        public int Version { get; set; } = 0; // For Operational Transformation
+        public int Level { get; set; }
+        public int OrderIndex { get; set; }
+        public Guid? ParentSectionId { get; set; }
+        public int StartParagraphIndex { get; set; }
+        public int EndParagraphIndex { get; set; }
+        public Section? ParentSection { get; set; }
+        public string Content { get; set; } = "";
+        public ICollection<Section> Children { get; set; } = new List<Section>();
+        public int Version { get; set; } = 0;
         public long Timestamp { get; set; } = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         public ICollection<SectionPermission> Assignments { get; set; } = new List<SectionPermission>();
     }
 }
-        

@@ -50,7 +50,7 @@ namespace text_editor_server.Hubs
                     await Clients.Caller.SendAsync("LoadSection", new
                     {
                         sectionId = section.Id,
-                        content = section.JsonContent,
+                    //    content = section.JsonContent,
                         version = section.Version
                     });
                 }

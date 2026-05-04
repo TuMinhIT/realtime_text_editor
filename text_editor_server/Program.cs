@@ -112,6 +112,13 @@ namespace text_editor_server
                     });
             });
 
+            // Add singleton and hosted service for SectionParsingBackgroundService
+            builder.Services.AddScoped<SectionParser>();
+
+            builder.Services.AddSingleton<SectionParsingBackgroundService>();
+
+            builder.Services.AddHostedService<SectionParsingBackgroundService>();
+
             var app = builder.Build();
       
             app.UseMiddleware<ExceptionHandlingMiddleware>();
@@ -212,5 +219,7 @@ namespace text_editor_server
         }
     }
 }
+
+
 
 

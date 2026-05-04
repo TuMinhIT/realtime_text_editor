@@ -48,7 +48,7 @@ namespace text_editor_server.Services
                                 {
                                     Id = Guid.NewGuid(),
                                     Title = currentSectionName,
-                                    JsonContent = contentBuilder.ToString()
+                                  //  JsonContent = contentBuilder.ToString()
                                 });
                                 contentBuilder.Clear();
                             }
@@ -78,8 +78,8 @@ namespace text_editor_server.Services
                         {
                             Id = Guid.NewGuid(),
                             Title = currentSectionName,
-                            JsonContent = contentBuilder.ToString()
-                        });
+                     //       JsonContent = contentBuilder.ToString()
+                        }); 
                     }
                 }
 
