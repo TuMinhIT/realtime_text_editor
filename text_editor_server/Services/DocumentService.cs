@@ -120,8 +120,11 @@ namespace text_editor_server.Services
                 };
 
                 _context.Documents.Add(document);
+                await _context.SaveChangesAsync();
                 _context.DocumentSnapshots.Add(documentSnapshot);
                 await _context.SaveChangesAsync();
+               
+
 
                 //CẦN CHUYỂN ĐỔI CHẠY BACKGROUND
                 // ======================
@@ -376,13 +379,11 @@ namespace text_editor_server.Services
         public async Task<bool> updateContentAsync(Guid documentId, string newContent)
         {
             try
-            {
-       
+            {             
                 // Tìm DocumentSnapshot tương ứng
                 var documentSnapshot = await _context.DocumentSnapshots
                     .FirstOrDefaultAsync(ds => ds.DocumentId == documentId);
 
-                // Cập nhật title cho Snapshot nếu tồn tại
                 if (documentSnapshot != null)
                 {
                     documentSnapshot.JsonContent= newContent;

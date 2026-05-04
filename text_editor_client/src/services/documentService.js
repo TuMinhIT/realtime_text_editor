@@ -71,11 +71,10 @@ export const documentService = {
 
   async updateDocumentContent(documentId, jsonContent) {
     try {
-      // const res = await http.put(`${resource}/${documentId}/content`, {
-      //   jsonContent,
-      // });
-      // return res.data;
-      console.log(jsonContent);
+      const res = await http.put(`${resource}/${documentId}/content`, {
+        jsonContent,
+      });
+      return res.data;
       return true;
     } catch (err) {
       throw toError(err);

@@ -13,26 +13,6 @@ import { toast } from "react-toastify";
 const SERVICE_URL =
   "https://ej2services.syncfusion.com/production/web-services/api/documenteditor/";
 
-const extractTitleFromSfdt = (sfdt, fallbackTitle) => {
-  try {
-    const parsed = JSON.parse(sfdt);
-    const firstBlock =
-      parsed?.sections?.[0]?.blocks?.find((block) =>
-        Array.isArray(block?.inlines),
-      ) || parsed?.sections?.[0]?.blocks?.[0];
-
-    const titleText =
-      firstBlock?.inlines
-        ?.map((inline) => inline.text || "")
-        .join("")
-        .trim() || "";
-
-    return titleText || fallbackTitle;
-  } catch {
-    return fallbackTitle;
-  }
-};
-
 const DocumentEditor = () => {
   const { documentId } = useParams();
   const navigate = useNavigate();
@@ -131,7 +111,7 @@ const DocumentEditor = () => {
         }),
       );
 
-      toast.success("Da luu thay doi vao backend.");
+      toast.success("Đã lưu!");
     } catch (error) {
       setErrorMessage(
         error?.message || "Khong the luu tai lieu. Hay kiem tra API backend.",
@@ -186,8 +166,8 @@ const DocumentEditor = () => {
           </div>
 
           <div className="ml-auto flex items-center gap-3 text-sm text-slate-600">
-            <span className="hidden text-xs text-slate-500 md:inline-flex">
-              Luu luc {lastSavedAt}
+            <span className=" hidden text-xs text-slate-500 md:inline-flex">
+              Lưu lúc {lastSavedAt}
             </span>
 
             <button
