@@ -69,6 +69,30 @@ export const documentService = {
     }
   },
 
+  async updateDocumentContent(documentId, jsonContent) {
+    try {
+      // const res = await http.put(`${resource}/${documentId}/content`, {
+      //   jsonContent,
+      // });
+      // return res.data;
+      console.log(jsonContent);
+      return true;
+    } catch (err) {
+      throw toError(err);
+    }
+  },
+
+  async updateDocumentTitle(documentId, title) {
+    try {
+      const res = await http.post(
+        `${resource}/${documentId}/title?title=${title}`,
+      );
+      return res.data;
+    } catch (err) {
+      throw toError(err);
+    }
+  },
+
   async deleteDocument(id) {
     try {
       const res = await http.post(`${resource}/remove/${id}`);

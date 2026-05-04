@@ -40,6 +40,7 @@ const DocumentEditor = () => {
   const [documentTitle, setDocumentTitle] = useState("Untitled document");
   const [lastSavedAt, setLastSavedAt] = useState("Chua luu");
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [sfdtContent, setSfdtContent] = useState("");
   const [selectedStyle, setSelectedStyle] = useState("Normal");
@@ -105,23 +106,40 @@ const DocumentEditor = () => {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const editor = editorRef.current?.documentEditor;
     if (!editor) {
       return;
     }
 
-    const serialized = editor.serialize();
-    setSfdtContent(serialized);
-    setLastSavedAt(
-      new Date().toLocaleTimeString("vi-VN", {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    );
-    toast.info(
-      "Da serialize SFDT o client. De luu that, ban nen them endpoint PUT /api/Document/{id}/content.",
-    );
+    setIsSaving(true);
+    setErrorMessage("");
+
+    try {
+      const serialized = editor.serialize();
+
+      await Promise.all([
+        documentService.updateDocumentTitle(documentId, documentTitle.trim()),
+        documentService.updateDocumentContent(documentId, serialized),
+      ]);
+
+      setSfdtContent(serialized);
+      setLastSavedAt(
+        new Date().toLocaleTimeString("vi-VN", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      );
+
+      toast.success("Da luu thay doi vao backend.");
+    } catch (error) {
+      setErrorMessage(
+        error?.message || "Khong the luu tai lieu. Hay kiem tra API backend.",
+      );
+      toast.error("Luu that bai.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleToggleNavigationPane = () => {
@@ -133,19 +151,6 @@ const DocumentEditor = () => {
       editor.documentEditorSettings.showNavigationPane = nextValue;
       editor.focusIn();
     }
-  };
-
-  const handleApplyHeading = (event) => {
-    const styleName = event.target.value;
-    setSelectedStyle(styleName);
-
-    const editor = editorRef.current?.documentEditor;
-    const selectionEditor = editor?.editor;
-    if (!selectionEditor) {
-      return;
-    }
-
-    selectionEditor.applyStyle(styleName);
   };
 
   useEffect(() => {
@@ -178,25 +183,9 @@ const DocumentEditor = () => {
               className="w-60  px-2 py-1.5 text-lg font-medium outline-none hover:bg-slate-100 focus:bg-slate-100 md:w-[360px]"
               placeholder="Untitled document"
             />
-
-            <select
-              value={selectedStyle}
-              onChange={handleApplyHeading}
-              className="ml-2 rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-700 outline-none focus:border-slate-400"
-              aria-label="Chon style heading"
-            >
-              <option value="Normal">Normal</option>
-              <option value="Heading 1">Heading 1</option>
-              <option value="Heading 2">Heading 2</option>
-              <option value="Heading 3">Heading 3</option>
-            </select>
           </div>
 
           <div className="ml-auto flex items-center gap-3 text-sm text-slate-600">
-            {/* <span className="hidden rounded-full bg-[#e8f0fe] px-3 py-1 text-xs font-medium text-[#1967d2] xl:inline-flex">
-              ID {documentId}
-            </span> */}
-
             <span className="hidden text-xs text-slate-500 md:inline-flex">
               Luu luc {lastSavedAt}
             </span>
@@ -213,10 +202,12 @@ const DocumentEditor = () => {
             <button
               type="button"
               onClick={handleSave}
-              className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400"
+              disabled={isSaving}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-60"
             >
+              {isSaving ? <span>Luu...</span> : null}
               <Save size={16} />
-              Save
+              {!isSaving ? <span>Save</span> : null}
             </button>
           </div>
         </div>

@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Syncfusion.EJ2.DocumentEditor;
 using text_editor_server.Data;
@@ -89,28 +90,11 @@ namespace text_editor_server.Services
 
             try
             {
-                await using var stream = new MemoryStream();
-                await file.CopyToAsync(stream);
-
-                if (stream.Length == 0)
-                    return ServiceResult<DocumentUploadRes>.Fail("File is empty");
-
-
                 // ======================
-                // Convert DOCX -> SFDT JSON (KHÔNG NÉN)
+                // Gọi helper convert DOCX -> SFDT JSON
                 // ======================
-                stream.Position = 0;
+                string sfdtJson = await HelperFunc.ConvertDocxToSfdtAsync(file);
 
-                using var wordDoc = new Syncfusion.DocIO.DLS.WordDocument(
-                    stream,
-                    Syncfusion.DocIO.FormatType.Docx);
-
-                var editorDoc = WordDocument.Load(wordDoc);
-
-                // QUAN TRỌNG: đây mới là JSON thật
-                string sfdtJson = JsonConvert.SerializeObject(editorDoc);
-
-                editorDoc.Dispose();
                 // ======================
                 // Save DB
                 // ======================
@@ -120,11 +104,12 @@ namespace text_editor_server.Services
                     Title = string.IsNullOrWhiteSpace(title)
                         ? Path.GetFileNameWithoutExtension(file.FileName)
                         : title.Trim(),
-                    JsonContent = "no content it saved in snaphot",
+                    JsonContent = "no content it saved in snapshot",
                     SourceFilePath = file.FileName,
                     CreatedBy = currentUserId,
                     CreatedAt = DateTime.UtcNow
                 };
+                
                 var documentSnapshot = new DocumentSnapshot
                 {
                     Id = Guid.NewGuid(),
@@ -135,7 +120,6 @@ namespace text_editor_server.Services
                 };
 
                 _context.Documents.Add(document);
-                await _context.SaveChangesAsync();
                 _context.DocumentSnapshots.Add(documentSnapshot);
                 await _context.SaveChangesAsync();
 
@@ -349,6 +333,72 @@ namespace text_editor_server.Services
 
 			return ServiceResult<DocumentSnapshot>.Ok(content);
         }
+
+        // update title document
+        public async Task<bool> updateTitleAsync(Guid documentId, string title)
+        {
+            try
+            {
+                // Tìm Document chính
+                var document = await _context.Documents
+                    .FirstOrDefaultAsync(d => d.Id == documentId);
+
+                if (document == null)
+                    return false;
+
+                // Cập nhật title cho Document
+                document.Title = title;
+
+                // Tìm DocumentSnapshot tương ứng
+                var documentSnapshot = await _context.DocumentSnapshots
+                    .FirstOrDefaultAsync(ds => ds.DocumentId == documentId);
+
+                // Cập nhật title cho Snapshot nếu tồn tại
+                if (documentSnapshot != null)
+                {
+                    documentSnapshot.Title = title;
+                }
+
+                // Lưu thay đổi vào DB
+                await _context.SaveChangesAsync();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Failed to update title for document {documentId}");
+                return false;
+            }
+        }
+
+
+        // update json content
+        public async Task<bool> updateContentAsync(Guid documentId, string newContent)
+        {
+            try
+            {
+       
+                // Tìm DocumentSnapshot tương ứng
+                var documentSnapshot = await _context.DocumentSnapshots
+                    .FirstOrDefaultAsync(ds => ds.DocumentId == documentId);
+
+                // Cập nhật title cho Snapshot nếu tồn tại
+                if (documentSnapshot != null)
+                {
+                    documentSnapshot.JsonContent= newContent;
+                }
+                // Lưu thay đổi vào DB
+                await _context.SaveChangesAsync();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Failed to update title for document {documentId}");
+                return false;
+            }
+        }
+
     }
 
 

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using text_editor_server.DTOs.req;
 using text_editor_server.Services;
 
 namespace text_editor_server.Controllers
@@ -66,7 +67,7 @@ namespace text_editor_server.Controllers
             return Ok(result);
         }
 
-
+        // delete document
         [Authorize]
         [HttpPost("remove/{documentId:guid}")]
         public async Task<IActionResult> RemoveDocument(Guid documentId)
@@ -83,6 +84,45 @@ namespace text_editor_server.Controllers
             return Ok(result);
         }
 
+
+
+
+        //Lấy document snapshots
+        [HttpGet("{documentId:guid}/content")]
+        public async Task<IActionResult> GetDocumentContent(Guid documentId)
+        {
+            var result = await _documentService.GetDocumentSnapshotAsync(documentId);
+            return Ok(result);
+        }
+        // lưu title
+        [HttpPost("{documentId:guid}/title")]
+        public async Task<IActionResult> UpdateTitle(Guid documentId, string title)
+        {
+            var res = await _documentService.updateTitleAsync(documentId, title);
+            if (!res)
+            {
+                return NotFound(new { message = "Document not found" });
+            }
+
+            return Ok("Update success!");
+
+        }
+
+        // update content
+        [HttpPut("{documentId:guid}/content")]
+        public async Task<IActionResult> UpdateContent(Guid documentId, [FromBody] UpdateJsonSfdtReq req)
+        {
+            var res = await _documentService.updateContentAsync(documentId, req.JsonContent);
+            if (!res)
+            {
+                return NotFound(new { message = "Document not found" });
+            }
+
+            return Ok("Update success!");
+
+        }
+
+
         [HttpGet("{documentId:guid}/sections")]
         public async Task<IActionResult> GetDocumentBlocks(Guid documentId)
         {
@@ -95,13 +135,5 @@ namespace text_editor_server.Controllers
             return Ok(blocks);
         }
 
-
-        //Lấy document snapshots
-        [HttpGet("{documentId:guid}/content")]
-        public async Task<IActionResult> GetDocumentContent(Guid documentId)
-        {
-            var result = await _documentService.GetDocumentSnapshotAsync(documentId);
-            return Ok(result);
-        }
     }
 }
