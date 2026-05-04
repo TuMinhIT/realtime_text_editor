@@ -12,8 +12,8 @@ using text_editor_server.Data;
 namespace text_editor_server.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260504093236_updatetimestap")]
-    partial class updatetimestap
+    [Migration("20260504162836_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -139,12 +139,12 @@ namespace text_editor_server.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("DocumentId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("JsonContent")
+                    b.Property<string>("Content")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("DocumentId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("Level")
                         .HasColumnType("int");
@@ -168,6 +168,8 @@ namespace text_editor_server.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("DocumentId");
+
+                    b.HasIndex("ParentSectionId");
 
                     b.ToTable("Sections");
                 });
@@ -270,6 +272,12 @@ namespace text_editor_server.Migrations
                         .HasForeignKey("DocumentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("text_editor_server.Entities.Section", "ParentSection")
+                        .WithMany("Children")
+                        .HasForeignKey("ParentSectionId");
+
+                    b.Navigation("ParentSection");
                 });
 
             modelBuilder.Entity("text_editor_server.Entities.SectionPermission", b =>
@@ -297,6 +305,8 @@ namespace text_editor_server.Migrations
             modelBuilder.Entity("text_editor_server.Entities.Section", b =>
                 {
                     b.Navigation("Assignments");
+
+                    b.Navigation("Children");
                 });
 
             modelBuilder.Entity("text_editor_server.Entities.User", b =>

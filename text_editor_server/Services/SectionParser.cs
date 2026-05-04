@@ -16,6 +16,7 @@ namespace text_editor_server.Services
             _logger = logger;
         }
 
+       
         public async Task ParseNow(Guid documentId)
         {
             try
@@ -47,8 +48,7 @@ namespace text_editor_server.Services
             }
         }
 
-        // ================= CORE PARSER =================
-
+        //Hàm parse SFDT và lưu vào database
         private List<Section> ParseSectionsFromSfdt(string sfdtJson, Guid documentId)
         {
             var sections = new List<Section>();
@@ -76,14 +76,9 @@ namespace text_editor_server.Services
             foreach (var sec in secArray)
             {
                 var blocks = sec["b"] as JArray;
+                if (blocks == null) continue;
 
-                if (blocks == null)
-                {
-                    _logger.LogWarning("Missing 'b' blocks in section");
-                    continue;
-                }
-
-                var sectionStack = new Stack<(Section section, int level)>();
+                var sectionStack = new Stack<Section>();
                 Section? currentSection = null;
                 var contentBuffer = new List<JToken>();
 
@@ -91,17 +86,17 @@ namespace text_editor_server.Services
                 {
                     try
                     {
-                        string? styleName = block.SelectToken("pf.stn")?.ToString();
-                        string text = block.SelectToken("i[0].tlp")?.ToString() ?? "";
+                        string styleName = block.SelectToken("pf.stn")?.ToString() ?? "";
+                        string text = ExtractText(block);
 
-                        bool isHeading =
-                            !string.IsNullOrWhiteSpace(styleName) &&
-                            styleName.StartsWith("Heading");
+                        int level = ExtractLevel(styleName);
+
+                        // Giới hạn 2 cấp chỉ lấy heading cấp 1 và 2.
+                        bool isHeading = level == 1 || level == 2;
 
                         if (isHeading)
                         {
-                            int level = ExtractLevel(styleName);
-
+                            // flush section cũ
                             if (currentSection != null)
                             {
                                 currentSection.Content = BuildSfdt(contentBuffer);
@@ -110,21 +105,22 @@ namespace text_editor_server.Services
 
                             contentBuffer.Clear();
 
+                            // handle hierarchy
                             while (sectionStack.Count > 0 &&
-                                   sectionStack.Peek().level >= level)
+                                   sectionStack.Peek().Level >= level)
                             {
                                 sectionStack.Pop();
                             }
 
                             var parentId = sectionStack.Count > 0
-                                ? sectionStack.Peek().section.Id
+                                ? sectionStack.Peek().Id
                                 : (Guid?)null;
 
                             var newSection = new Section
                             {
                                 Id = Guid.NewGuid(),
                                 DocumentId = documentId,
-                                Title = text,
+                                Title = string.IsNullOrWhiteSpace(text) ? "Untitled" : text,
                                 Level = level,
                                 OrderIndex = orderIndex++,
                                 ParentSectionId = parentId,
@@ -132,21 +128,25 @@ namespace text_editor_server.Services
                                 Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
                             };
 
-                            sectionStack.Push((newSection, level));
+                            sectionStack.Push(newSection);
                             currentSection = newSection;
                         }
                         else
                         {
+                            // content belongs to current section
                             if (currentSection != null)
+                            {
                                 contentBuffer.Add(block);
+                            }
                         }
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Error parsing block: {Block}", block?.ToString());
+                        _logger.LogError(ex, "Error parsing block");
                     }
                 }
 
+                // flush last section
                 if (currentSection != null)
                 {
                     currentSection.Content = BuildSfdt(contentBuffer);
@@ -157,24 +157,30 @@ namespace text_editor_server.Services
             return sections;
         }
 
-        // ================= HELPERS =================
+        //HELPERS 
 
-        private int ExtractLevel(string styleName)
+        // lấy toàn bộ text trong SFDT (không mất nội dung)
+        private string ExtractText(JToken block)
         {
-            try
-            {
-                var num = styleName
-                    .Replace("Heading ", "")
-                    .Replace("Heading", "");
-
-                return int.TryParse(num, out int level) ? level : 1;
-            }
-            catch
-            {
-                return 1;
-            }
+            return string.Join(" ",
+                block.SelectTokens("i[*].tlp")
+                     .Select(x => x.ToString()));
         }
 
+        // Heading level parser
+        private int ExtractLevel(string styleName)
+        {
+            if (string.IsNullOrWhiteSpace(styleName))
+                return 0;
+
+            var num = styleName
+                .Replace("Heading", "")
+                .Trim();
+
+            return int.TryParse(num, out var level) ? level : 0;
+        }
+
+        // Build SFDT content block
         private string BuildSfdt(List<JToken> blocks)
         {
             try

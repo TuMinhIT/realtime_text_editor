@@ -112,12 +112,12 @@ namespace text_editor_server
                     });
             });
 
-            // Add singleton and hosted service for SectionParsingBackgroundService
+            // Đăng kí SectionParser - Tách lấy các heading của document để tạo section
             builder.Services.AddScoped<SectionParser>();
 
-            builder.Services.AddSingleton<SectionParsingBackgroundService>();
+           // builder.Services.AddSingleton<SectionParsingBackgroundService>();
 
-            builder.Services.AddHostedService<SectionParsingBackgroundService>();
+            //builder.Services.AddHostedService<SectionParsingBackgroundService>();
 
             var app = builder.Build();
       

@@ -123,73 +123,15 @@ namespace text_editor_server.Services
                     Version = 0,
                 };
 
+
                 _context.Documents.Add(document);
                 await _context.SaveChangesAsync();
                 _context.DocumentSnapshots.Add(documentSnapshot);
                 await _context.SaveChangesAsync();
 
-         
-
-                // ======================
-                // CẦN CHUYỂN ĐỔI CHẠY BACKGROUND
-                // Parse sections
-                // ======================
-                //stream.Position = 0;
-                //var (sections, plainText) =
-                //    await _docxParsingService.ParseDocxAsync(stream);
-
-                //var sectionsList = sections ?? new List<Section>();
-
-                //// ======================
-                //// Default section
-                //// ======================
-                //if (!sectionsList.Any())
-                //{
-                //    sectionsList.Add(new Section
-                //    {
-                //        Id = Guid.NewGuid(),
-                //        Title = "1", // Mặc định là cấp 1
-                //        JsonContent = plainText ?? "",
-                //        DocumentId = document.Id,
-                //        Version = 0,
-                //        Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
-                //    });
-                //}
-
-                //foreach (var section in sectionsList)
-                //{
-                //    if (section.Id == Guid.Empty)
-                //        section.Id = Guid.NewGuid();
-
-                //    section.DocumentId = document.Id;
-                //    section.Version = 0;
-                //    section.Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                //}
-
-                //// Lưu các section (tất cả các cấp để hiển thị UI)
-                //_context.Sections.AddRange(sectionsList);
-
-                //// ======================
-                //// Phân quyền: CHỈ ÁP DỤNG MẶC ĐỊNH CHO HEADING CẤP 2
-                //// (Cấp 2 có Title dạng "1.1", "2.1" -> Sẽ bị cắt bởi dấu '.' thành mảng 2 phần tử)
-                //// ======================
-                //var permissions = sectionsList
-                //    .Where(s => s.Title.Split('.').Length == 2)
-                //    .Select(s => new SectionPermission
-                //    {
-                //        Id = Guid.NewGuid(),
-                //        SectionId = s.Id,
-                //        UserId = currentUserId,
-                //        Permission = PermissionLevel.Admin,
-                //        AssignedAt = DateTime.UtcNow
-                //    });
-
-                //_context.SectionPermissions.AddRange(permissions);
-
-                //// Commit tất cả xuống database
-                //await _context.SaveChangesAsync();
-
-
+				string test = documentSnapshot.JsonContent;
+				string test2 = document.Id.ToString();
+               // await _sectionParser.ParseNow(document.Id);
 
                 return ServiceResult<DocumentUploadRes>.Ok(
                     new DocumentUploadRes

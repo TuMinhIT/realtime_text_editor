@@ -8,8 +8,10 @@
         public int Level { get; set; }
         public int OrderIndex { get; set; }
         public Guid? ParentSectionId { get; set; }
-        public int StartParagraphIndex { get; set; }
-        public int EndParagraphIndex { get; set; }
+
+
+   //     public int StartParagraphIndex { get; set; }
+     //   public int EndParagraphIndex { get; set; }
         public Section? ParentSection { get; set; }
         public string Content { get; set; } = "";
         public ICollection<Section> Children { get; set; } = new List<Section>();

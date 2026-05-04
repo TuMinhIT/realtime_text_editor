@@ -143,12 +143,6 @@ namespace text_editor_server.Migrations
                     b.Property<Guid>("DocumentId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("EndParagraphIndex")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Level")
-                        .HasColumnType("int");
-
                     b.Property<int>("Level")
                         .HasColumnType("int");
 
@@ -157,9 +151,6 @@ namespace text_editor_server.Migrations
 
                     b.Property<Guid?>("ParentSectionId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("StartParagraphIndex")
-                        .HasColumnType("int");
 
                     b.Property<long>("Timestamp")
                         .HasColumnType("bigint");

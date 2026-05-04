@@ -85,7 +85,8 @@ namespace text_editor_server.Migrations
                     DocumentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     JsonContent = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Version = table.Column<int>(type: "int", nullable: false)
+                    Version = table.Column<int>(type: "int", nullable: false),
+                    Timestamp = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -108,8 +109,6 @@ namespace text_editor_server.Migrations
                     Level = table.Column<int>(type: "int", nullable: false),
                     OrderIndex = table.Column<int>(type: "int", nullable: false),
                     ParentSectionId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    StartParagraphIndex = table.Column<int>(type: "int", nullable: false),
-                    EndParagraphIndex = table.Column<int>(type: "int", nullable: false),
                     Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Version = table.Column<int>(type: "int", nullable: false),
                     Timestamp = table.Column<long>(type: "bigint", nullable: false)
