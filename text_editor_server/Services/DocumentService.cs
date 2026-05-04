@@ -362,7 +362,7 @@ namespace text_editor_server.Services
 
                 if (documentSnapshot != null)
                 {
-                    documentSnapshot.JsonContent = newContent;
+                    documentSnapshot.JsonContent= newContent;
                 }
                 await _context.SaveChangesAsync();
 

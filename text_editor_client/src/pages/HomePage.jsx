@@ -115,12 +115,20 @@ const HomePage = () => {
     try {
       const response = await documentService.uploadDocument(file);
       if (response) {
-        loadDocuments();
+        const documentId = response?.documentId || response?.id;
+        if (documentId) {
+          setTimeout(() => {
+            navigate(`document/${documentId}`);
+          }, 500);
+        } else {
+          loadDocuments();
+        }
       }
     } catch (error) {
       setErrorMessage(
         error?.message || "Upload that bai. Hay kiem tra token va API.",
       );
+      toast.error("Upload that bai");
     } finally {
       setIsUploading(false);
     }

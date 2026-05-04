@@ -82,7 +82,6 @@ namespace text_editor_server.Services
                         }); 
                     }
                 }
-
                 return (sections, plainText.ToString());
             }
             catch (Exception ex)

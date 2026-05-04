@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using text_editor_server.Data;
 
@@ -11,9 +12,11 @@ using text_editor_server.Data;
 namespace text_editor_server.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260504093236_updatetimestap")]
+    partial class updatetimestap
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -136,18 +139,12 @@ namespace text_editor_server.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<Guid>("DocumentId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("EndParagraphIndex")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Level")
-                        .HasColumnType("int");
+                    b.Property<string>("JsonContent")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Level")
                         .HasColumnType("int");
@@ -157,9 +154,6 @@ namespace text_editor_server.Migrations
 
                     b.Property<Guid?>("ParentSectionId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("StartParagraphIndex")
-                        .HasColumnType("int");
 
                     b.Property<long>("Timestamp")
                         .HasColumnType("bigint");
@@ -174,8 +168,6 @@ namespace text_editor_server.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("DocumentId");
-
-                    b.HasIndex("ParentSectionId");
 
                     b.ToTable("Sections");
                 });
@@ -278,12 +270,6 @@ namespace text_editor_server.Migrations
                         .HasForeignKey("DocumentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("text_editor_server.Entities.Section", "ParentSection")
-                        .WithMany("Children")
-                        .HasForeignKey("ParentSectionId");
-
-                    b.Navigation("ParentSection");
                 });
 
             modelBuilder.Entity("text_editor_server.Entities.SectionPermission", b =>
@@ -311,8 +297,6 @@ namespace text_editor_server.Migrations
             modelBuilder.Entity("text_editor_server.Entities.Section", b =>
                 {
                     b.Navigation("Assignments");
-
-                    b.Navigation("Children");
                 });
 
             modelBuilder.Entity("text_editor_server.Entities.User", b =>
