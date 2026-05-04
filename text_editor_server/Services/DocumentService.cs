@@ -10,10 +10,10 @@ namespace text_editor_server.Services
 	public class DocumentService
 	{
 		private readonly AppDbContext _context;
-		private readonly IDocxParsingService _docxParsingService;
+		private readonly DocxParsingService _docxParsingService;
 		private readonly ILogger<DocumentService> _logger;
 
-		public DocumentService(AppDbContext context, IDocxParsingService docxParsingService, ILogger<DocumentService> logger)
+		public DocumentService(AppDbContext context, DocxParsingService docxParsingService, ILogger<DocumentService> logger)
 		{
 			_context = context;
 			_docxParsingService = docxParsingService;
@@ -123,28 +123,28 @@ namespace text_editor_server.Services
                 await _context.SaveChangesAsync();
                 _context.DocumentSnapshots.Add(documentSnapshot);
                 await _context.SaveChangesAsync();
-               
 
 
-                //CẦN CHUYỂN ĐỔI CHẠY BACKGROUND
+
                 // ======================
+                // CẦN CHUYỂN ĐỔI CHẠY BACKGROUND
                 // Parse sections
                 // ======================
                 //stream.Position = 0;
-                //            var (sections, plainText) =
-                //                await _docxParsingService.ParseDocxAsync(stream);
+                //var (sections, plainText) =
+                //    await _docxParsingService.ParseDocxAsync(stream);
 
-                //            var sectionsList = sections ?? new List<Section>();
+                //var sectionsList = sections ?? new List<Section>();
 
-                // ======================
-                // Default section
-                // ======================
+                //// ======================
+                //// Default section
+                //// ======================
                 //if (!sectionsList.Any())
                 //{
                 //    sectionsList.Add(new Section
                 //    {
                 //        Id = Guid.NewGuid(),
-                //        Title = "1",
+                //        Title = "1", // Mặc định là cấp 1
                 //        JsonContent = plainText ?? "",
                 //        DocumentId = document.Id,
                 //        Version = 0,
@@ -159,22 +159,31 @@ namespace text_editor_server.Services
 
                 //    section.DocumentId = document.Id;
                 //    section.Version = 0;
-                //    section.Timestamp =
-                //        DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                //    section.Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 //}
 
+                //// Lưu các section (tất cả các cấp để hiển thị UI)
                 //_context.Sections.AddRange(sectionsList);
 
-                //var permissions = sectionsList.Select(s => new SectionPermission
-                //{
-                //    Id = Guid.NewGuid(),
-                //    SectionId = s.Id,
-                //    UserId = currentUserId,
-                //    Permission = PermissionLevel.Admin,
-                //    AssignedAt = DateTime.UtcNow
-                //});
+                //// ======================
+                //// Phân quyền: CHỈ ÁP DỤNG MẶC ĐỊNH CHO HEADING CẤP 2
+                //// (Cấp 2 có Title dạng "1.1", "2.1" -> Sẽ bị cắt bởi dấu '.' thành mảng 2 phần tử)
+                //// ======================
+                //var permissions = sectionsList
+                //    .Where(s => s.Title.Split('.').Length == 2)
+                //    .Select(s => new SectionPermission
+                //    {
+                //        Id = Guid.NewGuid(),
+                //        SectionId = s.Id,
+                //        UserId = currentUserId,
+                //        Permission = PermissionLevel.Admin,
+                //        AssignedAt = DateTime.UtcNow
+                //    });
 
                 //_context.SectionPermissions.AddRange(permissions);
+                
+                //// Commit tất cả xuống database
+                //await _context.SaveChangesAsync();
 
 
 
@@ -183,19 +192,7 @@ namespace text_editor_server.Services
                     {
                         DocumentId = document.Id,
                         Title = document.Title,
-                        //Blocks = sectionsList
-                        //    .Select((s, index) => new DocumentBlockItemRes
-                        //    {
-                        //        SectionId = s.Id,
-                        //        Title = s.Title,
-                        //        Order = index + 1,
-                        //        Preview = string.IsNullOrEmpty(s.JsonContent)
-                        //            ? ""
-                        //            : s.JsonContent.Length > 200
-                        //                ? s.JsonContent.Substring(0, 200)
-                        //                : s.JsonContent
-                        //    })
-                        //    .ToList()
+                        
                     });
             }
             catch (Exception ex)
@@ -206,31 +203,7 @@ namespace text_editor_server.Services
         }
 
 
-        public async Task<DocumentBlocksRes?> GetDocumentBlocksAsync(Guid documentId)
-		{
-			//var document = await _context.Documents
-			//	.AsNoTracking()
-			//	.Where(d => d.Id == documentId)
-			//	.Select(d => new DocumentBlocksRes
-			//	{
-			//		DocumentId = d.Id,
-			//		Title = d.Title,
-			//		Blocks = d.Sections
-			//			.OrderBy(s => s.Name)
-			//			.Select((s, index) => new DocumentBlockItemRes
-			//			{
-			//				SectionId = s.Id,
-			//				Name = s.Name,
-			//				Order = index + 1,
-			//				//mở này ra
-			//				//Preview = s.JsonContent.Length > 200 ? s.JsonContent[..200] : s.JsonContent
-			//			}).ToList()
-			//	})
-			//	.FirstOrDefaultAsync();
-
-			//return document;
-			return null;
-        }
+       
 
 		public async Task<ServiceResult<BlockPermissionRes>> AssignUserToBlockAsync(Guid sectionId, Guid userId, PermissionLevel permission)
 		{

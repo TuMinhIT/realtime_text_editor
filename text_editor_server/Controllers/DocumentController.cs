@@ -122,18 +122,6 @@ namespace text_editor_server.Controllers
 
         }
 
-
-        [HttpGet("{documentId:guid}/sections")]
-        public async Task<IActionResult> GetDocumentBlocks(Guid documentId)
-        {
-            var blocks = await _documentService.GetDocumentBlocksAsync(documentId);
-            if (blocks == null)
-            {
-                return NotFound(new { message = "Document not found" });
-            }
-
-            return Ok(blocks);
-        }
-
+       
     }
 }

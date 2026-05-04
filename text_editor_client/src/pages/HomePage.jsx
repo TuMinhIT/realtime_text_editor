@@ -5,9 +5,12 @@ import {
   DeleteIcon,
   FileText,
   FolderOpen,
+  MoveDiagonal2,
   Plus,
+  SaveAllIcon,
   Search,
   Upload,
+  UserCheck,
 } from "lucide-react";
 import { APP_ROUTES } from "../constants/routes";
 import { http } from "../services/http";
@@ -17,6 +20,7 @@ import { mapUploadResponseToRecentDocument } from "../utils/documentMappers";
 import { CgSpinner } from "react-icons/cg";
 import { ClipLoader } from "react-spinners";
 import { toast } from "react-toastify";
+import { SiAuthelia } from "react-icons/si";
 
 const formatDate = (value) => {
   if (!value) {
@@ -161,6 +165,10 @@ const HomePage = () => {
     navigate(`document/${documentId}`);
   };
 
+  const openSectionAuthority = (documentId) => {
+    navigate(`sections/${documentId}`);
+  };
+
   const handleLogout = () => {
     sessionService.clearStore();
     http.setToken(null);
@@ -278,9 +286,7 @@ const HomePage = () => {
                   <th className="border-b border-slate-200 px-4 py-3 font-medium">
                     Last modified
                   </th>
-                  <th className="border-b border-slate-200 px-4 py-3 font-medium">
-                    Sections
-                  </th>
+
                   <th className="border-b border-slate-200 px-4 py-3 font-medium">
                     Action
                   </th>
@@ -326,9 +332,7 @@ const HomePage = () => {
                           {formatDate(doc.updatedAt)}
                         </span>
                       </td>
-                      <td className="border-b border-slate-100 px-4 py-4">
-                        {doc.sections || "-"}
-                      </td>
+
                       <td className="border-b border-slate-100 px-4 py-4">
                         <button
                           type="button"
@@ -345,6 +349,14 @@ const HomePage = () => {
                         >
                           <DeleteIcon size={15} />
                           Delete
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openSectionAuthority(doc.id)}
+                          className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-3 py-1.5 text-sm font-medium transition hover:bg-red-400"
+                        >
+                          <UserCheck size={15} />
+                          Authority
                         </button>
                       </td>
                     </tr>

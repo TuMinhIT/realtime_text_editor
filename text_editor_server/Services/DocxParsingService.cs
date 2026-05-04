@@ -4,19 +4,15 @@ using text_editor_server.Entities;
 
 namespace text_editor_server.Services
 {
-    public interface IDocxParsingService
-    {
-        Task<(List<Section> sections, string plainText)> ParseDocxAsync(Stream fileStream);
-        string ExtractTextFromParagraph(Paragraph paragraph);
-    }
 
-    public class DocxParsingService : IDocxParsingService
+
+    public class DocxParsingService
     {
         /// <summary>
         /// Parse .docx file and extract content organized by heading levels
         /// Creates sections based on heading hierarchy (e.g., Heading1 = 1, Heading2 = 1.1)
         /// </summary>
-        public async Task<(List<Section> sections, string plainText)> ParseDocxAsync(Stream fileStream)
+        public async Task<(List<Section> sections, string sfdt)> ParseDocxAsync(Stream fileStream)
         {
             var sections = new List<Section>();
             var plainText = new System.Text.StringBuilder();

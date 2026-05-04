@@ -6,6 +6,7 @@ namespace text_editor_server.Entities
     {
         public Guid Id { get; set; }
         public Guid DocumentId { get; set; }
+        public int Level { get; set; } // 1 = H1, 2 = H2
         public string Title { get; set; }
         public int OrderIndex { get; set; } // For ordering sections within a document
         public Guid? ParentSectionId { get; set; } // For hierarchical sections
@@ -15,3 +16,4 @@ namespace text_editor_server.Entities
         public ICollection<SectionPermission> Assignments { get; set; } = new List<SectionPermission>();
     }
 }
+        

@@ -4,6 +4,7 @@ import LoginPage from "./pages/LoginPage";
 import HomePage from "./pages/HomePage";
 import { sessionService } from "./services/sessionService";
 import DocumentEditor from "./components/DocumentEditor";
+import SectionAuthority from "./pages/SectionAuthority";
 
 function ProtectedRoute({ children }) {
   if (!sessionService.isAuthenticated()) {
@@ -31,7 +32,6 @@ function App() {
           </GuestRoute>
         }
       />
-
       <Route
         path={"/"}
         element={
@@ -40,7 +40,6 @@ function App() {
           </ProtectedRoute>
         }
       />
-
       <Route
         path={`document/:documentId`}
         element={
@@ -49,7 +48,14 @@ function App() {
           </ProtectedRoute>
         }
       />
-
+      <Route
+        path={`sections/:documentId`}
+        element={
+          <ProtectedRoute>
+            <SectionAuthority />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path={"*"}
         element={

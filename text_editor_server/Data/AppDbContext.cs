@@ -12,7 +12,7 @@ namespace text_editor_server.Data
         public DbSet<RefreshToken> RefreshTokens { get; set; }
  
         public DbSet<DocumentSnapshot> DocumentSnapshots { get; set; }
-        public DbSet<SectionSnapshot> SectionSnapshots { get; set; }
+   
         
         public AppDbContext(DbContextOptions<AppDbContext> options)
             : base(options) { }
@@ -70,19 +70,6 @@ namespace text_editor_server.Data
                 .HasForeignKey(ds => ds.DocumentId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // 6. Section & User -> SectionSnapshot relationship
-            modelBuilder.Entity<SectionSnapshot>()
-                .HasOne<Section>()
-                .WithMany()
-                .HasForeignKey(ss => ss.SectionId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<SectionSnapshot>()
-                .HasOne<User>()
-                .WithMany()
-                .HasForeignKey(ss => ss.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-
             // Indexes for performance
             modelBuilder.Entity<Section>()
                 .HasIndex(s => s.DocumentId);
@@ -92,9 +79,7 @@ namespace text_editor_server.Data
                 
             modelBuilder.Entity<DocumentSnapshot>()
                 .HasIndex(ds => ds.DocumentId);
-                
-            modelBuilder.Entity<SectionSnapshot>()
-                .HasIndex(ss => new { ss.SectionId, ss.UserId });
+      
         }
     }
 }
