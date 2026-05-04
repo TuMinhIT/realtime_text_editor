@@ -13,6 +13,18 @@ import { toast } from "react-toastify";
 const SERVICE_URL =
   "https://ej2services.syncfusion.com/production/web-services/api/documenteditor/";
 
+const normalizeJson = (value) => {
+  if (!value) {
+    return "";
+  }
+
+  try {
+    return JSON.stringify(JSON.parse(value));
+  } catch {
+    return value;
+  }
+};
+
 const DocumentEditor = () => {
   const { documentId } = useParams();
   const navigate = useNavigate();
@@ -23,8 +35,11 @@ const DocumentEditor = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [sfdtContent, setSfdtContent] = useState("");
-  const [selectedStyle, setSelectedStyle] = useState("Normal");
   const [showNavigationPane, setShowNavigationPane] = useState(true);
+  const [document, setDocument] = useState({});
+
+  const [hasAutoSaved, setHasAutoSaved] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
 
   const openDocumentContent = (sfdt) => {
     const editor = editorRef.current?.documentEditor;
@@ -48,9 +63,16 @@ const DocumentEditor = () => {
       const result = await documentService.getDocumentContent(documentId);
       if (result.success) {
         const loadedDocument = result.data;
+        const normalizedLoadedContent = normalizeJson(
+          loadedDocument.jsonContent,
+        );
 
-        setSfdtContent(loadedDocument.jsonContent);
+        setDocument(loadedDocument);
+        setSfdtContent(normalizedLoadedContent);
         setDocumentTitle(loadedDocument.title);
+
+        setIsDirty(false);
+        setHasAutoSaved(false);
       } else {
         setErrorMessage(result.message || "Khong tai duoc noi dung tai lieu.");
       }
@@ -70,20 +92,42 @@ const DocumentEditor = () => {
   useEffect(() => {
     if (!isLoading && sfdtContent) {
       openDocumentContent(sfdtContent);
+      if (document?.version === 0) {
+        setHasAutoSaved(true);
+        handleSave();
+      }
     }
-  }, [isLoading, sfdtContent]);
+  }, [isLoading, sfdtContent, document?.version, hasAutoSaved]);
 
-  const handleCreated = () => {
+  const handleContentChange = () => {
+    if (isLoading || isSaving) {
+      return;
+    }
+
     const editor = editorRef.current?.documentEditor;
     if (!editor) {
       return;
     }
 
-    editor.serviceUrl = SERVICE_URL;
+    const currentSerialized = normalizeJson(editor.serialize());
+    const hasChanged =
+      currentSerialized !== normalizeJson(sfdtContent) ||
+      documentTitle.trim() !== (document?.title || "").trim();
 
-    if (sfdtContent) {
-      openDocumentContent(sfdtContent);
-    }
+    setIsDirty(hasChanged);
+  };
+
+  const updateDirtyStateForTitle = (nextTitle) => {
+    const editor = editorRef.current?.documentEditor;
+    const currentSerialized = editor
+      ? normalizeJson(editor.serialize())
+      : normalizeJson(sfdtContent);
+
+    const hasChanged =
+      currentSerialized !== normalizeJson(sfdtContent) ||
+      nextTitle.trim() !== (document?.title || "").trim();
+
+    setIsDirty(hasChanged);
   };
 
   const handleSave = async () => {
@@ -96,7 +140,7 @@ const DocumentEditor = () => {
     setErrorMessage("");
 
     try {
-      const serialized = editor.serialize();
+      const serialized = normalizeJson(editor.serialize());
 
       await Promise.all([
         documentService.updateDocumentTitle(documentId, documentTitle.trim()),
@@ -104,6 +148,12 @@ const DocumentEditor = () => {
       ]);
 
       setSfdtContent(serialized);
+      setDocument((prev) => ({
+        ...prev,
+        title: documentTitle.trim(),
+        version:
+          typeof prev?.version === "number" ? prev.version + 1 : prev?.version,
+      }));
       setLastSavedAt(
         new Date().toLocaleTimeString("vi-VN", {
           hour: "2-digit",
@@ -111,7 +161,7 @@ const DocumentEditor = () => {
         }),
       );
 
-      toast.success("Đã lưu!");
+      setIsDirty(false);
     } catch (error) {
       setErrorMessage(
         error?.message || "Khong the luu tai lieu. Hay kiem tra API backend.",
@@ -159,16 +209,31 @@ const DocumentEditor = () => {
             </div>
             <input
               value={documentTitle}
-              onChange={(event) => setDocumentTitle(event.target.value)}
+              onChange={(event) => {
+                const nextTitle = event.target.value;
+                setDocumentTitle(nextTitle);
+                updateDirtyStateForTitle(nextTitle);
+              }}
               className="w-60  px-2 py-1.5 text-lg font-medium outline-none hover:bg-slate-100 focus:bg-slate-100 md:w-[360px]"
               placeholder="Untitled document"
             />
           </div>
 
           <div className="ml-auto flex items-center gap-3 text-sm text-slate-600">
-            <span className=" hidden text-xs text-slate-500 md:inline-flex">
-              Lưu lúc {lastSavedAt}
-            </span>
+            {!isDirty ? (
+              <div className="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
+                ✓
+                <span className=" hidden text-xs text-slate-500 md:inline-flex">
+                  Lưu lúc {lastSavedAt}
+                </span>
+              </div>
+            ) : (
+              <div className="inline-flex items-center gap-1 rounded-full bg-red-500 px-3 py-1 text-xs font-medium text-white">
+                <span className=" hidden text-xs  md:inline-flex">
+                  Chưa lưu
+                </span>
+              </div>
+            )}
 
             <button
               type="button"
@@ -205,11 +270,11 @@ const DocumentEditor = () => {
             ref={editorRef}
             height="100%"
             enableToolbar
+            contentChange={handleContentChange}
             documentEditorSettings={{
               showNavigationPane,
             }}
             serviceUrl={SERVICE_URL}
-            created={handleCreated}
           >
             <Inject services={[Toolbar]} />
           </DocumentEditorContainerComponent>

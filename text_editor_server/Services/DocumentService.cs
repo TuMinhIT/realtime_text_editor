@@ -360,6 +360,8 @@ namespace text_editor_server.Services
                 if (documentSnapshot != null)
                 {
                     documentSnapshot.JsonContent= newContent;
+                    documentSnapshot.Version += 1; // Tăng version khi có cập nhật nội dung
+                    documentSnapshot.Timestamp = DateTime.UtcNow; 
                 }
                 // Lưu thay đổi vào DB
                 await _context.SaveChangesAsync();

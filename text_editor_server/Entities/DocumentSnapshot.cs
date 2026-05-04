@@ -9,6 +9,7 @@ namespace text_editor_server.Entities
         public string JsonContent { get; set; } = string.Empty; 
         public string Title { get; set; } = string.Empty;
         public int Version { get; set; } = 0; // For Operational Transformation
+        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
     }
     
 }
