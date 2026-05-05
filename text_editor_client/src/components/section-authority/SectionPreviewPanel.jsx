@@ -18,6 +18,8 @@ const SectionPreviewPanel = ({
   showNavigationPane,
   onToggleNavigationPane,
   onSave,
+  isSaving,
+  canEdit,
   editorRef,
   onCreated,
   onContentChange,
@@ -52,6 +54,15 @@ const SectionPreviewPanel = ({
                   Đang dựng preview...
                 </span>
               ) : null}
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-medium ${
+                  canEdit
+                    ? "bg-blue-100 text-blue-700"
+                    : "bg-slate-100 text-slate-600"
+                }`}
+              >
+                {canEdit ? "Có thể chỉnh sửa" : "Chỉ xem"}
+              </span>
             </div>
 
             <p className="mt-1 text-sm text-slate-500">
@@ -76,10 +87,10 @@ const SectionPreviewPanel = ({
             <button
               type="button"
               onClick={onSave}
-              disabled={!selectedSection}
+              disabled={!selectedSection || !canEdit || isSaving}
               className="rounded-full bg-[#1a73e8] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#1765cc] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Lưu section
+              {isSaving ? "Đang lưu..." : "Lưu section"}
             </button>
           </div>
         </div>

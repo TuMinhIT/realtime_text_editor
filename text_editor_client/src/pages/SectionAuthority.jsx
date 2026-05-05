@@ -51,6 +51,16 @@ const mapPermissionToAssignment = (item) => {
   };
 };
 
+const canEditSection = (section) => {
+  const assignments = getAssignments(section);
+
+  if (!assignments.length) {
+    return false;
+  }
+
+  return assignments.some((assignment) => assignment.canEdit);
+};
+
 const SectionAuthority = () => {
   const location = useLocation();
   const { documentId } = useParams();
@@ -69,6 +79,7 @@ const SectionAuthority = () => {
   const [previewSfdt, setPreviewSfdt] = useState("");
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [newUserEmail, setNewUserEmail] = useState("");
   const [isAddingUser, setIsAddingUser] = useState(false);
   const [showNavigationPane, setShowNavigationPane] = useState(true);
@@ -81,6 +92,79 @@ const SectionAuthority = () => {
     }
 
     editor.open(sfdt);
+  };
+
+  const configureEditorPermissions = (section) => {
+    const editor = editorRef.current?.documentEditor;
+    if (!editor) {
+      return;
+    }
+
+    const canEdit = canEditSection(section);
+
+    try {
+      editor.isReadOnly = !canEdit;
+    } catch {
+      // Ignore if the editor instance does not expose read-only toggling yet.
+    }
+
+    if (!canEdit) {
+      return;
+    }
+
+    const start = section?.startBlockIndex ?? section?.start;
+    const end = section?.endBlockIndex ?? section?.end;
+
+    if (start === undefined || end === undefined) {
+      return;
+    }
+
+    const pages = editor.documentHelper?.pages || [];
+    let blockCounter = 0;
+    let startPos = null;
+    let endPos = null;
+
+    pages.forEach((page) => {
+      (page.bodyWidgets || []).forEach((body) => {
+        (body.childWidgets || []).forEach((block) => {
+          if (blockCounter === start) {
+            startPos = block.firstChild ? block.firstChild.index : block.index;
+          }
+
+          if (blockCounter === end) {
+            endPos = block.lastChild ? block.lastChild.index : block.index;
+          }
+
+          blockCounter += 1;
+        });
+      });
+    });
+
+    if (!startPos || !endPos) {
+      return;
+    }
+
+    try {
+      if (typeof editor.stopProtection === "function") {
+        editor.stopProtection("");
+      }
+
+      if (typeof editor.enforceProtection === "function") {
+        editor.enforceProtection("section-preview", "ReadOnly");
+      }
+
+      if (editor.selection && editor.editor) {
+        editor.selection.selectRange(startPos, endPos);
+        editor.editor.insertEditingRegion("Everyone");
+      }
+    } catch {
+      // Fallback to whole-preview editing when the protection API is unavailable.
+      try {
+        editor.isReadOnly = false;
+      } catch {
+        // Ignore.
+      }
+    }
   };
 
   //Lấy nội dung document để hiển thị tên tài liệu + contentDocumentContent
@@ -279,6 +363,7 @@ const SectionAuthority = () => {
 
   useEffect(() => {
     openPreview(previewSfdt);
+    configureEditorPermissions(selectedSection);
   }, [previewSfdt]);
 
   useEffect(() => {
@@ -288,13 +373,18 @@ const SectionAuthority = () => {
     }
   }, [showNavigationPane]);
 
+  useEffect(() => {
+    configureEditorPermissions(selectedSection);
+  }, [selectedSection?.id, selectedSection?.assignments, previewSfdt]);
+
   const handleCreated = () => {
     openPreview(previewSfdt);
+    configureEditorPermissions(selectedSection);
   };
 
   const handleContentChange = () => {
     const editor = editorRef.current?.documentEditor;
-    if (!editor || !selectedSection) {
+    if (!editor || !selectedSection || editor.isReadOnly) {
       return;
     }
 
@@ -421,10 +511,56 @@ const SectionAuthority = () => {
   };
 
   const handleSave = () => {
-    toast.info("Hiện tại màn này mới dựng preview section, chưa có API lưu section.");
+    const editor = editorRef.current?.documentEditor;
+    if (!editor || !selectedSection) {
+      return;
+    }
+
+    if (!canEditSection(selectedSection)) {
+      toast.warn("Section này hiện chỉ được xem, không thể lưu chỉnh sửa.");
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      const serialized = normalizeJson(editor.serialize());
+
+      setSections((current) =>
+        current.map((section) =>
+          section.id === selectedSection.id
+            ? {
+                ...section,
+                content: serialized,
+                jsonContent: serialized,
+              }
+            : section,
+        ),
+      );
+
+      setSelectedSection((current) =>
+        current
+          ? {
+              ...current,
+              content: serialized,
+              jsonContent: serialized,
+            }
+          : current,
+      );
+
+      setPreviewSfdt(serialized);
+      setOriginalPreview(serialized);
+      setIsDirty(false);
+      toast.success("Đã lưu preview section vào trạng thái hiện tại.");
+    } catch {
+      toast.error("Không thể lưu nội dung section.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const selectedAssignments = getAssignments(selectedSection);
+  const canEditSelectedSection = canEditSection(selectedSection);
 
   if (isLoading) {
     return (
@@ -462,6 +598,8 @@ const SectionAuthority = () => {
               setShowNavigationPane((current) => !current)
             }
             onSave={handleSave}
+            isSaving={isSaving}
+            canEdit={canEditSelectedSection}
             editorRef={editorRef}
             onCreated={handleCreated}
             onContentChange={handleContentChange}
