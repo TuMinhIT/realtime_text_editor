@@ -1,0 +1,1717 @@
+{
+  "optimizeSfdt": true,
+  "ahb": false,
+  "sec": [
+    {
+      "secpr": {
+        "pw": 612,
+        "ph": 792,
+        "lm": 72,
+        "rm": 72,
+        "tm": 72,
+        "bm": 72,
+        "hd": 36,
+        "fd": 36,
+        "dfp": 0,
+        "doep": 0,
+        "bi": 0,
+        "bc": "NewPage",
+        "enf": 2,
+        "fnf": 0,
+        "rif": 0,
+        "rie": 0,
+        "ifn": 1,
+        "ien": 1,
+        "pgns": "Arabic",
+        "ncols": 1,
+        "eqw": 1,
+        "lbtc": 0,
+        "cols": []
+      },
+      "b": [
+        {
+          "pf": {
+            "bdrs": {
+              "tp": {},
+              "lt": {},
+              "rg": {},
+              "bt": {},
+              "h": {},
+              "v": {}
+            },
+            "stn": "Heading 1",
+            "lif": {}
+          },
+          "cf": {
+            "id": 1066
+          },
+          "i": [
+            {
+              "cf": {
+                "id": 1066
+              },
+              "tlp": "I. GIỚI THIỆU CHUNG"
+            }
+          ]
+        },
+        {
+          "pf": {
+            "bdrs": {
+              "tp": {},
+              "lt": {},
+              "rg": {},
+              "bt": {},
+              "h": {},
+              "v": {}
+            },
+            "stn": "Heading 2",
+            "lif": {}
+          },
+          "cf": {
+            "id": 1066
+          },
+          "i": [
+            {
+              "cf": {
+                "id": 1066
+              },
+              "tlp": "1.1 Thông tin sinh viên"
+            }
+          ]
+        },
+        {
+          "pf": {
+            "bdrs": {
+              "tp": {},
+              "lt": {},
+              "rg": {},
+              "bt": {},
+              "h": {},
+              "v": {}
+            },
+            "stn": "Normal",
+            "lif": {}
+          },
+          "cf": {
+            "id": 1066
+          },
+          "i": [
+            {
+              "cf": {
+                "id": 1066
+              },
+              "tlp": "Sinh viên thực hiện báo cáo là sinh viên năm cuối chuyên ngành CNTT. Mục tiêu của kỳ thực tập là áp dụng kiến thức đã học vào dự án thực tế."
+            }
+          ]
+        },
+        {
+          "pf": {
+            "bdrs": {
+              "tp": {},
+              "lt": {},
+              "rg": {},
+              "bt": {},
+              "h": {},
+              "v": {}
+            },
+            "stn": "Heading 2",
+            "lif": {}
+          },
+          "cf": {
+            "id": 1066
+          },
+          "i": [
+            {
+              "cf": {
+                "id": 1066
+              },
+              "tlp": "1.2 Mục tiêu thực tập:"
+            }
+          ]
+        },
+        {
+          "pf": {
+            "bdrs": {
+              "tp": {},
+              "lt": {},
+              "rg": {},
+              "bt": {},
+              "h": {},
+              "v": {}
+            },
+            "stn": "List Paragraph",
+            "lif": {
+              "lid": 0,
+              "lilno": 0,
+              "nsid": 1789397582
+            }
+          },
+          "cf": {
+            "id": 1066
+          },
+          "i": [
+            {
+              "cf": {
+                "id": 1066
+              },
+              "tlp": "Hiểu quy trình phát triển phần mềm thực tế."
+            }
+          ]
+        },
+        {
+          "pf": {
+            "bdrs": {
+              "tp": {},
+              "lt": {},
+              "rg": {},
+              "bt": {},
+              "h": {},
+              "v": {}
+            },
+            "stn": "List Paragraph",
+            "lif": {
+              "lid": 0,
+              "lilno": 0,
+              "nsid": 1789397582
+            }
+          },
+          "cf": {
+            "id": 1066
+          },
+          "i": [
+            {
+              "cf": {
+                "id": 1066
+              },
+              "tlp": "Làm việc với ASP .NET Core Web API."
+            }
+          ]
+        },
+        {
+          "pf": {
+            "bdrs": {
+              "tp": {},
+              "lt": {},
+              "rg": {},
+              "bt": {},
+              "h": {},
+              "v": {}
+            },
+            "stn": "List Paragraph",
+            "lif": {
+              "lid": 0,
+              "lilno": 0,
+              "nsid": 1789397582
+            }
+          },
+          "cf": {
+            "id": 1066
+          },
+          "i": [
+            {
+              "cf": {
+                "id": 1066
+              },
+              "tlp": "Xây dựng hệ thống realtime editor."
+            }
+          ]
+        },
+        {
+          "pf": {
+            "bdrs": {
+              "tp": {},
+              "lt": {},
+              "rg": {},
+              "bt": {},
+              "h": {},
+              "v": {}
+            },
+            "stn": "Heading 1",
+            "lif": {}
+          },
+          "cf": {
+            "id": 1066
+          },
+          "i": [
+            {
+              "cf": {
+                "id": 1066
+              },
+              "tlp": "II. NỘI DUNG THỰC HIỆN"
+            }
+          ]
+        },
+        {
+          "pf": {
+            "bdrs": {
+              "tp": {},
+              "lt": {},
+              "rg": {},
+              "bt": {},
+              "h": {},
+              "v": {}
+            },
+            "stn": "Heading 2",
+            "lif": {}
+          },
+          "cf": {
+            "id": 1066
+          },
+          "i": [
+            {
+              "cf": {
+                "id": 1066
+              },
+              "tlp": "2.1 Công nghệ sử dụng:"
+            }
+          ]
+        },
+        {
+          "pf": {
+            "bdrs": {
+              "tp": {},
+              "lt": {},
+              "rg": {},
+              "bt": {},
+              "h": {},
+              "v": {}
+            },
+            "stn": "Heading 3",
+            "lif": {}
+          },
+          "cf": {
+            "id": 1066
+          },
+          "i": [
+            {
+              "cf": {
+                "id": 1066
+              },
+              "tlp": "2.1.1 ASP .NET Core"
+            }
+          ]
+        },
+        {
+          "pf": {
+            "bdrs": {
+              "tp": {},
+              "lt": {},
+              "rg": {},
+              "bt": {},
+              "h": {},
+              "v": {}
+            },
+            "stn": "Heading 3",
+            "lif": {}
+          },
+          "cf": {
+            "id": 1066
+          },
+          "i": [
+            {
+              "cf": {
+                "id": 1066
+              },
+              "tlp": "2.1.2 SQL"
+            }
+          ]
+        },
+        {
+          "pf": {
+            "bdrs": {
+              "tp": {},
+              "lt": {},
+              "rg": {},
+              "bt": {},
+              "h": {},
+              "v": {}
+            },
+            "stn": "Heading 3",
+            "lif": {}
+          },
+          "cf": {
+            "id": 1066
+          },
+          "i": [
+            {
+              "cf": {
+                "id": 1066
+              },
+              "tlp": "2.1.3 SignalR"
+            }
+          ]
+        },
+        {
+          "pf": {
+            "bdrs": {
+              "tp": {},
+              "lt": {},
+              "rg": {},
+              "bt": {},
+              "h": {},
+              "v": {}
+            },
+            "stn": "Normal",
+            "lif": {}
+          },
+          "cf": {
+            "id": 1066
+          },
+          "i": []
+        },
+        {
+          "pf": {
+            "bdrs": {
+              "tp": {},
+              "lt": {},
+              "rg": {},
+              "bt": {},
+              "h": {},
+              "v": {}
+            },
+            "stn": "Heading 2",
+            "lif": {}
+          },
+          "cf": {
+            "id": 1066
+          },
+          "i": [
+            {
+              "cf": {
+                "id": 1066
+              },
+              "tlp": "2.2 Mô tả hệ thống"
+            }
+          ]
+        },
+        {
+          "pf": {
+            "bdrs": {
+              "tp": {},
+              "lt": {},
+              "rg": {},
+              "bt": {},
+              "h": {},
+              "v": {}
+            },
+            "stn": "Normal",
+            "lif": {}
+          },
+          "cf": {
+            "id": 1066
+          },
+          "i": [
+            {
+              "cf": {
+                "id": 1066
+              },
+              "tlp": "Hệ thống được xây dựng là một trình soạn thảo văn bản realtime, cho phép nhiều người chỉnh sửa cùng lúc."
+            }
+          ]
+        },
+        {
+          "pf": {
+            "bdrs": {
+              "tp": {},
+              "lt": {},
+              "rg": {},
+              "bt": {},
+              "h": {},
+              "v": {}
+            },
+            "stn": "Normal",
+            "lif": {}
+          },
+          "cf": {
+            "id": 1066
+          },
+          "i": []
+        },
+        {
+          "pf": {
+            "bdrs": {
+              "tp": {},
+              "lt": {},
+              "rg": {},
+              "bt": {},
+              "h": {},
+              "v": {}
+            },
+            "stn": "Normal",
+            "lif": {}
+          },
+          "cf": {
+            "id": 1066
+          },
+          "i": []
+        }
+      ],
+      "hf": {}
+    }
+  ],
+  "cf": {
+    "fsz": 12,
+    "ff": "Aptos",
+    "fszbi": 12,
+    "ffbi": "minorBidi",
+    "idbi": 1025,
+    "lig": "StandardContextual",
+    "id": 1033,
+    "idfe": 1033,
+    "ffa": "minorHAnsi",
+    "ffnfe": "minorHAnsi",
+    "fffe": "minorHAnsi"
+  },
+  "pf": {
+    "bdrs": {
+      "tp": {},
+      "lt": {},
+      "rg": {},
+      "bt": {},
+      "h": {},
+      "v": {}
+    },
+    "as": 8,
+    "ls": 1.1583333015441895,
+    "lst": 0,
+    "lif": {}
+  },
+  "fst": {},
+  "tfl": {
+    "id": 1033
+  },
+  "dtw": 36,
+  "tc": 0,
+  "enf": 0,
+  "hv": "",
+  "sv": "",
+  "fmt": 0,
+  "pt": 0,
+  "dhtml": 0,
+  "ffs": 1,
+  "comp": 0,
+  "stytbl": 0,
+  "thm": {
+    "fsc": {
+      "fscn": "Office",
+      "majfs": {
+        "fsl": [
+          {
+            "n": "latin",
+            "t": "Aptos Display",
+            "p": "02110004020202020204"
+          },
+          {
+            "n": "ea",
+            "p": "02110004020202020204"
+          },
+          {
+            "n": "cs",
+            "p": "02110004020202020204"
+          }
+        ],
+        "ft": {
+          "Jpan": "游ゴシック Light",
+          "Hang": "맑은 고딕",
+          "Hans": "等线 Light",
+          "Hant": "新細明體",
+          "Arab": "Times New Roman",
+          "Hebr": "Times New Roman",
+          "Thai": "Angsana New",
+          "Ethi": "Nyala",
+          "Beng": "Vrinda",
+          "Gujr": "Shruti",
+          "Khmr": "MoolBoran",
+          "Knda": "Tunga",
+          "Guru": "Raavi",
+          "Cans": "Euphemia",
+          "Cher": "Plantagenet Cherokee",
+          "Yiii": "Microsoft Yi Baiti",
+          "Tibt": "Microsoft Himalaya",
+          "Thaa": "MV Boli",
+          "Deva": "Mangal",
+          "Telu": "Gautami",
+          "Taml": "Latha",
+          "Syrc": "Estrangelo Edessa",
+          "Orya": "Kalinga",
+          "Mlym": "Kartika",
+          "Laoo": "DokChampa",
+          "Sinh": "Iskoola Pota",
+          "Mong": "Mongolian Baiti",
+          "Viet": "Times New Roman",
+          "Uigh": "Microsoft Uighur",
+          "Geor": "Sylfaen",
+          "Armn": "Arial",
+          "Bugi": "Leelawadee UI",
+          "Bopo": "Microsoft JhengHei",
+          "Java": "Javanese Text",
+          "Lisu": "Segoe UI",
+          "Mymr": "Myanmar Text",
+          "Nkoo": "Ebrima",
+          "Olck": "Nirmala UI",
+          "Osma": "Ebrima",
+          "Phag": "Phagspa",
+          "Syrn": "Estrangelo Edessa",
+          "Syrj": "Estrangelo Edessa",
+          "Syre": "Estrangelo Edessa",
+          "Sora": "Nirmala UI",
+          "Tale": "Microsoft Tai Le",
+          "Talu": "Microsoft New Tai Lue",
+          "Tfng": "Ebrima"
+        }
+      },
+      "minfs": {
+        "fsl": [
+          {
+            "n": "latin",
+            "t": "Aptos",
+            "p": "02110004020202020204"
+          },
+          {
+            "n": "ea",
+            "p": "02110004020202020204"
+          },
+          {
+            "n": "cs",
+            "p": "02110004020202020204"
+          }
+        ],
+        "ft": {
+          "Jpan": "游明朝",
+          "Hang": "맑은 고딕",
+          "Hans": "等线",
+          "Hant": "新細明體",
+          "Arab": "Arial",
+          "Hebr": "Arial",
+          "Thai": "Cordia New",
+          "Ethi": "Nyala",
+          "Beng": "Vrinda",
+          "Gujr": "Shruti",
+          "Khmr": "DaunPenh",
+          "Knda": "Tunga",
+          "Guru": "Raavi",
+          "Cans": "Euphemia",
+          "Cher": "Plantagenet Cherokee",
+          "Yiii": "Microsoft Yi Baiti",
+          "Tibt": "Microsoft Himalaya",
+          "Thaa": "MV Boli",
+          "Deva": "Mangal",
+          "Telu": "Gautami",
+          "Taml": "Latha",
+          "Syrc": "Estrangelo Edessa",
+          "Orya": "Kalinga",
+          "Mlym": "Kartika",
+          "Laoo": "DokChampa",
+          "Sinh": "Iskoola Pota",
+          "Mong": "Mongolian Baiti",
+          "Viet": "Arial",
+          "Uigh": "Microsoft Uighur",
+          "Geor": "Sylfaen",
+          "Armn": "Arial",
+          "Bugi": "Leelawadee UI",
+          "Bopo": "Microsoft JhengHei",
+          "Java": "Javanese Text",
+          "Lisu": "Segoe UI",
+          "Mymr": "Myanmar Text",
+          "Nkoo": "Ebrima",
+          "Olck": "Nirmala UI",
+          "Osma": "Ebrima",
+          "Phag": "Phagspa",
+          "Syrn": "Estrangelo Edessa",
+          "Syrj": "Estrangelo Edessa",
+          "Syre": "Estrangelo Edessa",
+          "Sora": "Nirmala UI",
+          "Tale": "Microsoft Tai Le",
+          "Talu": "Microsoft New Tai Lue",
+          "Tfng": "Ebrima"
+        }
+      }
+    }
+  },
+  "bg": {
+    "c": "#FFFFFFFF"
+  },
+  "sty": [
+    {
+      "n": "Normal",
+      "t": 0,
+      "pf": {
+        "bdrs": {
+          "tp": {},
+          "lt": {},
+          "rg": {},
+          "bt": {},
+          "h": {},
+          "v": {}
+        },
+        "lif": {}
+      },
+      "cf": {},
+      "nx": "Normal"
+    },
+    {
+      "n": "Heading 1",
+      "t": 0,
+      "pf": {
+        "bdrs": {
+          "tp": {},
+          "lt": {},
+          "rg": {},
+          "bt": {},
+          "h": {},
+          "v": {}
+        },
+        "bs": 18,
+        "as": 4,
+        "ol": 1,
+        "klt": true,
+        "kwn": true,
+        "lif": {}
+      },
+      "cf": {
+        "fsz": 20,
+        "ff": "Aptos Display",
+        "fc": "#0F4761FF",
+        "fszbi": 20,
+        "ffbi": "majorBidi",
+        "ffa": "majorHAnsi",
+        "ffnfe": "majorHAnsi",
+        "fffe": "majorEastAsia"
+      },
+      "b": "Normal",
+      "l": "Heading 1 Char",
+      "nx": "Normal"
+    },
+    {
+      "n": "Heading 1 Char",
+      "t": 1,
+      "cf": {
+        "fsz": 20,
+        "ff": "Aptos Display",
+        "fc": "#0F4761FF",
+        "fszbi": 20,
+        "ffbi": "majorBidi",
+        "ffa": "majorHAnsi",
+        "ffnfe": "majorHAnsi",
+        "fffe": "majorEastAsia"
+      },
+      "b": "Default Paragraph Font",
+      "l": "Heading 1"
+    },
+    {
+      "n": "Default Paragraph Font",
+      "t": 1,
+      "cf": {}
+    },
+    {
+      "n": "Heading 2",
+      "t": 0,
+      "pf": {
+        "bdrs": {
+          "tp": {},
+          "lt": {},
+          "rg": {},
+          "bt": {},
+          "h": {},
+          "v": {}
+        },
+        "bs": 8,
+        "as": 4,
+        "ol": 2,
+        "klt": true,
+        "kwn": true,
+        "lif": {}
+      },
+      "cf": {
+        "fsz": 16,
+        "ff": "Aptos Display",
+        "fc": "#0F4761FF",
+        "fszbi": 16,
+        "ffbi": "majorBidi",
+        "ffa": "majorHAnsi",
+        "ffnfe": "majorHAnsi",
+        "fffe": "majorEastAsia"
+      },
+      "b": "Normal",
+      "l": "Heading 2 Char",
+      "nx": "Normal"
+    },
+    {
+      "n": "Heading 2 Char",
+      "t": 1,
+      "cf": {
+        "fsz": 16,
+        "ff": "Aptos Display",
+        "fc": "#0F4761FF",
+        "fszbi": 16,
+        "ffbi": "majorBidi",
+        "ffa": "majorHAnsi",
+        "ffnfe": "majorHAnsi",
+        "fffe": "majorEastAsia"
+      },
+      "b": "Default Paragraph Font",
+      "l": "Heading 2"
+    },
+    {
+      "n": "Heading 3",
+      "t": 0,
+      "pf": {
+        "bdrs": {
+          "tp": {},
+          "lt": {},
+          "rg": {},
+          "bt": {},
+          "h": {},
+          "v": {}
+        },
+        "bs": 8,
+        "as": 4,
+        "ol": 3,
+        "klt": true,
+        "kwn": true,
+        "lif": {}
+      },
+      "cf": {
+        "fsz": 14,
+        "fc": "#0F4761FF",
+        "fszbi": 14,
+        "ffbi": "majorBidi",
+        "fffe": "majorEastAsia"
+      },
+      "b": "Normal",
+      "l": "Heading 3 Char",
+      "nx": "Normal"
+    },
+    {
+      "n": "Heading 3 Char",
+      "t": 1,
+      "cf": {
+        "fsz": 14,
+        "fc": "#0F4761FF",
+        "fszbi": 14,
+        "ffbi": "majorBidi",
+        "fffe": "majorEastAsia"
+      },
+      "b": "Default Paragraph Font",
+      "l": "Heading 3"
+    },
+    {
+      "n": "Heading 4",
+      "t": 0,
+      "pf": {
+        "bdrs": {
+          "tp": {},
+          "lt": {},
+          "rg": {},
+          "bt": {},
+          "h": {},
+          "v": {}
+        },
+        "bs": 4,
+        "as": 2,
+        "ol": 4,
+        "klt": true,
+        "kwn": true,
+        "lif": {}
+      },
+      "cf": {
+        "i": true,
+        "fc": "#0F4761FF",
+        "ibi": true,
+        "ffbi": "majorBidi",
+        "fffe": "majorEastAsia"
+      },
+      "b": "Normal",
+      "l": "Heading 4 Char",
+      "nx": "Normal"
+    },
+    {
+      "n": "Heading 4 Char",
+      "t": 1,
+      "cf": {
+        "i": true,
+        "fc": "#0F4761FF",
+        "ibi": true,
+        "ffbi": "majorBidi",
+        "fffe": "majorEastAsia"
+      },
+      "b": "Default Paragraph Font",
+      "l": "Heading 4"
+    },
+    {
+      "n": "Heading 5",
+      "t": 0,
+      "pf": {
+        "bdrs": {
+          "tp": {},
+          "lt": {},
+          "rg": {},
+          "bt": {},
+          "h": {},
+          "v": {}
+        },
+        "bs": 4,
+        "as": 2,
+        "ol": 5,
+        "klt": true,
+        "kwn": true,
+        "lif": {}
+      },
+      "cf": {
+        "fc": "#0F4761FF",
+        "ffbi": "majorBidi",
+        "fffe": "majorEastAsia"
+      },
+      "b": "Normal",
+      "l": "Heading 5 Char",
+      "nx": "Normal"
+    },
+    {
+      "n": "Heading 5 Char",
+      "t": 1,
+      "cf": {
+        "fc": "#0F4761FF",
+        "ffbi": "majorBidi",
+        "fffe": "majorEastAsia"
+      },
+      "b": "Default Paragraph Font",
+      "l": "Heading 5"
+    },
+    {
+      "n": "Heading 6",
+      "t": 0,
+      "pf": {
+        "bdrs": {
+          "tp": {},
+          "lt": {},
+          "rg": {},
+          "bt": {},
+          "h": {},
+          "v": {}
+        },
+        "bs": 2,
+        "as": 0,
+        "ol": 6,
+        "klt": true,
+        "kwn": true,
+        "lif": {}
+      },
+      "cf": {
+        "i": true,
+        "fc": "#595959FF",
+        "ibi": true,
+        "ffbi": "majorBidi",
+        "fffe": "majorEastAsia"
+      },
+      "b": "Normal",
+      "l": "Heading 6 Char",
+      "nx": "Normal"
+    },
+    {
+      "n": "Heading 6 Char",
+      "t": 1,
+      "cf": {
+        "i": true,
+        "fc": "#595959FF",
+        "ibi": true,
+        "ffbi": "majorBidi",
+        "fffe": "majorEastAsia"
+      },
+      "b": "Default Paragraph Font",
+      "l": "Heading 6"
+    },
+    {
+      "n": "Heading 7",
+      "t": 0,
+      "pf": {
+        "bdrs": {
+          "tp": {},
+          "lt": {},
+          "rg": {},
+          "bt": {},
+          "h": {},
+          "v": {}
+        },
+        "bs": 2,
+        "as": 0,
+        "ol": 7,
+        "klt": true,
+        "kwn": true,
+        "lif": {}
+      },
+      "cf": {
+        "fc": "#595959FF",
+        "ffbi": "majorBidi",
+        "fffe": "majorEastAsia"
+      },
+      "b": "Normal",
+      "l": "Heading 7 Char",
+      "nx": "Normal"
+    },
+    {
+      "n": "Heading 7 Char",
+      "t": 1,
+      "cf": {
+        "fc": "#595959FF",
+        "ffbi": "majorBidi",
+        "fffe": "majorEastAsia"
+      },
+      "b": "Default Paragraph Font",
+      "l": "Heading 7"
+    },
+    {
+      "n": "Heading 8",
+      "t": 0,
+      "pf": {
+        "bdrs": {
+          "tp": {},
+          "lt": {},
+          "rg": {},
+          "bt": {},
+          "h": {},
+          "v": {}
+        },
+        "as": 0,
+        "ol": 8,
+        "klt": true,
+        "kwn": true,
+        "lif": {}
+      },
+      "cf": {
+        "i": true,
+        "fc": "#272727FF",
+        "ibi": true,
+        "ffbi": "majorBidi",
+        "fffe": "majorEastAsia"
+      },
+      "b": "Normal",
+      "l": "Heading 8 Char",
+      "nx": "Normal"
+    },
+    {
+      "n": "Heading 8 Char",
+      "t": 1,
+      "cf": {
+        "i": true,
+        "fc": "#272727FF",
+        "ibi": true,
+        "ffbi": "majorBidi",
+        "fffe": "majorEastAsia"
+      },
+      "b": "Default Paragraph Font",
+      "l": "Heading 8"
+    },
+    {
+      "n": "Heading 9",
+      "t": 0,
+      "pf": {
+        "bdrs": {
+          "tp": {},
+          "lt": {},
+          "rg": {},
+          "bt": {},
+          "h": {},
+          "v": {}
+        },
+        "as": 0,
+        "ol": 9,
+        "klt": true,
+        "kwn": true,
+        "lif": {}
+      },
+      "cf": {
+        "fc": "#272727FF",
+        "ffbi": "majorBidi",
+        "fffe": "majorEastAsia"
+      },
+      "b": "Normal",
+      "l": "Heading 9 Char",
+      "nx": "Normal"
+    },
+    {
+      "n": "Heading 9 Char",
+      "t": 1,
+      "cf": {
+        "fc": "#272727FF",
+        "ffbi": "majorBidi",
+        "fffe": "majorEastAsia"
+      },
+      "b": "Default Paragraph Font",
+      "l": "Heading 9"
+    },
+    {
+      "n": "Normal Table",
+      "t": 2,
+      "nx": "Normal Table"
+    },
+    {
+      "n": "Title",
+      "t": 0,
+      "pf": {
+        "bdrs": {
+          "tp": {},
+          "lt": {},
+          "rg": {},
+          "bt": {},
+          "h": {},
+          "v": {}
+        },
+        "as": 4,
+        "ls": 1,
+        "lst": 0,
+        "cs": true,
+        "lif": {}
+      },
+      "cf": {
+        "fsz": 28,
+        "ff": "Aptos Display",
+        "fszbi": 28,
+        "ffbi": "majorBidi",
+        "ffa": "majorHAnsi",
+        "ffnfe": "majorHAnsi",
+        "fffe": "majorEastAsia",
+        "csp": -0.5
+      },
+      "b": "Normal",
+      "l": "Title Char",
+      "nx": "Normal"
+    },
+    {
+      "n": "Title Char",
+      "t": 1,
+      "cf": {
+        "fsz": 28,
+        "ff": "Aptos Display",
+        "fszbi": 28,
+        "ffbi": "majorBidi",
+        "ffa": "majorHAnsi",
+        "ffnfe": "majorHAnsi",
+        "fffe": "majorEastAsia",
+        "csp": -0.5
+      },
+      "b": "Default Paragraph Font",
+      "l": "Title"
+    },
+    {
+      "n": "Subtitle",
+      "t": 0,
+      "pf": {
+        "bdrs": {
+          "tp": {},
+          "lt": {},
+          "rg": {},
+          "bt": {},
+          "h": {},
+          "v": {}
+        },
+        "lif": {
+          "lilno": 1
+        }
+      },
+      "cf": {
+        "fsz": 14,
+        "fc": "#595959FF",
+        "fszbi": 14,
+        "ffbi": "majorBidi",
+        "fffe": "majorEastAsia",
+        "csp": 0.75
+      },
+      "b": "Normal",
+      "l": "Subtitle Char",
+      "nx": "Normal"
+    },
+    {
+      "n": "Subtitle Char",
+      "t": 1,
+      "cf": {
+        "fsz": 14,
+        "fc": "#595959FF",
+        "fszbi": 14,
+        "ffbi": "majorBidi",
+        "fffe": "majorEastAsia",
+        "csp": 0.75
+      },
+      "b": "Default Paragraph Font",
+      "l": "Subtitle"
+    },
+    {
+      "n": "Quote",
+      "t": 0,
+      "pf": {
+        "bdrs": {
+          "tp": {},
+          "lt": {},
+          "rg": {},
+          "bt": {},
+          "h": {},
+          "v": {}
+        },
+        "ta": 1,
+        "bs": 8,
+        "lif": {}
+      },
+      "cf": {
+        "i": true,
+        "fc": "#404040FF",
+        "ibi": true
+      },
+      "b": "Normal",
+      "l": "Quote Char",
+      "nx": "Normal"
+    },
+    {
+      "n": "Quote Char",
+      "t": 1,
+      "cf": {
+        "i": true,
+        "fc": "#404040FF",
+        "ibi": true
+      },
+      "b": "Default Paragraph Font",
+      "l": "Quote"
+    },
+    {
+      "n": "List Paragraph",
+      "t": 0,
+      "pf": {
+        "bdrs": {
+          "tp": {},
+          "lt": {},
+          "rg": {},
+          "bt": {},
+          "h": {},
+          "v": {}
+        },
+        "lin": 36,
+        "cs": true,
+        "lif": {}
+      },
+      "cf": {},
+      "b": "Normal",
+      "nx": "List Paragraph"
+    },
+    {
+      "n": "Intense Emphasis",
+      "t": 1,
+      "cf": {
+        "i": true,
+        "fc": "#0F4761FF",
+        "ibi": true
+      },
+      "b": "Default Paragraph Font"
+    },
+    {
+      "n": "Intense Quote",
+      "t": 0,
+      "pf": {
+        "bdrs": {
+          "tp": {
+            "c": "#0F4761FF",
+            "hns": 0,
+            "ls": 0,
+            "lw": 0.5,
+            "sh": 0,
+            "sp": 10
+          },
+          "lt": {},
+          "rg": {},
+          "bt": {
+            "c": "#0F4761FF",
+            "hns": 0,
+            "ls": 0,
+            "lw": 0.5,
+            "sh": 0,
+            "sp": 10
+          },
+          "h": {},
+          "v": {}
+        },
+        "lin": 43.20000076293945,
+        "rin": 43.20000076293945,
+        "ta": 1,
+        "bs": 18,
+        "as": 18,
+        "lif": {}
+      },
+      "cf": {
+        "i": true,
+        "fc": "#0F4761FF",
+        "ibi": true
+      },
+      "b": "Normal",
+      "l": "Intense Quote Char",
+      "nx": "Normal"
+    },
+    {
+      "n": "Intense Quote Char",
+      "t": 1,
+      "cf": {
+        "i": true,
+        "fc": "#0F4761FF",
+        "ibi": true
+      },
+      "b": "Default Paragraph Font",
+      "l": "Intense Quote"
+    },
+    {
+      "n": "Intense Reference",
+      "t": 1,
+      "cf": {
+        "b": true,
+        "fc": "#0F4761FF",
+        "bbi": true,
+        "csp": 0.25
+      },
+      "b": "Default Paragraph Font"
+    },
+    {
+      "n": "Header",
+      "t": 0,
+      "pf": {
+        "bdrs": {
+          "tp": {},
+          "lt": {},
+          "rg": {},
+          "bt": {},
+          "h": {},
+          "v": {}
+        },
+        "as": 0,
+        "ls": 1,
+        "lst": 0,
+        "lif": {}
+      },
+      "cf": {},
+      "b": "Normal",
+      "nx": "Header"
+    },
+    {
+      "n": "Footer",
+      "t": 0,
+      "pf": {
+        "bdrs": {
+          "tp": {},
+          "lt": {},
+          "rg": {},
+          "bt": {},
+          "h": {},
+          "v": {}
+        },
+        "as": 0,
+        "ls": 1,
+        "lst": 0,
+        "lif": {}
+      },
+      "cf": {},
+      "b": "Normal",
+      "nx": "Footer"
+    }
+  ],
+  "li": [
+    {
+      "alid": 0,
+      "lo": [],
+      "lid": 0,
+      "nsid": 1789397582
+    }
+  ],
+  "al": [
+    {
+      "alid": 0,
+      "nsid": 1789397582,
+      "lvl": [
+        {
+          "cf": {
+            "ff": "Symbol",
+            "fht": 0,
+            "ffa": "Symbol",
+            "ffnfe": "Symbol"
+          },
+          "pf": {
+            "bdrs": {
+              "tp": {},
+              "lt": {},
+              "rg": {},
+              "bt": {},
+              "h": {},
+              "v": {}
+            },
+            "lin": 36,
+            "fin": -18,
+            "lif": {}
+          },
+          "isLgl": 0,
+          "fchar": 0,
+          "lilp": 10,
+          "nf": "",
+          "psty": "",
+          "rl": 0,
+          "sa": 0
+        },
+        {
+          "cf": {
+            "ff": "Courier New",
+            "fht": 0,
+            "ffbi": "Courier New",
+            "ffa": "Courier New",
+            "ffnfe": "Courier New"
+          },
+          "pf": {
+            "bdrs": {
+              "tp": {},
+              "lt": {},
+              "rg": {},
+              "bt": {},
+              "h": {},
+              "v": {}
+            },
+            "lin": 72,
+            "fin": -18,
+            "lif": {}
+          },
+          "isLgl": 0,
+          "fchar": 0,
+          "lilp": 10,
+          "nf": "o",
+          "psty": "",
+          "rl": 0,
+          "sa": 0
+        },
+        {
+          "cf": {
+            "ff": "Wingdings",
+            "fht": 0,
+            "ffa": "Wingdings",
+            "ffnfe": "Wingdings"
+          },
+          "pf": {
+            "bdrs": {
+              "tp": {},
+              "lt": {},
+              "rg": {},
+              "bt": {},
+              "h": {},
+              "v": {}
+            },
+            "lin": 108,
+            "fin": -18,
+            "lif": {}
+          },
+          "isLgl": 0,
+          "fchar": 0,
+          "lilp": 10,
+          "nf": "",
+          "psty": "",
+          "rl": 0,
+          "sa": 0
+        },
+        {
+          "cf": {
+            "ff": "Symbol",
+            "fht": 0,
+            "ffa": "Symbol",
+            "ffnfe": "Symbol"
+          },
+          "pf": {
+            "bdrs": {
+              "tp": {},
+              "lt": {},
+              "rg": {},
+              "bt": {},
+              "h": {},
+              "v": {}
+            },
+            "lin": 144,
+            "fin": -18,
+            "lif": {}
+          },
+          "isLgl": 0,
+          "fchar": 0,
+          "lilp": 10,
+          "nf": "",
+          "psty": "",
+          "rl": 0,
+          "sa": 0
+        },
+        {
+          "cf": {
+            "ff": "Courier New",
+            "fht": 0,
+            "ffbi": "Courier New",
+            "ffa": "Courier New",
+            "ffnfe": "Courier New"
+          },
+          "pf": {
+            "bdrs": {
+              "tp": {},
+              "lt": {},
+              "rg": {},
+              "bt": {},
+              "h": {},
+              "v": {}
+            },
+            "lin": 180,
+            "fin": -18,
+            "lif": {}
+          },
+          "isLgl": 0,
+          "fchar": 0,
+          "lilp": 10,
+          "nf": "o",
+          "psty": "",
+          "rl": 0,
+          "sa": 0
+        },
+        {
+          "cf": {
+            "ff": "Wingdings",
+            "fht": 0,
+            "ffa": "Wingdings",
+            "ffnfe": "Wingdings"
+          },
+          "pf": {
+            "bdrs": {
+              "tp": {},
+              "lt": {},
+              "rg": {},
+              "bt": {},
+              "h": {},
+              "v": {}
+            },
+            "lin": 216,
+            "fin": -18,
+            "lif": {}
+          },
+          "isLgl": 0,
+          "fchar": 0,
+          "lilp": 10,
+          "nf": "",
+          "psty": "",
+          "rl": 0,
+          "sa": 0
+        },
+        {
+          "cf": {
+            "ff": "Symbol",
+            "fht": 0,
+            "ffa": "Symbol",
+            "ffnfe": "Symbol"
+          },
+          "pf": {
+            "bdrs": {
+              "tp": {},
+              "lt": {},
+              "rg": {},
+              "bt": {},
+              "h": {},
+              "v": {}
+            },
+            "lin": 252,
+            "fin": -18,
+            "lif": {}
+          },
+          "isLgl": 0,
+          "fchar": 0,
+          "lilp": 10,
+          "nf": "",
+          "psty": "",
+          "rl": 0,
+          "sa": 0
+        },
+        {
+          "cf": {
+            "ff": "Courier New",
+            "fht": 0,
+            "ffbi": "Courier New",
+            "ffa": "Courier New",
+            "ffnfe": "Courier New"
+          },
+          "pf": {
+            "bdrs": {
+              "tp": {},
+              "lt": {},
+              "rg": {},
+              "bt": {},
+              "h": {},
+              "v": {}
+            },
+            "lin": 288,
+            "fin": -18,
+            "lif": {}
+          },
+          "isLgl": 0,
+          "fchar": 0,
+          "lilp": 10,
+          "nf": "o",
+          "psty": "",
+          "rl": 0,
+          "sa": 0
+        },
+        {
+          "cf": {
+            "ff": "Wingdings",
+            "fht": 0,
+            "ffa": "Wingdings",
+            "ffnfe": "Wingdings"
+          },
+          "pf": {
+            "bdrs": {
+              "tp": {},
+              "lt": {},
+              "rg": {},
+              "bt": {},
+              "h": {},
+              "v": {}
+            },
+            "lin": 324,
+            "fin": -18,
+            "lif": {}
+          },
+          "isLgl": 0,
+          "fchar": 0,
+          "lilp": 10,
+          "nf": "",
+          "psty": "",
+          "rl": 0,
+          "sa": 0
+        }
+      ]
+    }
+  ],
+  "cm": [],
+  "r": [],
+  "cx": [],
+  "imgs": {},
+  "fn": {
+    "s": [
+      {
+        "pf": {
+          "bdrs": {
+            "tp": {},
+            "lt": {},
+            "rg": {},
+            "bt": {},
+            "h": {},
+            "v": {}
+          },
+          "stn": "Normal",
+          "lif": {}
+        },
+        "cf": {},
+        "i": [
+          {
+            "cf": {},
+            "tlp": "\u0003"
+          }
+        ]
+      }
+    ],
+    "cs": [
+      {
+        "pf": {
+          "bdrs": {
+            "tp": {},
+            "lt": {},
+            "rg": {},
+            "bt": {},
+            "h": {},
+            "v": {}
+          },
+          "stn": "Normal",
+          "lif": {}
+        },
+        "cf": {},
+        "i": [
+          {
+            "cf": {},
+            "tlp": "\u0004"
+          }
+        ]
+      }
+    ],
+    "cn": [
+      {
+        "pf": {
+          "bdrs": {
+            "tp": {},
+            "lt": {},
+            "rg": {},
+            "bt": {},
+            "h": {},
+            "v": {}
+          },
+          "stn": "Normal",
+          "lif": {}
+        },
+        "cf": {},
+        "i": []
+      }
+    ]
+  },
+  "en": {
+    "s": [
+      {
+        "pf": {
+          "bdrs": {
+            "tp": {},
+            "lt": {},
+            "rg": {},
+            "bt": {},
+            "h": {},
+            "v": {}
+          },
+          "stn": "Normal",
+          "lif": {}
+        },
+        "cf": {},
+        "i": [
+          {
+            "cf": {},
+            "tlp": "\u0003"
+          }
+        ]
+      }
+    ],
+    "cs": [
+      {
+        "pf": {
+          "bdrs": {
+            "tp": {},
+            "lt": {},
+            "rg": {},
+            "bt": {},
+            "h": {},
+            "v": {}
+          },
+          "stn": "Normal",
+          "lif": {}
+        },
+        "cf": {},
+        "i": [
+          {
+            "cf": {},
+            "tlp": "\u0004"
+          }
+        ]
+      }
+    ],
+    "cn": [
+      {
+        "pf": {
+          "bdrs": {
+            "tp": {},
+            "lt": {},
+            "rg": {},
+            "bt": {},
+            "h": {},
+            "v": {}
+          },
+          "stn": "Normal",
+          "lif": {}
+        },
+        "cf": {},
+        "i": []
+      }
+    ]
+  }
+}
