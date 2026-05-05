@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace text_editor_server.Migrations
 {
     /// <inheritdoc />
-    public partial class inidata : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -109,9 +109,7 @@ namespace text_editor_server.Migrations
                     Level = table.Column<int>(type: "int", nullable: false),
                     OrderIndex = table.Column<int>(type: "int", nullable: false),
                     ParentSectionId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    StartBlockIndex = table.Column<int>(type: "int", nullable: false),
-                    EndBlockIndex = table.Column<int>(type: "int", nullable: false),
-                    HeadingText = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Version = table.Column<int>(type: "int", nullable: false),
                     Timestamp = table.Column<long>(type: "bigint", nullable: false)
                 },

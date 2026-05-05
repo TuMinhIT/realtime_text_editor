@@ -2,6 +2,7 @@
 using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Syncfusion.EJ2.DocumentEditor;
 using text_editor_server.Data;
 using text_editor_server.DTOs.res;
@@ -308,7 +309,36 @@ namespace text_editor_server.Services
                 }
                 await _context.SaveChangesAsync();
 				// Trigger background section parsing
-				await _sectionParser.ParseNow(documentSnapshot);
+				await _sectionParser.ParseNow(documentId);
+
+				//Kiểm thử ghép section:
+				var sections = await _context.Sections
+					.Where(s => s.DocumentId == documentId)
+					.OrderBy(s => s.OrderIndex)
+					.ToListAsync();
+
+				//Sfdt gốc ban đầu:
+				var originalSfdt = JObject.Parse(newContent);
+
+				//Gọi hàm rebuild lại:
+				var rebuiltSfdt = _sectionParser.RebuildSfdt(sections, originalSfdt);
+
+				//log thử kq để so sánh kết quả sơ bộ:
+				_logger.LogInformation("Rebuilt SFDT: {RebuiltSfdt}", rebuiltSfdt);
+
+                //So sánh JSON:
+                var isEqual = JToken.DeepEquals(
+					JObject.Parse(newContent),
+					JObject.Parse(rebuiltSfdt)
+                );
+
+				_logger.LogInformation("Is original SFDT equal to rebuilt SFDT? {IsEqual}", isEqual);
+
+				//Xuất file để kiểm thử thủ công:
+				await _sectionParser.ExportDebugFiles(documentId, newContent);
+
+
+				//END TEST
                 return true;
 
             }
