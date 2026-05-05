@@ -23,6 +23,8 @@ namespace text_editor_server.Controllers
             _sectionParse = sectionParse;
         }
 
+
+        //Hàm get tất cả section của một document:
         [HttpGet("document/{documentId:guid}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllSectionsByDocument(Guid documentId)
@@ -35,7 +37,7 @@ namespace text_editor_server.Controllers
             return Ok(result.Data);
         }
 
-
+        //Hàm get tất cả user có quyền trên một section:
         [HttpGet("{sectionId:guid}/users")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetSectionUsers(Guid sectionId)
@@ -49,6 +51,7 @@ namespace text_editor_server.Controllers
             return Ok(result.Data);
         }
 
+        //Hàm assign quyền cho user trên một section:
         [HttpPost("assign-user")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AssignUserToSection([FromBody] AssignBlockPermissionReq request)
@@ -72,6 +75,8 @@ namespace text_editor_server.Controllers
             return Ok(result.Data);
         }
 
+
+        //Hàm remove quyền của user trên một section:
         [HttpDelete("{sectionId:guid}/users/{userId:guid}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> RemoveUserFromSection(Guid sectionId, Guid userId)

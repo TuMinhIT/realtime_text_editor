@@ -4,6 +4,8 @@ const resource = "/section";
 const toError = (err) => err?.response?.data || err;
 
 export const sectionService = {
+
+  //Lấy tất cả section của document
   async getAllSectionsByDocument(documentId) {
     try {
       const res = await http.get(`${resource}/document/${documentId}`);
@@ -13,6 +15,7 @@ export const sectionService = {
     }
   },
 
+  //Lấy chi tiết section
   async getDocumentBlocks(documentId) {
     try {
       const res = await http.get(`${resource}/${documentId}/blocks`);
@@ -22,6 +25,7 @@ export const sectionService = {
     }
   },
 
+  //Hiển thị tên tài liệu + contentDocumentContent
   async getDocumentContent(documentId) {
     try {
       const res = await http.get(`${resource}/${documentId}/content`);
