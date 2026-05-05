@@ -307,11 +307,10 @@ namespace text_editor_server.Services
                     documentSnapshot.JsonContent= newContent;
                 }
                 await _context.SaveChangesAsync();
-
-                // Trigger background section parsing
-                await _sectionParser.ParseNow(documentId);
-
+				// Trigger background section parsing
+				await _sectionParser.ParseNow(documentSnapshot);
                 return true;
+
             }
             catch (Exception ex)
             {
@@ -319,9 +318,5 @@ namespace text_editor_server.Services
                 return false;
             }
         }
-
     }
-
-
-
 }

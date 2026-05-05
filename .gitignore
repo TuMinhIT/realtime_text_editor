@@ -36,3 +36,5 @@ TestResults/
 *.snupkg
 artifacts/
 .env
+appsettings.json
+appsettings.Development.json

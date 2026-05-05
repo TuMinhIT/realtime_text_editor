@@ -16,18 +16,18 @@ namespace text_editor_server.Controllers
             _sectionService = sectionService;
         }
 
-        [HttpGet]
+        [HttpGet("document/{documentId:guid}")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetAllSections()
+        public async Task<IActionResult> GetAllSectionsByDocument(Guid documentId)
         {
-            var result = await _sectionService.GetAllSectionsForAdminAsync();
+            var result = await _sectionService.GetAllSectionsByDocumentAsync(documentId);
             if (!result.Success)
             {
                 return BadRequest(new { message = result.Message });
             }
-
             return Ok(result.Data);
         }
+
 
         [HttpGet("{sectionId:guid}/users")]
         [Authorize(Roles = "Admin")]

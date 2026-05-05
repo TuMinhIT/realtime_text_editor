@@ -1,10 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json.Linq;
 using text_editor_server.Data;
 using text_editor_server.DTOs.res;
 using text_editor_server.Entities;
 
 namespace text_editor_server.Services
-{       
+{
     public class SectionService
     {
         private readonly AppDbContext _context;
@@ -109,14 +110,18 @@ namespace text_editor_server.Services
             return ServiceResult<bool>.Ok(true);
         }
 
-        public async Task<ServiceResult<List<Section>>> GetAllSectionsForAdminAsync()
+        public async Task<ServiceResult<List<Section>>> GetAllSectionsByDocumentAsync(Guid documentId)
         {
-            // Trong thực tế, bạn có thể map sang một DTO khác nếu không muốn trả thẳng Entity ra view
             var sections = await _context.Sections
                 .AsNoTracking()
+                .Where(s => s.DocumentId == documentId)
+                .OrderBy(s => s.OrderIndex)
                 .ToListAsync();
 
             return ServiceResult<List<Section>>.Ok(sections);
         }
+
+       
+       
     }
 }

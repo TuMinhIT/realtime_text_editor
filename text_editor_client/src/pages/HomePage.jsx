@@ -173,8 +173,12 @@ const HomePage = () => {
     navigate(`document/${documentId}`);
   };
 
-  const openSectionAuthority = (documentId) => {
-    navigate(`sections/${documentId}`);
+  const openSectionAuthority = (documentId, title) => {
+    navigate(`sections/${documentId}`, {
+      state: {
+        documentTitle: title,
+      },
+    });
   };
 
   const handleLogout = () => {
@@ -360,7 +364,9 @@ const HomePage = () => {
                         </button>
                         <button
                           type="button"
-                          onClick={() => openSectionAuthority(doc.id)}
+                          onClick={() =>
+                            openSectionAuthority(doc.id, doc.title)
+                          }
                           className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-3 py-1.5 text-sm font-medium transition hover:bg-red-400"
                         >
                           <UserCheck size={15} />

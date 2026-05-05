@@ -1,33 +1,11 @@
 import { http } from "./http";
 
-const resource = "/sections";
-
-export const AuthoritySectionService = {
-  async uploadDocument(file, title) {
+const resource = "/section";
+export const sectionService = {
+  async getAllSectionsByDocument(documentId) {
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      if (title?.trim()) {
-        formData.append("title", title.trim());
-      }
-
-      const res = await http.post(`${resource}/upload`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
+      const res = await http.get(`${resource}/document/${documentId}`);
       return res.data;
-    } catch (err) {
-      throw toError(err);
-    }
-  },
-
-  async getAllDocuments() {
-    try {
-      const res = await http.get(`${resource}/getAll`);
-      return normalizeListResponse(res.data);
     } catch (err) {
       throw toError(err);
     }
@@ -84,4 +62,4 @@ export const AuthoritySectionService = {
   },
 };
 
-export default AuthoritySectionService;
+export default sectionService;

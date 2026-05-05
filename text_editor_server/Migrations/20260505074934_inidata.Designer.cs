@@ -12,8 +12,8 @@ using text_editor_server.Data;
 namespace text_editor_server.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260504162836_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260505074934_inidata")]
+    partial class inidata
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,52 @@ namespace text_editor_server.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("Section", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("DocumentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("EndBlockIndex")
+                        .HasColumnType("int");
+
+                    b.Property<string>("HeadingText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OrderIndex")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("ParentSectionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("StartBlockIndex")
+                        .HasColumnType("int");
+
+                    b.Property<long>("Timestamp")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DocumentId");
+
+                    b.HasIndex("ParentSectionId");
+
+                    b.ToTable("Sections");
+                });
 
             modelBuilder.Entity("text_editor_server.Entities.Document", b =>
                 {
@@ -133,47 +179,6 @@ namespace text_editor_server.Migrations
                     b.ToTable("RefreshTokens");
                 });
 
-            modelBuilder.Entity("text_editor_server.Entities.Section", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid>("DocumentId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("Level")
-                        .HasColumnType("int");
-
-                    b.Property<int>("OrderIndex")
-                        .HasColumnType("int");
-
-                    b.Property<Guid?>("ParentSectionId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<long>("Timestamp")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Version")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DocumentId");
-
-                    b.HasIndex("ParentSectionId");
-
-                    b.ToTable("Sections");
-                });
-
             modelBuilder.Entity("text_editor_server.Entities.SectionPermission", b =>
                 {
                     b.Property<Guid>("Id")
@@ -234,6 +239,21 @@ namespace text_editor_server.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("Section", b =>
+                {
+                    b.HasOne("text_editor_server.Entities.Document", null)
+                        .WithMany("Sections")
+                        .HasForeignKey("DocumentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Section", "ParentSection")
+                        .WithMany()
+                        .HasForeignKey("ParentSectionId");
+
+                    b.Navigation("ParentSection");
+                });
+
             modelBuilder.Entity("text_editor_server.Entities.Document", b =>
                 {
                     b.HasOne("text_editor_server.Entities.User", "Creator")
@@ -265,24 +285,9 @@ namespace text_editor_server.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("text_editor_server.Entities.Section", b =>
-                {
-                    b.HasOne("text_editor_server.Entities.Document", null)
-                        .WithMany("Sections")
-                        .HasForeignKey("DocumentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("text_editor_server.Entities.Section", "ParentSection")
-                        .WithMany("Children")
-                        .HasForeignKey("ParentSectionId");
-
-                    b.Navigation("ParentSection");
-                });
-
             modelBuilder.Entity("text_editor_server.Entities.SectionPermission", b =>
                 {
-                    b.HasOne("text_editor_server.Entities.Section", "Section")
+                    b.HasOne("Section", "Section")
                         .WithMany("Assignments")
                         .HasForeignKey("SectionId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -297,16 +302,14 @@ namespace text_editor_server.Migrations
                     b.Navigation("Section");
                 });
 
+            modelBuilder.Entity("Section", b =>
+                {
+                    b.Navigation("Assignments");
+                });
+
             modelBuilder.Entity("text_editor_server.Entities.Document", b =>
                 {
                     b.Navigation("Sections");
-                });
-
-            modelBuilder.Entity("text_editor_server.Entities.Section", b =>
-                {
-                    b.Navigation("Assignments");
-
-                    b.Navigation("Children");
                 });
 
             modelBuilder.Entity("text_editor_server.Entities.User", b =>

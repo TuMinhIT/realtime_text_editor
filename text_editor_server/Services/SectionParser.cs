@@ -14,26 +14,30 @@ namespace text_editor_server.Services
         {
             _db = db;
             _logger = logger;
-        }
+        }   
 
-       
-        public async Task ParseNow(Guid documentId)
+        public async Task ParseNow(DocumentSnapshot documentSnapshot)
         {
             try
             {
-                var snapshot = await _db.DocumentSnapshots
-                    .FirstOrDefaultAsync(x => x.DocumentId == documentId);
-
+                var snapshot = documentSnapshot;
+                var documentId = snapshot.DocumentId;
                 if (snapshot == null)
                 {
                     _logger.LogWarning("Snapshot not found: {DocumentId}", documentId);
                     return;
                 }
 
-                var sections = ParseSectionsFromSfdt(snapshot.JsonContent, documentId);
+                //kiểm tra đã tách section chưa, nếu đã tách rồi thì thôi
+                var existingSections = _db.Sections.Where(x => x.DocumentId == documentId);
+                if (existingSections.Any())
+                {
+                    _logger.LogInformation("Sections already exist for document {DocumentId}, skipping parsing",
+                        documentId);
+                    return;
+                }
 
-                var old = _db.Sections.Where(x => x.DocumentId == documentId);
-                _db.Sections.RemoveRange(old);
+                var sections = ParseSectionsFromSfdt(snapshot.JsonContent, documentId);
 
                 _db.Sections.AddRange(sections);
                 await _db.SaveChangesAsync();
@@ -43,12 +47,12 @@ namespace text_editor_server.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "ParseNow failed for document {DocumentId}", documentId);
+                _logger.LogError(ex, "ParseNow failed for document {DocumentId}", documentSnapshot.DocumentId);
                 throw;
             }
         }
 
-        //Hàm parse SFDT và lưu vào database
+        //Hàm parse SFDT và lưu vào database (chỉ lưu range block)
         private List<Section> ParseSectionsFromSfdt(string sfdtJson, Guid documentId)
         {
             var sections = new List<Section>();
@@ -72,6 +76,8 @@ namespace text_editor_server.Services
             }
 
             int orderIndex = 0;
+            int blockIndex = 0;
+            bool hasAnySection = false;
 
             foreach (var sec in secArray)
             {
@@ -80,7 +86,6 @@ namespace text_editor_server.Services
 
                 var sectionStack = new Stack<Section>();
                 Section? currentSection = null;
-                var contentBuffer = new List<JToken>();
 
                 foreach (var block in blocks)
                 {
@@ -96,16 +101,12 @@ namespace text_editor_server.Services
 
                         if (isHeading)
                         {
-                            // flush section cũ
-                            if (currentSection != null)
+                            if (currentSection != null && currentSection.EndBlockIndex == 0)
                             {
-                                currentSection.Content = BuildSfdt(contentBuffer);
+                                currentSection.EndBlockIndex = blockIndex;
                                 sections.Add(currentSection);
                             }
 
-                            contentBuffer.Clear();
-
-                            // handle hierarchy
                             while (sectionStack.Count > 0 &&
                                    sectionStack.Peek().Level >= level)
                             {
@@ -124,32 +125,47 @@ namespace text_editor_server.Services
                                 Level = level,
                                 OrderIndex = orderIndex++,
                                 ParentSectionId = parentId,
+                                StartBlockIndex = blockIndex,
+                                EndBlockIndex = 0,
                                 Version = 0,
                                 Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
                             };
 
                             sectionStack.Push(newSection);
                             currentSection = newSection;
+                            hasAnySection = true;
                         }
-                        else
-                        {
-                            // content belongs to current section
-                            if (currentSection != null)
-                            {
-                                contentBuffer.Add(block);
-                            }
-                        }
+                        //else if (!hasAnySection && currentSection == null)
+                        //{
+                        //    var fullSection = new Section
+                        //    {
+                        //        Id = Guid.NewGuid(),
+                        //        DocumentId = documentId,
+                        //        Title = "Full Document",
+                        //        Level = 1,
+                        //        OrderIndex = orderIndex++,
+                        //        ParentSectionId = null,
+                        //        StartBlockIndex = blockIndex,
+                        //        EndBlockIndex = 0,
+                        //        Version = 0,
+                        //        Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+                        //    };
+
+                        //    currentSection = fullSection;
+                        //    hasAnySection = true;
+                        //}
                     }
                     catch (Exception ex)
                     {
                         _logger.LogError(ex, "Error parsing block");
                     }
+
+                    blockIndex++;
                 }
 
-                // flush last section
-                if (currentSection != null)
+                if (currentSection != null && currentSection.EndBlockIndex == 0)
                 {
-                    currentSection.Content = BuildSfdt(contentBuffer);
+                    currentSection.EndBlockIndex = blockIndex;
                     sections.Add(currentSection);
                 }
             }
@@ -180,19 +196,19 @@ namespace text_editor_server.Services
             return int.TryParse(num, out var level) ? level : 0;
         }
 
-        // Build SFDT content block
-        private string BuildSfdt(List<JToken> blocks)
+       
+
+        // Build SFDT content block (metadata + sec)
+        private string BuildSfdt(List<JToken> blocks, JObject metadataTemplate)
         {
             try
             {
-                var sfdt = new JObject
+                var sfdt = (JObject)metadataTemplate.DeepClone();
+                sfdt["sec"] = new JArray
                 {
-                    ["sec"] = new JArray
+                    new JObject
                     {
-                        new JObject
-                        {
-                            ["b"] = new JArray(blocks)
-                        }
+                        ["b"] = new JArray(blocks)
                     }
                 };
 

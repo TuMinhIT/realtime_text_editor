@@ -1,5 +1,4 @@
-﻿using DocumentFormat.OpenXml.Office2010.Word;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -14,10 +13,12 @@ namespace text_editor_server.Controllers
     public class DocumentController : ControllerBase
     {
         private readonly DocumentService _documentService;
+        private readonly SectionService _sectionService;
 
-        public DocumentController(DocumentService documentService)
+        public DocumentController(DocumentService documentService, SectionService sectionService)
         {
             _documentService = documentService;
+            _sectionService = sectionService;
         }
 
         [Authorize]
@@ -84,9 +85,6 @@ namespace text_editor_server.Controllers
             return Ok(result);
         }
 
-
-
-
         //Lấy document snapshots
         [HttpGet("{documentId:guid}/content")]
         public async Task<IActionResult> GetDocumentContent(Guid documentId)
@@ -94,6 +92,7 @@ namespace text_editor_server.Controllers
             var result = await _documentService.GetDocumentSnapshotAsync(documentId);
             return Ok(result);
         }
+
         // lưu title
         [HttpPost("{documentId:guid}/title")]
         public async Task<IActionResult> UpdateTitle(Guid documentId, string title)
@@ -120,8 +119,6 @@ namespace text_editor_server.Controllers
 
             return Ok("Update success!");
 
-        }
-
-       
+        }       
     }
 }
