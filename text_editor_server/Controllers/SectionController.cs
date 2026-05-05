@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
+using text_editor_server.DTOs.req;
 using text_editor_server.Entities;
 using text_editor_server.Services;
 
@@ -10,10 +12,15 @@ namespace text_editor_server.Controllers
     public class SectionController : ControllerBase
     {
         private readonly SectionService _sectionService;
+        private readonly DocumentService _documentService;
 
-        public SectionController(SectionService sectionService)
+        private readonly SectionParser _sectionParse;
+
+        public SectionController(SectionService sectionService, DocumentService documentService, SectionParser sectionParse)
         {
             _sectionService = sectionService;
+            _documentService = documentService;
+            _sectionParse = sectionParse;
         }
 
         [HttpGet("document/{documentId:guid}")]
@@ -76,6 +83,25 @@ namespace text_editor_server.Controllers
             }
 
             return Ok(new { message = "User removed from section" });
+        }
+
+
+        //Hàm get section preview:
+        [HttpPost("preview-section")]
+        public async Task<IActionResult> PreviewSection([FromBody] PreviewSectionReq req)
+        {
+            if (req == null || req.DocumentId == Guid.Empty)
+                return BadRequest("Invalid request");
+
+            var result = await _sectionParse.BuildPreviewAsync(
+                req.DocumentId,
+                req.SectionContent
+            );
+
+            if (result == null)
+                return NotFound("Snapshot not found");
+
+            return Ok(result);
         }
     }
 

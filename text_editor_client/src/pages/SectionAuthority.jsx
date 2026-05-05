@@ -31,7 +31,29 @@ const normalizeJson = (value) => {
 };
 
 const getAssignments = (section) => {
-  return Array.isArray(section?.assignments) ? section.assignments : [];
+  if (Array.isArray(section?.assignments)) {
+    return section.assignments;
+  }
+
+  if (Array.isArray(section?.users)) {
+    return section.users;
+  }
+
+  return [];
+};
+
+const mapPermissionToAssignment = (item) => {
+  const permission = (item?.permission || "").toLowerCase();
+
+  return {
+    id: item?.userId || item?.id || `${item?.userEmail || "user"}-${permission}`,
+    userId: item?.userId || item?.id,
+    userEmail: item?.userEmail || "",
+    userName: item?.userName || item?.fullName || item?.userEmail || "",
+    permission: item?.permission || "",
+    canEdit: permission === "edit" || permission === "owner",
+    canDelete: permission === "owner",
+  };
 };
 
 const SectionAuthority = () => {
@@ -50,23 +72,21 @@ const SectionAuthority = () => {
   const [selectedSection, setSelectedSection] = useState(null);
   const [sectionHeading, setSectionHeading] = useState("");
   const [sectionBody, setSectionBody] = useState("");
+  const [previewSfdt, setPreviewSfdt] = useState("");
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [newUserEmail, setNewUserEmail] = useState("");
   const [isAddingUser, setIsAddingUser] = useState(false);
   const [showNavigationPane, setShowNavigationPane] = useState(true);
+  const [originalPreview, setOriginalPreview] = useState("");
 
-  const openSelectedSection = (section) => {
+  const openPreview = (sfdt) => {
     const editor = editorRef.current?.documentEditor;
-    const content = normalizeJson(
-      section?.jsonContent || section?.content || document?.jsonContent,
-    );
-
-    if (!editor || !content) {
+    if (!editor || !sfdt) {
       return;
     }
 
-    editor.open(content);
+    editor.open(sfdt);
   };
 
   const loadDocument = async () => {
@@ -94,6 +114,35 @@ const SectionAuthority = () => {
           : [];
 
     setSections(list);
+  };
+
+  const loadSectionUsers = async (sectionId) => {
+    try {
+      const result = await sectionService.getSectionUsers(sectionId);
+      const users = Array.isArray(result)
+        ? result
+        : Array.isArray(result?.data)
+          ? result.data
+          : [];
+
+      const assignments = users.map(mapPermissionToAssignment);
+
+      setSections((current) =>
+        current.map((section) =>
+          section.id === sectionId ? { ...section, assignments } : section,
+        ),
+      );
+
+      setSelectedSection((current) =>
+        current?.id === sectionId ? { ...current, assignments } : current,
+      );
+    } catch {
+      setSections((current) =>
+        current.map((section) =>
+          section.id === sectionId ? { ...section, assignments: [] } : section,
+        ),
+      );
+    }
   };
 
   useEffect(() => {
@@ -139,28 +188,101 @@ const SectionAuthority = () => {
   }, [sections]);
 
   useEffect(() => {
-    if (!selectedSection) {
-      setSectionHeading("");
-      setSectionBody("");
+    if (!selectedSection?.id) {
       return;
     }
 
-    const content = normalizeJson(
-      selectedSection.jsonContent || selectedSection.content,
-    );
-
-    try {
-      const { heading, body } = extractHeadingAndBodyFromSfdt(content);
-      setSectionHeading(heading || selectedSection.title || "");
-      setSectionBody(body || "");
-    } catch {
-      setSectionHeading(selectedSection.title || "");
-      setSectionBody("");
+    if (selectedSection.assignments !== undefined) {
+      return;
     }
 
-    openSelectedSection(selectedSection);
-    setIsDirty(false);
-  }, [selectedSection]);
+    loadSectionUsers(selectedSection.id);
+  }, [selectedSection?.id, selectedSection?.assignments]);
+
+  useEffect(() => {
+    if (!selectedSection || !documentId) {
+      setSectionHeading("");
+      setSectionBody("");
+      setPreviewSfdt("");
+      setOriginalPreview("");
+      setIsDirty(false);
+      return;
+    }
+
+    let isActive = true;
+
+    const loadPreview = async () => {
+      setIsPreviewLoading(true);
+      setErrorMessage("");
+
+      try {
+        const sectionContent = normalizeJson(
+          selectedSection.content || selectedSection.jsonContent,
+        );
+
+        if (!sectionContent) {
+          throw new Error("Thiếu dữ liệu section để dựng preview.");
+        }
+
+        const preview = await sectionService.previewSection(
+          documentId,
+          sectionContent,
+        );
+
+        const normalizedPreview = normalizeJson(preview);
+
+        if (!normalizedPreview) {
+          throw new Error("Backend không trả về SFDT preview hợp lệ.");
+        }
+
+        if (!isActive) {
+          return;
+        }
+
+        setPreviewSfdt(normalizedPreview);
+        setOriginalPreview(normalizedPreview);
+
+        try {
+          const { heading, body } = extractHeadingAndBodyFromSfdt(
+            normalizedPreview,
+          );
+          setSectionHeading(heading || selectedSection.title || "");
+          setSectionBody(body || "");
+        } catch {
+          setSectionHeading(selectedSection.title || "");
+          setSectionBody("");
+        }
+
+        setIsDirty(false);
+      } catch (error) {
+        if (!isActive) {
+          return;
+        }
+
+        setPreviewSfdt("");
+        setOriginalPreview("");
+        setSectionHeading(selectedSection.title || "");
+        setSectionBody("");
+        setErrorMessage(
+          error?.message || "Không thể dựng preview section từ backend.",
+        );
+      } finally {
+        if (isActive) {
+          setIsPreviewLoading(false);
+        }
+      }
+    };
+
+    loadPreview();
+
+    return () => {
+      isActive = false;
+    };
+  }, [selectedSection, documentId]);
+
+  useEffect(() => {
+    openPreview(previewSfdt);
+  }, [previewSfdt]);
 
   useEffect(() => {
     const editor = editorRef.current?.documentEditor;
@@ -170,7 +292,7 @@ const SectionAuthority = () => {
   }, [showNavigationPane]);
 
   const handleCreated = () => {
-    openSelectedSection(selectedSection);
+    openPreview(previewSfdt);
   };
 
   const handleContentChange = () => {
@@ -179,12 +301,8 @@ const SectionAuthority = () => {
       return;
     }
 
-    // const currentSerialized = normalizeJson(editor.serialize());
-    // const originalSerialized = normalizeJson(
-    //   selectedSection.jsonContent || selectedSection.content,
-    // );
-
-    setIsDirty(currentSerialized !== originalSerialized);
+    const currentSerialized = normalizeJson(editor.serialize());
+    setIsDirty(currentSerialized !== originalPreview);
   };
 
   const handleSelectSection = (section) => {
@@ -231,7 +349,6 @@ const SectionAuthority = () => {
 
       setNewUserEmail("");
       toast.success("Đã thêm quyền cho người dùng");
-      setIsDirty(true);
     } catch {
       toast.error("Không thể thêm người dùng");
     } finally {
@@ -240,7 +357,9 @@ const SectionAuthority = () => {
   };
 
   const handleRemoveUser = async (permissionId) => {
-    if (!selectedSection) return;
+    if (!selectedSection) {
+      return;
+    }
 
     try {
       setSections((current) =>
@@ -268,14 +387,15 @@ const SectionAuthority = () => {
       );
 
       toast.success("Đã xóa quyền");
-      setIsDirty(true);
     } catch {
       toast.error("Không thể xóa quyền");
     }
   };
 
   const handleTogglePermission = async (permissionId, permissionType) => {
-    if (!selectedSection) return;
+    if (!selectedSection) {
+      return;
+    }
 
     try {
       const updatedAssignments = getAssignments(selectedSection).map(
@@ -298,41 +418,13 @@ const SectionAuthority = () => {
       );
 
       toast.success("Cập nhật quyền thành công");
-      setIsDirty(true);
     } catch {
       toast.error("Không thể cập nhật quyền");
     }
   };
 
-  const handleSave = async () => {
-    if (!selectedSection) return;
-
-    const editor = editorRef.current?.documentEditor;
-    if (!editor) return;
-
-    setIsSaving(true);
-
-    try {
-      const newJson = normalizeJson(editor.serialize());
-
-      setSections((current) =>
-        current.map((section) =>
-          section.id === selectedSection.id
-            ? { ...section, jsonContent: newJson }
-            : section,
-        ),
-      );
-      setSelectedSection((current) =>
-        current ? { ...current, jsonContent: newJson } : current,
-      );
-
-      toast.success("Lưu thành công");
-      setIsDirty(false);
-    } catch {
-      toast.error("Lưu thất bại");
-    } finally {
-      setIsSaving(false);
-    }
+  const handleSave = () => {
+    toast.info("Hiện tại màn này mới dựng preview section, chưa có API lưu section.");
   };
 
   if (isLoading) {
@@ -386,7 +478,7 @@ const SectionAuthority = () => {
               <h2 className="text-base font-semibold">Sections</h2>
             </div>
             <p className="mt-1 text-xs text-slate-500">
-              Chọn section để xem và chỉnh nội dung tương ứng.
+              Chọn section để gọi backend dựng preview SFDT tương ứng.
             </p>
           </div>
 
@@ -450,13 +542,18 @@ const SectionAuthority = () => {
                   </h2>
                   {isDirty ? (
                     <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700">
-                      Chưa lưu
+                      Preview đã sửa
                     </span>
                   ) : (
                     <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">
-                      Đã đồng bộ
+                      Preview đồng bộ
                     </span>
                   )}
+                  {isPreviewLoading ? (
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+                      Đang dựng preview...
+                    </span>
+                  ) : null}
                 </div>
 
                 <p className="mt-1 text-sm text-slate-500">
@@ -481,10 +578,10 @@ const SectionAuthority = () => {
                 <button
                   type="button"
                   onClick={handleSave}
-                  disabled={isSaving || !selectedSection}
+                  disabled={!selectedSection}
                   className="rounded-full bg-[#1a73e8] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#1765cc] disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {isSaving ? "Đang lưu..." : "Lưu section"}
+                  Lưu section
                 </button>
               </div>
             </div>
@@ -493,19 +590,29 @@ const SectionAuthority = () => {
           <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
             <div className="min-h-0 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
               {selectedSection ? (
-                <DocumentEditorContainerComponent
-                  ref={editorRef}
-                  height="100%"
-                  enableToolbar
-                  created={handleCreated}
-                  contentChange={handleContentChange}
-                  documentEditorSettings={{
-                    showNavigationPane,
-                  }}
-                  serviceUrl={SERVICE_URL}
-                >
-                  <Inject services={[Toolbar]} />
-                </DocumentEditorContainerComponent>
+                isPreviewLoading && !previewSfdt ? (
+                  <div className="flex h-full min-h-[520px] items-center justify-center px-6 text-center text-sm text-slate-500">
+                    Đang gọi backend để dựng preview section...
+                  </div>
+                ) : previewSfdt ? (
+                  <DocumentEditorContainerComponent
+                    ref={editorRef}
+                    height="100%"
+                    enableToolbar
+                    created={handleCreated}
+                    contentChange={handleContentChange}
+                    documentEditorSettings={{
+                      showNavigationPane,
+                    }}
+                    serviceUrl={SERVICE_URL}
+                  >
+                    <Inject services={[Toolbar]} />
+                  </DocumentEditorContainerComponent>
+                ) : (
+                  <div className="flex h-full min-h-[520px] items-center justify-center px-6 text-center text-sm text-slate-500">
+                    Không thể dựng preview cho section này.
+                  </div>
+                )
               ) : (
                 <div className="flex h-full min-h-[520px] items-center justify-center px-6 text-center text-sm text-slate-500">
                   Chọn một section để mở nội dung và chỉnh sửa.

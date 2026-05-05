@@ -280,6 +280,28 @@ namespace text_editor_server.Services
         }
 
 
+        public async Task<string?> BuildPreviewAsync(Guid documentId, string sectionContent)
+        {
+            var snapshot = await _db.DocumentSnapshots
+                .FirstOrDefaultAsync(x => x.DocumentId == documentId);
+
+            if (snapshot == null || string.IsNullOrWhiteSpace(snapshot.JsonContent))
+                return null;
+
+            JObject originalSfdt;
+
+            try
+            {
+                originalSfdt = JObject.Parse(snapshot.JsonContent);
+            }
+            catch
+            {
+                return null; // hoặc log lỗi
+            }
+
+            return BuildSectionPreview(sectionContent, originalSfdt);
+        }
+
         public async Task ExportDebugFiles(Guid documentId, string originalContent)
         {
             try

@@ -1,6 +1,8 @@
 import { http } from "./http";
 
 const resource = "/section";
+const toError = (err) => err?.response?.data || err;
+
 export const sectionService = {
   async getAllSectionsByDocument(documentId) {
     try {
@@ -55,6 +57,27 @@ export const sectionService = {
   async deleteDocument(id) {
     try {
       const res = await http.post(`${resource}/remove/${id}`);
+      return res.data;
+    } catch (err) {
+      throw toError(err);
+    }
+  },
+
+  async getSectionUsers(sectionId) {
+    try {
+      const res = await http.get(`${resource}/${sectionId}/users`);
+      return res.data;
+    } catch (err) {
+      throw toError(err);
+    }
+  },
+
+  async previewSection(documentId, sectionContent) {
+    try {
+      const res = await http.post(`${resource}/preview-section`, {
+        documentId,
+        sectionContent,
+      });
       return res.data;
     } catch (err) {
       throw toError(err);
