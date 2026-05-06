@@ -175,9 +175,19 @@ namespace text_editor_server
                             new User
                             {
                                 Id = Guid.NewGuid(),
-                                Email = "test2@gmail.com",
+                                Email = "Loi@gmail.com",
                                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456"),
-                                FullName = "Test User 2",
+                                FullName = "Loigray",
+                                CreatedAt = DateTime.UtcNow,
+                                IsActive = true,
+                                Role = "User"
+                            },
+                                    new User
+                            {
+                                Id = Guid.NewGuid(),
+                                Email = "test@gmail.com",
+                                PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456"),
+                                FullName = "Lôi Gray",
                                 CreatedAt = DateTime.UtcNow,
                                 IsActive = true,
                                 Role = "User"

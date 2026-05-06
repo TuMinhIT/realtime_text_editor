@@ -165,76 +165,6 @@ const SectionAuthority = () => {
     }
   };
 
-  const handleAddUserToSection = (user, permission = "edit") => {
-    if (!selectedSection || !user) {
-      return;
-    }
-
-    const normalizedUserId = user.userId || user.id || user._id;
-    const normalizedEmail = user.userEmail || user.email || "";
-    const normalizedName =
-      user.userName || user.name || user.fullName || normalizedEmail;
-
-    const newPermission = {
-      id: normalizedUserId || normalizedEmail || `perm-${Date.now()}`,
-      userId: normalizedUserId || normalizedEmail,
-      userEmail: normalizedEmail,
-      userName: normalizedName,
-      permission,
-      canEdit: permission === "edit" || permission === "owner",
-      canDelete: permission === "owner",
-    };
-
-    setSections((current) =>
-      current.map((section) => {
-        if (section.id !== selectedSection.id) {
-          return section;
-        }
-
-        const currentAssignments = getAssignments(section);
-        const alreadyExists = currentAssignments.some(
-          (assignment) =>
-            (assignment.userId || assignment.id) === newPermission.userId ||
-            assignment.userEmail === newPermission.userEmail,
-        );
-
-        if (alreadyExists) {
-          return section;
-        }
-
-        return {
-          ...section,
-          assignments: [...currentAssignments, newPermission],
-        };
-      }),
-    );
-
-    setSelectedSection((current) => {
-      if (!current) {
-        return current;
-      }
-
-      const currentAssignments = getAssignments(current);
-      const alreadyExists = currentAssignments.some(
-        (assignment) =>
-          (assignment.userId || assignment.id) === newPermission.userId ||
-          assignment.userEmail === newPermission.userEmail,
-      );
-
-      if (alreadyExists) {
-        return current;
-      }
-
-      return {
-        ...current,
-        assignments: [...currentAssignments, newPermission],
-      };
-    });
-
-    setIsDirty(true);
-    toast.success("Đã thêm người dùng vào section");
-  };
-
   useEffect(() => {
     if (!documentId) {
       setErrorMessage("Không tìm thấy documentId trên route.");
@@ -626,7 +556,6 @@ const SectionAuthority = () => {
             <div className="mt-4">
               <UserPermission
                 selectedSection={selectedSection}
-                onAddUser={handleAddUserToSection}
                 onRemoveUser={handleRemoveUser}
                 onClose={() => setShowFormAdd(false)}
               />

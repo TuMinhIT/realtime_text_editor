@@ -4,7 +4,6 @@ const resource = "/section";
 const toError = (err) => err?.response?.data || err;
 
 export const sectionService = {
-
   //Lấy tất cả section của document
   async getAllSectionsByDocument(documentId) {
     try {
@@ -58,9 +57,14 @@ export const sectionService = {
     }
   },
 
-  async deleteDocument(id) {
+  async addUserToSetion(sectionId, userId, permission = 1) {
     try {
-      const res = await http.post(`${resource}/remove/${id}`);
+      const res = await http.post(`${resource}/assign-user`, {
+        sectionId,
+        userId,
+        permission: permission,
+      });
+
       return res.data;
     } catch (err) {
       throw toError(err);
