@@ -1,3 +1,4 @@
+import { SectionIcon } from "lucide-react";
 import { http } from "./http";
 
 const resource = "/section";
@@ -8,16 +9,6 @@ export const sectionService = {
   async getAllSectionsByDocument(documentId) {
     try {
       const res = await http.get(`${resource}/document/${documentId}`);
-      return res.data;
-    } catch (err) {
-      throw toError(err);
-    }
-  },
-
-  //Lấy chi tiết section
-  async getDocumentBlocks(documentId) {
-    try {
-      const res = await http.get(`${resource}/${documentId}/blocks`);
       return res.data;
     } catch (err) {
       throw toError(err);
@@ -56,7 +47,7 @@ export const sectionService = {
       throw toError(err);
     }
   },
-
+  // thêm 1 user vào secsion permission
   async addUserToSetion(sectionId, userId, permission = 1) {
     try {
       const res = await http.post(`${resource}/assign-user`, {
@@ -79,12 +70,34 @@ export const sectionService = {
       throw toError(err);
     }
   },
+  // /get assignment của 1 sections
+  async getSectionAssignments(sectionId) {
+    try {
+      const res = await http.get(`${resource}/assignments/${sectionId}`);
+      return res.data;
+    } catch (err) {
+      throw toError(err);
+    }
+  },
 
-  async previewSection(documentId, sectionContent) {
+  // xóa phân quyền section
+  // permission/{sectionPermissionId:guid}"
+  async removeUserFromSection(id) {
+    try {
+      const res = await http.delete(`${resource}/permission/${id}`);
+      return res.data;
+    } catch (err) {
+      throw toError(err);
+    }
+  },
+
+  //get nội dung section được chọn
+  async previewSection(sectionId, sectionContent, documentId) {
     try {
       const res = await http.post(`${resource}/preview-section`, {
-        documentId,
-        sectionContent,
+        documentId: documentId,
+        sectionContent: sectionContent,
+        sectionId: sectionId,
       });
       return res.data;
     } catch (err) {

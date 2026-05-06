@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Lock, Plus, Users } from "lucide-react";
 import { toast } from "react-toastify";
-import { extractHeadingAndBodyFromSfdt } from "../utils/sfdtParser";
+
 import sectionService from "../services/sectionService";
 import documentService from "../services/documentService";
 import DocViewer from "../components/SectionAuth/DocViewer";
@@ -27,18 +27,6 @@ const normalizeJson = (value) => {
   }
 };
 
-const getAssignments = (section) => {
-  if (Array.isArray(section?.assignments)) {
-    return section.assignments;
-  }
-
-  if (Array.isArray(section?.users)) {
-    return section.users;
-  }
-
-  return [];
-};
-
 const mapPermissionToAssignment = (item) => {
   const permission = (item?.permission || "").toLowerCase();
 
@@ -54,16 +42,6 @@ const mapPermissionToAssignment = (item) => {
   };
 };
 
-const canEditSection = (section) => {
-  const assignments = getAssignments(section);
-
-  if (!assignments.length) {
-    return false;
-  }
-
-  return assignments.some((assignment) => assignment.canEdit);
-};
-
 const SectionAuthority = () => {
   const location = useLocation();
   const { documentId } = useParams();
@@ -77,15 +55,9 @@ const SectionAuthority = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [selectedSection, setSelectedSection] = useState(null);
-  const [sectionHeading, setSectionHeading] = useState("");
-  const [sectionBody, setSectionBody] = useState("");
   const [previewSfdt, setPreviewSfdt] = useState("");
   const [originalPreview, setOriginalPreview] = useState("");
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
-  const [isDirty, setIsDirty] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [showNavigationPane, setShowNavigationPane] = useState(true);
-  const [showFormAdd, setShowFormAdd] = useState(false);
 
   const openPreview = (sfdt) => {
     const editor = editorRef.current?.documentEditor;
@@ -96,14 +68,14 @@ const SectionAuthority = () => {
     editor.open(sfdt);
   };
 
-  const applyReadOnlyMode = (section) => {
+  const applyReadOnlyMode = (flag) => {
     const editor = editorRef.current?.documentEditor;
     if (!editor) {
       return;
     }
 
     try {
-      editor.isReadOnly = !canEditSection(section);
+      editor.isReadOnly = flag;
     } catch {
       // Ignore if this Syncfusion build does not expose the flag yet.
     }
@@ -117,6 +89,8 @@ const SectionAuthority = () => {
       setDocumentTitle(
         loadedDocument?.title || location.state?.documentTitle || "Tài liệu",
       );
+      setPreviewSfdt(loadedDocument.jsonContent);
+      setOriginalPreview(loadedDocument.jsonContent);
       return;
     }
 
@@ -137,34 +111,31 @@ const SectionAuthority = () => {
   };
 
   const loadSectionUsers = async (sectionId) => {
-    try {
-      const result = await sectionService.getSectionUsers(sectionId);
-      const users = Array.isArray(result)
-        ? result
-        : Array.isArray(result?.data)
-          ? result.data
-          : [];
-
-      const assignments = users.map(mapPermissionToAssignment);
-
-      setSections((current) =>
-        current.map((section) =>
-          section.id === sectionId ? { ...section, assignments } : section,
-        ),
-      );
-
-      setSelectedSection((current) =>
-        current?.id === sectionId ? { ...current, assignments } : current,
-      );
-    } catch {
-      setSections((current) =>
-        current.map((section) =>
-          section.id === sectionId ? { ...section, assignments: [] } : section,
-        ),
-      );
-    }
+    // try {
+    //   const result = await sectionService.getSectionUsers(sectionId);
+    //   const users = Array.isArray(result)
+    //     ? result
+    //     : Array.isArray(result?.data)
+    //       ? result.data
+    //       : [];
+    //   const assignments = users.map(mapPermissionToAssignment);
+    //   setSections((current) =>
+    //     current.map((section) =>
+    //       section.id === sectionId ? { ...section, assignments } : section,
+    //     ),
+    //   );
+    //   setSelectedSection((current) =>
+    //     current?.id === sectionId ? { ...current, assignments } : current,
+    //   );
+    // } catch {
+    //   setSections((current) =>
+    //     current.map((section) =>
+    //       section.id === sectionId ? { ...section, assignments: [] } : section,
+    //     ),
+    //   );
+    // }
   };
-
+  // load section and document
   useEffect(() => {
     if (!documentId) {
       setErrorMessage("Không tìm thấy documentId trên route.");
@@ -193,12 +164,13 @@ const SectionAuthority = () => {
   useEffect(() => {
     if (!sections.length) {
       setSelectedSection(null);
+
       return;
     }
-
+    //  trả tỏng quan khi vừa load
     setSelectedSection((current) => {
       if (!current) {
-        return sections[0];
+        return "tongquan";
       }
 
       return (
@@ -207,152 +179,71 @@ const SectionAuthority = () => {
     });
   }, [sections]);
 
-  useEffect(() => {
-    if (!selectedSection?.id || selectedSection.assignments !== undefined) {
-      return;
-    }
+  const loadPreview = async () => {
+    setIsPreviewLoading(true);
+    setErrorMessage("");
 
-    loadSectionUsers(selectedSection.id);
-  }, [selectedSection?.id, selectedSection?.assignments]);
+    try {
+      const sectionContent = normalizeJson(
+        selectedSection.content || selectedSection.jsonContent,
+      );
+
+      if (!sectionContent) {
+        throw new Error("Thiếu dữ liệu section để dựng preview.");
+      }
+      if (selectedSection.level == 1) return;
+
+      const preview = await sectionService.previewSection(
+        selectedSection.id,
+        sectionContent,
+        documentId,
+      );
+
+      if (!preview.sfdtContent) {
+        throw new Error("Backend không trả về SFDT preview hợp lệ.");
+      }
+
+      setPreviewSfdt(preview.sfdtContent);
+    } catch (error) {
+      setPreviewSfdt(originalPreview);
+      setErrorMessage(
+        error?.message || "Không thể dựng preview section từ backend.",
+      );
+    } finally {
+      setIsPreviewLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!selectedSection || !documentId) {
-      setSectionHeading("");
-      setSectionBody("");
-      setPreviewSfdt("");
-      setOriginalPreview("");
-      setIsDirty(false);
+      if (sectionService.level == 1) return;
+      setPreviewSfdt(originalPreview);
       return;
     }
 
-    let isActive = true;
-
-    const loadPreview = async () => {
-      setIsPreviewLoading(true);
-      setErrorMessage("");
-
-      try {
-        const sectionContent = normalizeJson(
-          selectedSection.content || selectedSection.jsonContent,
-        );
-
-        if (!sectionContent) {
-          throw new Error("Thiếu dữ liệu section để dựng preview.");
-        }
-
-        const preview = await sectionService.previewSection(
-          documentId,
-          sectionContent,
-        );
-
-        const normalizedPreview = normalizeJson(preview);
-
-        if (!normalizedPreview) {
-          throw new Error("Backend không trả về SFDT preview hợp lệ.");
-        }
-
-        if (!isActive) {
-          return;
-        }
-
-        setPreviewSfdt(normalizedPreview);
-        setOriginalPreview(normalizedPreview);
-
-        try {
-          const { heading, body } =
-            extractHeadingAndBodyFromSfdt(normalizedPreview);
-          setSectionHeading(heading || selectedSection.title || "");
-          setSectionBody(body || "");
-        } catch {
-          setSectionHeading(selectedSection.title || "");
-          setSectionBody("");
-        }
-
-        setIsDirty(false);
-      } catch (error) {
-        if (!isActive) {
-          return;
-        }
-
-        setPreviewSfdt("");
-        setOriginalPreview("");
-        setSectionHeading(selectedSection.title || "");
-        setSectionBody("");
-        setErrorMessage(
-          error?.message || "Không thể dựng preview section từ backend.",
-        );
-      } finally {
-        if (isActive) {
-          setIsPreviewLoading(false);
-        }
-      }
-    };
+    // Nếu là tổng quan, hiển thị tài liệu gốc
+    if (selectedSection === "tongquan") {
+      setPreviewSfdt(originalPreview);
+      return;
+    }
 
     loadPreview();
-
-    return () => {
-      isActive = false;
-    };
-  }, [selectedSection, documentId]);
+  }, [selectedSection, documentId, originalPreview]);
 
   useEffect(() => {
     openPreview(previewSfdt);
-    applyReadOnlyMode(selectedSection);
-  }, [previewSfdt, selectedSection?.id, selectedSection?.assignments]);
-
-  useEffect(() => {
-    const editor = editorRef.current?.documentEditor;
-    if (editor?.documentEditorSettings) {
-      editor.documentEditorSettings.showNavigationPane = showNavigationPane;
-    }
-  }, [showNavigationPane]);
+    applyReadOnlyMode(true);
+  }, [previewSfdt, selectedSection?.id]);
 
   const handleCreated = () => {
     openPreview(previewSfdt);
-    applyReadOnlyMode(selectedSection);
+    applyReadOnlyMode(true);
   };
 
   const handleSave = () => {
     const editor = editorRef.current?.documentEditor;
     if (!editor || !selectedSection) {
       return;
-    }
-
-    setIsSaving(true);
-
-    try {
-      const serialized = normalizeJson(editor.serialize());
-
-      setSections((current) =>
-        current.map((section) =>
-          section.id === selectedSection.id
-            ? {
-                ...section,
-                content: serialized,
-                jsonContent: serialized,
-              }
-            : section,
-        ),
-      );
-
-      setSelectedSection((current) =>
-        current
-          ? {
-              ...current,
-              content: serialized,
-              jsonContent: serialized,
-            }
-          : current,
-      );
-
-      setPreviewSfdt(serialized);
-      setOriginalPreview(serialized);
-      setIsDirty(false);
-      toast.success("Đã lưu section trong trạng thái hiện tại.");
-    } catch {
-      toast.error("Không thể lưu nội dung section.");
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -363,48 +254,11 @@ const SectionAuthority = () => {
     }
 
     const currentSerialized = normalizeJson(editor.serialize());
-    setIsDirty(currentSerialized !== originalPreview);
   };
 
   const handleSelectSection = (section) => {
     setSelectedSection(section);
   };
-
-  const handleRemoveUser = (permissionId) => {
-    if (!selectedSection) {
-      return;
-    }
-
-    setSections((current) =>
-      current.map((section) =>
-        section.id === selectedSection.id
-          ? {
-              ...section,
-              assignments: getAssignments(section).filter(
-                (assignment) => assignment.id !== permissionId,
-              ),
-            }
-          : section,
-      ),
-    );
-
-    setSelectedSection((current) =>
-      current
-        ? {
-            ...current,
-            assignments: getAssignments(current).filter(
-              (assignment) => assignment.id !== permissionId,
-            ),
-          }
-        : current,
-    );
-
-    setIsDirty(true);
-    toast.success("Đã xóa quyền");
-  };
-
-  const selectedAssignments = getAssignments(selectedSection);
-  const canEditSelectedSection = canEditSection(selectedSection);
 
   if (isLoading) {
     return (
@@ -467,30 +321,37 @@ const SectionAuthority = () => {
                 Chưa có section nào.
               </div>
             ) : null}
-
+            <button
+              type="button"
+              onClick={() => setSelectedSection("tongquan")}
+              className={`w-full rounded-2xl  border px-2 py-1 text-left transition ${
+                selectedSection == "tongquan"
+                  ? "border-blue-200 bg-blue-50 shadow-sm"
+                  : "border-slate-200 bg-gray-300 hover:border-slate-300 hover:bg-slate-50"
+              }`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="truncate text-md  font-bold text-slate-900">
+                    Tổng quan
+                  </div>
+                </div>
+              </div>
+            </button>
             {sections.map((section) => {
               const indentPx = Math.max(0, (section.level || 1) - 1) * 12;
               const isSelected = selectedSection?.id === section.id;
               if (section.level == 1)
                 return (
-                  <button
+                  <div
                     key={section.id}
                     type="button"
-                    onClick={() => handleSelectSection(section)}
-                    style={{ marginLeft: indentPx }}
-                    className={`w-full rounded-2xl border px-4 py-3 text-left transition ${
-                      isSelected
-                        ? "border-blue-200 bg-blue-50 shadow-sm"
-                        : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
-                    }`}
+                    className={`w-full  border-b px-2 py-1 text-left transition ${"border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"}`}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <div className="truncate text-sm font-semibold text-slate-900">
+                        <div className="truncate text-md  font-bold text-slate-900">
                           {section.title}
-                        </div>
-                        <div className="mt-1 text-xs text-slate-500">
-                          {getAssignments(section).length} người được gán
                         </div>
                       </div>
 
@@ -498,7 +359,7 @@ const SectionAuthority = () => {
                         Lv{section.level || 1}
                       </div>
                     </div>
-                  </button>
+                  </div>
                 );
               else
                 return (
@@ -507,7 +368,7 @@ const SectionAuthority = () => {
                     type="button"
                     onClick={() => handleSelectSection(section)}
                     style={{ marginLeft: indentPx }}
-                    className={`w-full rounded-2xl border px-4 py-3 text-left transition ${
+                    className={`w-full border-b  px-2 py-2 text-left transition ${
                       isSelected
                         ? "border-blue-200 bg-blue-50 shadow-sm"
                         : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
@@ -517,9 +378,6 @@ const SectionAuthority = () => {
                       <div className="min-w-0">
                         <div className="truncate text-sm font-semibold text-slate-900">
                           {section.title}
-                        </div>
-                        <div className="mt-1 text-xs text-slate-500">
-                          {getAssignments(section).length} người được gán
                         </div>
                       </div>
 
@@ -540,46 +398,38 @@ const SectionAuthority = () => {
               {errorMessage}
             </div>
           ) : null}
-          <div className="rounded-3xl  border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="flex flex-row gap-4 items-center lg:flex-row lg:items-start lg:justify-between">
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-lg font-semibold text-slate-900">
-                    {selectedSection?.title || "Chưa chọn section"}
-                  </h2>
+
+          {selectedSection == "tongquan" ? null : (
+            <div className="rounded-3xl  border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="flex flex-row gap-4 items-center lg:flex-row lg:items-start lg:justify-between">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-lg font-semibold text-slate-900">
+                      {selectedSection?.title || "Chưa chọn section"}
+                    </h2>
+                  </div>
                 </div>
               </div>
 
-              <span
-                className={`rounded-full px-3 py-1 text-xs font-medium ${
-                  canEditSelectedSection
-                    ? "bg-blue-100 text-blue-700"
-                    : "bg-slate-100 text-slate-600"
-                }`}
-              >
-                {canEditSelectedSection ? "Có thể chỉnh sửa" : "Chỉ xem"}
-              </span>
+              <div className="mt-4">
+                {/* truyền props assignments, khi thay dổi auto update preview */}
+                <UserPermission
+                  selectedSection={selectedSection}
+                  loadPreview={loadPreview}
+                />
+              </div>
             </div>
-
-            <div className="mt-4">
-              <UserPermission
-                selectedSection={selectedSection}
-                onRemoveUser={handleRemoveUser}
-                onClose={() => setShowFormAdd(false)}
-              />
-            </div>
-          </div>
+          )}
 
           <DocViewer
             editorRef={editorRef}
             selectedSection={selectedSection}
             previewSfdt={previewSfdt}
             isPreviewLoading={isPreviewLoading}
-            showNavigationPane={showNavigationPane}
+            showNavigationPane={false}
             handleCreated={handleCreated}
             handleContentChange={handleContentChange}
             handleSave={handleSave}
-            isSaving={isSaving}
             originalPreview={originalPreview}
           />
         </section>

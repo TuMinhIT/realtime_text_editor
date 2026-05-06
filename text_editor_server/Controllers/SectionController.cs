@@ -77,11 +77,11 @@ namespace text_editor_server.Controllers
 
 
         //Hàm remove quyền của user trên một section:
-        [HttpDelete("{sectionId:guid}/users/{userId:guid}")]
+        [HttpDelete("permission/{sectionPermissionId:guid}")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> RemoveUserFromSection(Guid sectionId, Guid userId)
+        public async Task<IActionResult> RemoveUserFromSection(Guid sectionPermissionId)
         {
-            var result = await _sectionService.RemoveUserFromSectionAsync(sectionId, userId);
+            var result = await _sectionService.RemoveUserFromSectionAsync(sectionPermissionId);
             if (!result.Success)
             {
                 return NotFound(new { message = result.Message });
@@ -97,17 +97,28 @@ namespace text_editor_server.Controllers
         {
             if (req == null || req.DocumentId == Guid.Empty)
                 return BadRequest("Invalid request");
-
+        
             var result = await _sectionParse.BuildPreviewAsync(
                 req.DocumentId,
                 req.SectionContent
             );
-
+                
             if (result == null)
-                return NotFound("Snapshot not found");
+                    return NotFound("Snapshot not found");
 
-            return Ok(result);
+            return Ok(new { sfdtContent = result }
+            );
         }
+
+        //Hàm get assignment trên 1 section 
+        [HttpGet("assignments/{sectionId:guid}")]
+        public async Task<IActionResult> GetSectionAssignments(Guid sectionId)
+        {
+            var assignment = await _sectionService.GetSectionPermissonAsync(sectionId);
+            return Ok(assignment);
+            
+        }
+
 
 
         ////Hàm update section:

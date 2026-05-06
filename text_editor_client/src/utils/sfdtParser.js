@@ -12,33 +12,6 @@ const safeParse = (input) => {
   }
 };
 
-export const extractHeadingAndBodyFromSfdt = (jsonOrString) => {
-  const doc = safeParse(jsonOrString);
-  if (!doc) {
-    // fallback: treat input as plain text
-    const text = typeof jsonOrString === "string" ? jsonOrString : "";
-    const parts = text.split("\n\n");
-    return { heading: parts[0] || "", body: parts.slice(1).join("\n\n") };
-  }
-
-  const paragraphs = [];
-
-  const sections = doc.sections || doc.Sections || [];
-  for (const sec of sections) {
-    const blocks = sec.blocks || sec.Blocks || [];
-    for (const block of blocks) {
-      // Build paragraph text from inlines
-      const inlines = block.inlines || block.Inlines || [];
-      const txt = inlines.map((i) => i.text || i.Text || "").join("");
-      paragraphs.push(txt);
-    }
-  }
-
-  const heading = paragraphs.length > 0 ? paragraphs[0] : "";
-  const body = paragraphs.length > 1 ? paragraphs.slice(1).join("\n\n") : "";
-  return { heading, body };
-};
-
 const makeParagraphBlock = (text) => ({
   inlines: [{ text }],
 });

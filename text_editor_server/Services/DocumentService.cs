@@ -335,13 +335,7 @@ namespace text_editor_server.Services
 				// logger.LogInformation("Is original SFDT equal to rebuilt SFDT? {IsEqual}", isEqual);
 
 				//Xuất file để kiểm thử thủ công:
-<<<<<<< HEAD
 				//await _sectionParser.ExportDebugFiles(documentId, newContent);
-=======
-			//	await _sectionParser.ExportDebugFiles(documentId, newContent);
-
-
->>>>>>> origin/update-content
 				//END TEST
                 return true;
 

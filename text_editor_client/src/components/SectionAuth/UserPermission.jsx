@@ -4,107 +4,52 @@ import { userService } from "../../services/userService";
 import sectionService from "../../services/sectionService";
 import { toast } from "react-toastify";
 
-const normalizeUsers = (result) => {
-  const source = Array.isArray(result)
-    ? result
-    : Array.isArray(result?.data)
-      ? result.data
-      : Array.isArray(result?.users)
-        ? result.users
-        : [];
-
-  return source.map((user) => ({
-    id: user.id || user.userId || user._id || user.email,
-    userId: user.id || user.userId || user._id || user.email,
-    userEmail: user.email || user.userEmail || "",
-    userName: user.name || user.userName || user.fullName || user.email || "",
-    role: user.role || user.permission || "",
-  }));
-};
-
-const getAssignments = (section) => {
-  if (Array.isArray(section?.assignments)) {
-    return section.assignments;
-  }
-
-  if (Array.isArray(section?.users)) {
-    return section.users;
-  }
-
-  return [];
-};
-
 const getAssignmentKey = (assignment) =>
-  assignment?.userId || assignment?.id || assignment?.userEmail || "";
+  assignment.userId || assignment?.userEmail || "";
 
-const UserPermission = ({ selectedSection, onRemoveUser, onClose }) => {
+const UserPermission = ({ selectedSection, loadPreview }) => {
   const [allUsers, setAllUsers] = useState([]);
   const [isUsersLoading, setIsUsersLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [permission, setPermission] = useState(0);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [assignments, setAssignments] = useState([]);
+
+  const loadUsers = async () => {
+    setIsUsersLoading(true);
+
+    try {
+      const result = await userService.getAllUser();
+      setAllUsers(result);
+    } catch {
+      setAllUsers([]);
+    } finally {
+      setIsUsersLoading(false);
+    }
+  };
+
+  const loadAssignments = async (sectionId) => {
+    try {
+      const result = await sectionService.getSectionAssignments(sectionId);
+
+      const assignmentData = result;
+
+      setAssignments(assignmentData);
+    } catch {
+      setAssignments([]);
+    }
+  };
 
   useEffect(() => {
-    let isActive = true;
-
-    const loadUsers = async () => {
-      setIsUsersLoading(true);
-
-      try {
-        const result = await userService.getAllUser();
-        if (!isActive) {
-          return;
-        }
-
-        setAllUsers(normalizeUsers(result));
-      } catch {
-        if (isActive) {
-          setAllUsers([]);
-        }
-      } finally {
-        if (isActive) {
-          setIsUsersLoading(false);
-        }
-      }
-    };
-
     loadUsers();
-
-    return () => {
-      isActive = false;
-    };
-  }, []);
-
-  const assignedUsers = useMemo(
-    () => getAssignments(selectedSection),
-    [selectedSection],
-  );
-
-  const assignedLookup = useMemo(() => {
-    const lookup = new Set();
-
-    assignedUsers.forEach((assignment) => {
-      const key = getAssignmentKey(assignment);
-      if (key) {
-        lookup.add(key);
-      }
-
-      if (assignment?.userEmail) {
-        lookup.add(assignment.userEmail);
-      }
-    });
-
-    return lookup;
-  }, [assignedUsers]);
+    if (selectedSection) loadAssignments(selectedSection.id);
+  }, [selectedSection]);
 
   const filteredUsers = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
 
     return allUsers.filter((user) => {
       const key = getAssignmentKey(user);
-      if (assignedLookup.has(key) || assignedLookup.has(user.userEmail)) {
-        return false;
-      }
 
       if (!term) {
         return true;
@@ -114,7 +59,7 @@ const UserPermission = ({ selectedSection, onRemoveUser, onClose }) => {
         .filter(Boolean)
         .some((value) => value.toLowerCase().includes(term));
     });
-  }, [allUsers, assignedLookup, searchTerm]);
+  }, [allUsers, searchTerm]);
 
   const handleAddUserToSection = async (user, permission = 1) => {
     if (!selectedSection || !user) {
@@ -130,9 +75,23 @@ const UserPermission = ({ selectedSection, onRemoveUser, onClose }) => {
       setSearchTerm("");
       setIsAddModalOpen(false);
 
+      if (selectedSection) loadAssignments(selectedSection.id);
+
       toast.success("Đã thêm người dùng vào section");
     } catch (error) {
       toast.error(error?.message || "Không thể thêm người dùng vào section");
+    }
+  };
+
+  const handleRemoveUser = async (permissionId) => {
+    if (!selectedSection) {
+      return;
+    }
+    try {
+      await sectionService.removeUserFromSection(permissionId);
+      loadAssignments(selectedSection.id);
+    } catch (error) {
+      toast.error(error?.message || "Không thể xóa");
     }
   };
 
@@ -145,21 +104,21 @@ const UserPermission = ({ selectedSection, onRemoveUser, onClose }) => {
   }
 
   return (
-    <section className="shadow-sm p-2">
+    <section className=" p-2">
       <div className="gap-2 flex flex-wrap">
-        {assignedUsers.length === 0 ? (
-          <div className="rounded-2xl border border-dashed text-center text-sm text-slate-500">
+        {assignments.length === 0 ? (
+          <div className="rounded-2xl  text-center text-sm text-slate-500">
             Chưa có user nào được gán cho section này.
           </div>
         ) : (
-          assignedUsers.map((assignment) => (
+          assignments.map((assignment) => (
             <div
               key={assignment.id}
               className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-2 py-1 sm:flex-row sm:items-center sm:justify-between"
             >
               <div className="min-w-0">
                 <div className="truncate text-sm font-semibold text-slate-900">
-                  {assignment.userName}
+                  {assignment.fullName}
                 </div>
                 <div className="truncate text-xs text-slate-500">
                   {assignment.userEmail}
@@ -168,12 +127,12 @@ const UserPermission = ({ selectedSection, onRemoveUser, onClose }) => {
 
               <div className="flex items-center gap-3 self-start sm:self-auto">
                 <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-700 ring-1 ring-slate-200">
-                  {assignment.permission}
+                  {assignment.permission || "View"}
                 </span>
 
                 <button
                   type="button"
-                  onClick={() => onRemoveUser?.(assignment.id)}
+                  onClick={async () => await handleRemoveUser(assignment.id)}
                   className="inline-flex h-9 w-9 items-center justify-center rounded-full text-red-600 transition hover:bg-red-50"
                   aria-label="Xóa user"
                 >
@@ -255,15 +214,15 @@ const UserPermission = ({ selectedSection, onRemoveUser, onClose }) => {
                 <div className="space-y-2">
                   {filteredUsers.map((user) => (
                     <div
-                      key={user.id}
+                      key={user.email}
                       className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
                     >
                       <div className="min-w-0">
                         <div className="truncate text-sm font-semibold text-slate-900">
-                          {user.userName}
+                          {user.fullName}
                         </div>
                         <div className="truncate text-xs text-slate-500">
-                          {user.userEmail}
+                          {user.email}
                         </div>
                       </div>
 

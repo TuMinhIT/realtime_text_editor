@@ -95,10 +95,10 @@ namespace text_editor_server.Services
             });
         }
 
-        public async Task<ServiceResult<bool>> RemoveUserFromSectionAsync(Guid sectionId, Guid userId)
+        public async Task<ServiceResult<bool>> RemoveUserFromSectionAsync(Guid sectionPermissionId)
         {
             var assignment = await _context.SectionPermissions
-                .FirstOrDefaultAsync(sp => sp.SectionId == sectionId && sp.UserId == userId);
+                .FirstOrDefaultAsync(sp => sp.Id == sectionPermissionId);
 
             if (assignment == null)
             {
@@ -122,6 +122,29 @@ namespace text_editor_server.Services
             return ServiceResult<List<Section>>.Ok(sections);
         }
 
+        public async Task<List<BlockPermissionRes>> GetSectionPermissonAsync(Guid sectionId)
+        {
+            var sectionPermissions = await _context.SectionPermissions
+                .AsNoTracking()
+                .Where(s => s.SectionId == sectionId)
+                .Join(
+                    _context.Users.AsNoTracking(),
+                    sp => sp.UserId,
+                    u => u.Id,
+                    (sp, u) => new BlockPermissionRes
+                    {
+                        Id = sp.Id,
+                        fullName = u.FullName,
+                        SectionId = sp.SectionId,
+                        UserId = sp.UserId,
+                        UserEmail = u.Email,
+                        Permission = sp.Permission.ToString(),
+                        AssignedAt = sp.AssignedAt
+                    })
+                .ToListAsync();
+
+            return sectionPermissions;
+        }
 
         //Cập nhật section:
         public async Task<bool> UpdateSectionContentAsync(Guid sectionId, string newContent)
