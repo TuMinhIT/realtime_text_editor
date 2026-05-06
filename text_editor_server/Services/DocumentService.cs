@@ -310,30 +310,38 @@ namespace text_editor_server.Services
 				await _sectionParser.ParseNow(documentId);
 
 				//Kiểm thử ghép section:
-				var sections = await _context.Sections
-					.Where(s => s.DocumentId == documentId)
-					.OrderBy(s => s.OrderIndex)
-					.ToListAsync();
+			////	var sections = await _context.Sections
+			//		.Where(s => s.DocumentId == documentId)
+			//		.OrderBy(s => s.OrderIndex)
+			//		.ToListAsync();
 
 				//Sfdt gốc ban đầu:
-				var originalSfdt = JObject.Parse(newContent);
+			//	var originalSfdt = JObject.Parse(newContent);
 
 				//Gọi hàm rebuild lại:
-				var rebuiltSfdt = _sectionParser.RebuildSfdt(sections, originalSfdt);
+				//var rebuiltSfdt = _sectionParser.RebuildSfdt(sections, originalSfdt);
+
 
 				//log thử kq để so sánh kết quả sơ bộ:
-				_logger.LogInformation("Rebuilt SFDT: {RebuiltSfdt}", rebuiltSfdt);
+			//	_logger.LogInformation("Rebuilt SFDT: {RebuiltSfdt}", rebuiltSfdt);
 
-                //So sánh JSON:
-                var isEqual = JToken.DeepEquals(
-					JObject.Parse(newContent),
-					JObject.Parse(rebuiltSfdt)
-                );
+				
+     //           //So sánh JSON:
+     //           var isEqual = JToken.DeepEquals(
+					//JObject.Parse(newContent),
+					//JObject.Parse(rebuiltSfdt)
+     //           );
 
-				_logger.LogInformation("Is original SFDT equal to rebuilt SFDT? {IsEqual}", isEqual);
+				// logger.LogInformation("Is original SFDT equal to rebuilt SFDT? {IsEqual}", isEqual);
 
 				//Xuất file để kiểm thử thủ công:
+<<<<<<< HEAD
 				//await _sectionParser.ExportDebugFiles(documentId, newContent);
+=======
+			//	await _sectionParser.ExportDebugFiles(documentId, newContent);
+
+
+>>>>>>> origin/update-content
 				//END TEST
                 return true;
 
@@ -343,6 +351,42 @@ namespace text_editor_server.Services
                 _logger.LogError(ex, $"Failed to update content for document {documentId}");
                 return false;
             }
+        }
+
+
+        //Update JSONCONTENT khi cập nhật section:
+        public async Task RebuildFromSectionAsync(Guid sectionId)
+        {
+            var section = await _context.Sections
+                .FirstOrDefaultAsync(s => s.Id == sectionId);
+
+            if (section == null) return;
+
+            var documentId = section.DocumentId;
+
+            var documentSnapshot = await _context.DocumentSnapshots
+                .FirstOrDefaultAsync(d => d.DocumentId == documentId);
+
+            if (documentSnapshot == null) return;
+
+            // 1. load sections
+            var sections = await _context.Sections
+                .Where(s => s.DocumentId == documentId)
+                .OrderBy(s => s.OrderIndex)
+                .ToListAsync();
+
+            // 2. rebuild sfdt
+            var originalSfdt = JObject.Parse(documentSnapshot.JsonContent);
+
+            var rebuiltSfdt = _sectionParser.RebuildSfdt(sections, originalSfdt);
+
+            // 3. update document
+            documentSnapshot.JsonContent = rebuiltSfdt;
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Document {DocumentId} synced from section {SectionId}",
+                documentId, sectionId);
         }
     }
 }

@@ -84,7 +84,7 @@ namespace text_editor_server.Services
                 var sectionStack = new Stack<Section>();
                 Section? currentSection = null;
 
-                // 👉 IMPORTANT: giữ raw SFDT blocks
+                //  IMPORTANT: giữ raw SFDT blocks
                 var contentBuffer = new List<JObject>();
 
                 foreach (var blockToken in blocks)
@@ -170,9 +170,36 @@ namespace text_editor_server.Services
         // =========================
 
         // KHÔNG flatten text nữa → giữ format
+        //private string ExtractTitle(JObject block)
+        //{
+        //    string test = block.ToString();
+        //    if (string.IsNullOrEmpty(test))
+        //        return "Untitled";
+        //    string test1 = block.SelectToken("i[0].tlp")?.ToString() ?? "Untitled";
+        //    return block.SelectToken("i[0].tlp")?.ToString() ?? "Untitled";
+        //}
         private string ExtractTitle(JObject block)
         {
-            return block.SelectToken("i[0].tlp")?.ToString() ?? "Untitled";
+            var runs = block["i"] as JArray;
+
+            if (runs == null)
+            {
+                _logger.LogWarning("No runs found: {Block}", block.ToString());
+                return "Untitled";
+            }
+
+            foreach (var r in runs)
+            {
+                _logger.LogInformation("Run: {Text}", r["tlp"]?.ToString());
+            }
+
+            var title = string.Concat(
+                runs.Select(r => r["tlp"]?.ToString() ?? "")
+            ).Trim();
+
+            _logger.LogInformation("Final Title: {Title}", title);
+
+            return title;
         }
 
         private int ExtractLevel(string styleName)
@@ -299,6 +326,8 @@ namespace text_editor_server.Services
                 return null; // hoặc log lỗi
             }
 
+
+      
             return BuildSectionPreview(sectionContent, originalSfdt);
         }
 
@@ -345,9 +374,18 @@ namespace text_editor_server.Services
                         var preview = BuildSectionPreview(section.Content, originalSfdt);
 
                         var safeTitle = string.Join("_",
-                            section.Title.Split(Path.GetInvalidFileNameChars()));
+                        section.Title.Split(Path.GetInvalidFileNameChars()));
 
-                        var fileName = $"{index:D2}_section_L{section.Level}_{safeTitle}.sfdt";
+                        // 🔥 cắt còn 30 ký tự
+                        if (safeTitle.Length > 30)
+                            safeTitle = safeTitle.Substring(0, 30);
+
+                        // 🔥 thêm hash chống trùng
+                        using var sha = System.Security.Cryptography.SHA1.Create();
+                        var hashBytes = sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(section.Title));
+                        var hash = BitConverter.ToString(hashBytes).Replace("-", "").Substring(0, 8);
+
+                        var fileName = $"{index:D2}_L{section.Level}_{safeTitle}_{hash}.sfdt";
 
                         var path = Path.Combine(baseDir, fileName);
 
@@ -379,5 +417,6 @@ namespace text_editor_server.Services
                 _logger.LogError(ex, "ExportDebugFiles failed");
             }
         }
+
     }
 }
