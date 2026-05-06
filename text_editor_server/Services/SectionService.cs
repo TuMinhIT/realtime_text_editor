@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using text_editor_server.Data;
 using text_editor_server.DTOs.res;
@@ -121,7 +122,62 @@ namespace text_editor_server.Services
             return ServiceResult<List<Section>>.Ok(sections);
         }
 
-       
-       
+
+        //Cập nhật section:
+        public async Task<bool> UpdateSectionContentAsync(Guid sectionId, string newContent)
+        {
+            try
+            {
+                var section = await _context.Sections
+                    .FirstOrDefaultAsync(s => s.Id == sectionId);
+
+                if (section == null)
+                    return false;
+
+                // 1. Extract block từ SFDT
+                var blocks = ExtractBlocksFromSfdt(newContent);
+
+                if (blocks.Count == 0)
+                    return false;
+
+                // 2. FIX: lưu toàn bộ blocks (KHÔNG lấy First())
+                section.Content = JsonConvert.SerializeObject(blocks);
+
+                await _context.SaveChangesAsync();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating section content");
+                return false;
+            }
+        }
+        //Hàm chuyển từ sfdt gốc sang section content:
+        public List<JObject> ExtractBlocksFromSfdt(string json)
+        {
+            var result = new List<JObject>();
+
+            var jObj = JObject.Parse(json);
+            var sections = jObj["sec"] as JArray;
+
+            if (sections == null) return result;
+
+            foreach (var sec in sections)
+            {
+                var blocks = sec["b"] as JArray;
+                if (blocks == null) continue;
+
+                foreach (var block in blocks)
+                {
+                    if (block is JObject obj)
+                        result.Add(obj);
+                }
+            }
+
+            return result;
+        }
+
+
     }
 }

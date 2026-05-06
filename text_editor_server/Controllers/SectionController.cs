@@ -108,6 +108,54 @@ namespace text_editor_server.Controllers
 
             return Ok(result);
         }
+
+
+        ////Hàm update section:
+        //[HttpPut("section/{id}")]
+        //public async Task<IActionResult> UpdateSection(Guid id, [FromBody] UpdateSectionReq req)
+        //{
+        //    var section = await _db.Sections.FirstOrDefaultAsync(s => s.Id == id);
+        //    if (section == null)
+        //        return NotFound();
+
+        //    // 🔥 chống conflict
+        //    if (section.Version != req.Version)
+        //        return Conflict("Section has been modified");
+
+        //    section.Content = req.Content;
+        //    section.Version++;
+        //    section.Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+        //    await _db.SaveChangesAsync();
+
+        //    return Ok();
+        //}
+
+        [HttpPut("{sectionId}")]
+        public async Task<IActionResult> UpdateSectionContent(
+       Guid sectionId,
+       [FromBody] UpdateSectionReq req)
+        {
+            if (req == null || string.IsNullOrEmpty(req.Content))
+                return BadRequest("Invalid request");
+
+            var result = await _sectionService
+                .UpdateSectionContentAsync(sectionId, req.Content);
+
+            if (!result)
+                return NotFound("Section not found or update failed");
+
+
+            ////Cập nhật document:
+            await _documentService.RebuildFromSectionAsync(sectionId);
+            return Ok(new
+            {
+                message = "Section updated successfully"
+            });
+        }
+
+        //
+
     }
 
     public class AssignBlockPermissionReq
