@@ -30,6 +30,23 @@ namespace text_editor_server.Services
             _httpContextAccessor = httpContextAccessor;
         }
 
+        // Get list User
+        public async Task<List<UserRes>> GetListUser()
+        {
+            var users = await _context.Users
+            .AsNoTracking()
+            .Where(u => u.Role != "Admin")
+            .Select(u => new UserRes
+            {
+                Id = u.Id,
+                FullName = u.FullName,
+                Email = u.Email,
+                IsActive = u.IsActive
+            })
+            .ToListAsync();
+            return users;
+        }
+
         //REGISTER
         public async Task<UserRes?> RegisterUser(string email, string password, string fullName)
         {

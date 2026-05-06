@@ -1,12 +1,16 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Lock, Plus, Users } from "lucide-react";
+import { ArrowLeft, Lock, Plus, Trash2, TrashIcon, Users } from "lucide-react";
 import { toast } from "react-toastify";
+import {
+  DocumentEditorContainerComponent,
+  Inject,
+  Toolbar,
+} from "@syncfusion/ej2-react-documenteditor";
 import { extractHeadingAndBodyFromSfdt } from "../utils/sfdtParser";
 import sectionService from "../services/sectionService";
 import documentService from "../services/documentService";
 import DocViewer from "../components/SectionAuth/DocViewer";
-import UserPermission from "../components/SectionAuth/UserPermission";
 
 const SERVICE_URL =
   "https://ej2services.syncfusion.com/production/web-services/api/documenteditor/";
@@ -27,16 +31,21 @@ const normalizeJson = (value) => {
   }
 };
 
+// const getAssignments = (section) => {
+//   if (Array.isArray(section?.assignments)) {
+//     return section.assignments;
+//   }
+
+//   if (Array.isArray(section?.users)) {
+//     return section.users;
+//   }
+
+//   return [];
+// };
+
 const getAssignments = (section) => {
-  if (Array.isArray(section?.assignments)) {
-    return section.assignments;
-  }
-
-  if (Array.isArray(section?.users)) {
-    return section.users;
-  }
-
-  return [];
+  // return Array.isArray(section?.assignments) ? section.assignments : [];
+  return [{ name: "OKe" }, { name: "Heie" }, { name: "HUEM" }];
 };
 
 const mapPermissionToAssignment = (item) => {
@@ -84,8 +93,9 @@ const SectionAuthority = () => {
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [newUserEmail, setNewUserEmail] = useState("");
+  const [isAddingUser, setIsAddingUser] = useState(false);
   const [showNavigationPane, setShowNavigationPane] = useState(true);
-  const [showFormAdd, setShowFormAdd] = useState(false);
 
   const openPreview = (sfdt) => {
     const editor = editorRef.current?.documentEditor;
@@ -163,76 +173,6 @@ const SectionAuthority = () => {
         ),
       );
     }
-  };
-
-  const handleAddUserToSection = (user, permission = "edit") => {
-    if (!selectedSection || !user) {
-      return;
-    }
-
-    const normalizedUserId = user.userId || user.id || user._id;
-    const normalizedEmail = user.userEmail || user.email || "";
-    const normalizedName =
-      user.userName || user.name || user.fullName || normalizedEmail;
-
-    const newPermission = {
-      id: normalizedUserId || normalizedEmail || `perm-${Date.now()}`,
-      userId: normalizedUserId || normalizedEmail,
-      userEmail: normalizedEmail,
-      userName: normalizedName,
-      permission,
-      canEdit: permission === "edit" || permission === "owner",
-      canDelete: permission === "owner",
-    };
-
-    setSections((current) =>
-      current.map((section) => {
-        if (section.id !== selectedSection.id) {
-          return section;
-        }
-
-        const currentAssignments = getAssignments(section);
-        const alreadyExists = currentAssignments.some(
-          (assignment) =>
-            (assignment.userId || assignment.id) === newPermission.userId ||
-            assignment.userEmail === newPermission.userEmail,
-        );
-
-        if (alreadyExists) {
-          return section;
-        }
-
-        return {
-          ...section,
-          assignments: [...currentAssignments, newPermission],
-        };
-      }),
-    );
-
-    setSelectedSection((current) => {
-      if (!current) {
-        return current;
-      }
-
-      const currentAssignments = getAssignments(current);
-      const alreadyExists = currentAssignments.some(
-        (assignment) =>
-          (assignment.userId || assignment.id) === newPermission.userId ||
-          assignment.userEmail === newPermission.userEmail,
-      );
-
-      if (alreadyExists) {
-        return current;
-      }
-
-      return {
-        ...current,
-        assignments: [...currentAssignments, newPermission],
-      };
-    });
-
-    setIsDirty(true);
-    toast.success("Đã thêm người dùng vào section");
   };
 
   useEffect(() => {
@@ -439,38 +379,122 @@ const SectionAuthority = () => {
   const handleSelectSection = (section) => {
     setSelectedSection(section);
   };
+  // thêm user mới
+  const handleAddUser = async () => {
+    if (!newUserEmail.trim() || !selectedSection) {
+      toast.warn("Vui lòng nhập email người dùng");
+      return;
+    }
 
-  const handleRemoveUser = (permissionId) => {
+    setIsAddingUser(true);
+
+    try {
+      const newPermission = {
+        id: `perm-${Date.now()}`,
+        userId: `user-${Date.now()}`,
+        userEmail: newUserEmail.trim(),
+        userName: newUserEmail.split("@")[0],
+        canEdit: true,
+        canDelete: false,
+      };
+
+      setSections((current) =>
+        current.map((section) =>
+          section.id === selectedSection.id
+            ? {
+                ...section,
+                assignments: [...getAssignments(section), newPermission],
+              }
+            : section,
+        ),
+      );
+
+      setSelectedSection((current) =>
+        current
+          ? {
+              ...current,
+              assignments: [...getAssignments(current), newPermission],
+            }
+          : current,
+      );
+
+      setNewUserEmail("");
+      setIsDirty(true);
+      toast.success("Đã thêm quyền cho người dùng");
+    } catch {
+      toast.error("Không thể thêm người dùng");
+    } finally {
+      setIsAddingUser(false);
+    }
+  };
+
+  const handleRemoveUser = async (permissionId) => {
     if (!selectedSection) {
       return;
     }
 
-    setSections((current) =>
-      current.map((section) =>
-        section.id === selectedSection.id
+    try {
+      setSections((current) =>
+        current.map((section) =>
+          section.id === selectedSection.id
+            ? {
+                ...section,
+                assignments: getAssignments(section).filter(
+                  (assignment) => assignment.id !== permissionId,
+                ),
+              }
+            : section,
+        ),
+      );
+
+      setSelectedSection((current) =>
+        current
           ? {
-              ...section,
-              assignments: getAssignments(section).filter(
+              ...current,
+              assignments: getAssignments(current).filter(
                 (assignment) => assignment.id !== permissionId,
               ),
             }
-          : section,
-      ),
-    );
+          : current,
+      );
 
-    setSelectedSection((current) =>
-      current
-        ? {
-            ...current,
-            assignments: getAssignments(current).filter(
-              (assignment) => assignment.id !== permissionId,
-            ),
-          }
-        : current,
-    );
+      setIsDirty(true);
+      toast.success("Đã xóa quyền");
+    } catch {
+      toast.error("Không thể xóa quyền");
+    }
+  };
 
-    setIsDirty(true);
-    toast.success("Đã xóa quyền");
+  const handleTogglePermission = async (permissionId, permissionType) => {
+    if (!selectedSection) {
+      return;
+    }
+
+    try {
+      const updatedAssignments = getAssignments(selectedSection).map(
+        (assignment) =>
+          assignment.id === permissionId
+            ? { ...assignment, [permissionType]: !assignment[permissionType] }
+            : assignment,
+      );
+
+      setSections((current) =>
+        current.map((section) =>
+          section.id === selectedSection.id
+            ? { ...section, assignments: updatedAssignments }
+            : section,
+        ),
+      );
+
+      setSelectedSection((current) =>
+        current ? { ...current, assignments: updatedAssignments } : current,
+      );
+
+      setIsDirty(true);
+      toast.success("Cập nhật quyền thành công");
+    } catch {
+      toast.error("Không thể cập nhật quyền");
+    }
   };
 
   const selectedAssignments = getAssignments(selectedSection);
@@ -614,28 +638,64 @@ const SectionAuthority = () => {
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
+                  onClick={() => setShowNavigationPane((current) => !current)}
+                  className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400"
+                >
+                  {showNavigationPane ? "Ẩn heading" : "Hiện heading"}
+                </button>
+
+                <button
+                  type="button"
                   onClick={handleSave}
                   disabled={isSaving || !selectedSection}
-                  className="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="rounded-full bg-[#1a73e8] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#1765cc] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isSaving ? "Đang lưu..." : "Lưu section"}
                 </button>
+
+                <button
+                  type="button"
+                  onClick={handleAddUser}
+                  className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Plus size={16} />
+                  Thêm Edit
+                </button>
               </div>
             </div>
+            <div className="flex flex-wrap gap-2 ">
+              {selectedSection ? (
+                getAssignments(selectedSection).map((assignment) => (
+                  <div
+                    key={assignment.id}
+                    className="rounded-2xl border border-slate-200 bg-slate-50 px-2"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="truncate text-sm font-medium text-slate-900">
+                        Ten 1
+                      </div>
 
-            <div className="mt-4">
-              <UserPermission
-                selectedSection={selectedSection}
-                onAddUser={handleAddUserToSection}
-                onRemoveUser={handleRemoveUser}
-                onClose={() => setShowFormAdd(false)}
-              />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveUser(assignment.id)}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-full text-red-600"
+                        aria-label="Xóa quyền"
+                      >
+                        <TrashIcon size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                  Hãy chọn một section ở cột bên trái.
+                </div>
+              )}
             </div>
           </div>
 
           <DocViewer
             editorRef={editorRef}
-            selectedSection={selectedSection}
             previewSfdt={previewSfdt}
             isPreviewLoading={isPreviewLoading}
             showNavigationPane={showNavigationPane}

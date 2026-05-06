@@ -110,10 +110,5 @@ namespace text_editor_server.Controllers
         }
     }
 
-    public class AssignBlockPermissionReq
-    {
-        public Guid SectionId { get; set; }
-        public Guid UserId { get; set; }
-        public PermissionLevel Permission { get; set; }
-    }
+
 }

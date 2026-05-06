@@ -152,32 +152,13 @@ namespace text_editor_server.Controllers
             });
         }
 
-        /// <summary>
-        /// Get user documents
-        /// </summary>
-        [HttpGet("{userId}/documents")]
-        public async Task<IActionResult> GetUserDocuments(Guid userId)
+        [HttpGet]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAll()
         {
-            try
-            {
-                var documents = await _context.Documents
-                    .Where(d => d.CreatedBy == userId)
-                    .Select(d => new
-                    {
-                        d.Id,
-                        d.Title,
-                        d.CreatedAt,
-                        SectionsCount = d.Sections.Count
-                    })
-                    .ToListAsync();
+            var result = await _authService.GetListUser();
+            return Ok(result);
 
-                return Ok(documents);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Error getting user documents: {ex.Message}");
-                return StatusCode(500, "Failed to get documents");
-            }
         }
 
         

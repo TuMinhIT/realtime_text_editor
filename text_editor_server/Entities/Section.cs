@@ -1,4 +1,4 @@
-﻿namespace text_editor_server.Entities
+﻿    namespace text_editor_server.Entities
 {
     public class Section
     {
@@ -9,9 +9,6 @@
         public int OrderIndex { get; set; }
         public Guid? ParentSectionId { get; set; }
 
-
-        //     public int StartParagraphIndex { get; set; }
-        //   public int EndParagraphIndex { get; set; }
         public Section? ParentSection { get; set; }
         public string Content { get; set; } = "";
         public ICollection<Section> Children { get; set; } = new List<Section>();

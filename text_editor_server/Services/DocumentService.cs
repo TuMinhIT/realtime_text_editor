@@ -130,9 +130,7 @@ namespace text_editor_server.Services
                 _context.DocumentSnapshots.Add(documentSnapshot);
                 await _context.SaveChangesAsync();
 
-				string test = documentSnapshot.JsonContent;
-				string test2 = document.Id.ToString();
-               // await _sectionParser.ParseNow(document.Id);
+			
 
                 return ServiceResult<DocumentUploadRes>.Ok(
                     new DocumentUploadRes
@@ -308,7 +306,7 @@ namespace text_editor_server.Services
                     documentSnapshot.JsonContent= newContent;
                 }
                 await _context.SaveChangesAsync();
-				// Trigger background section parsing
+				
 				await _sectionParser.ParseNow(documentId);
 
 				//Kiểm thử ghép section:
@@ -335,9 +333,7 @@ namespace text_editor_server.Services
 				_logger.LogInformation("Is original SFDT equal to rebuilt SFDT? {IsEqual}", isEqual);
 
 				//Xuất file để kiểm thử thủ công:
-				await _sectionParser.ExportDebugFiles(documentId, newContent);
-
-
+				//await _sectionParser.ExportDebugFiles(documentId, newContent);
 				//END TEST
                 return true;
 
