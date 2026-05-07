@@ -146,6 +146,17 @@ namespace text_editor_server.Services
             return sectionPermissions;
         }
 
+        // lấy quyền của 1 user trên 1 section
+        public async Task<SectionPermission> GetUserPermissonAsync(Guid userId, Guid sectionId)
+        {
+            var permission = await _context.SectionPermissions
+                .AsNoTracking()
+                .Where(s => s.SectionId == sectionId && s.UserId == userId)
+                .FirstOrDefaultAsync();
+
+            return permission;
+        }
+
         //Cập nhật section:
         public async Task<bool> UpdateSectionContentAsync(Guid sectionId, string newContent)
         {

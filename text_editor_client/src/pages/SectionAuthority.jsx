@@ -110,31 +110,6 @@ const SectionAuthority = () => {
     setSections(list);
   };
 
-  const loadSectionUsers = async (sectionId) => {
-    // try {
-    //   const result = await sectionService.getSectionUsers(sectionId);
-    //   const users = Array.isArray(result)
-    //     ? result
-    //     : Array.isArray(result?.data)
-    //       ? result.data
-    //       : [];
-    //   const assignments = users.map(mapPermissionToAssignment);
-    //   setSections((current) =>
-    //     current.map((section) =>
-    //       section.id === sectionId ? { ...section, assignments } : section,
-    //     ),
-    //   );
-    //   setSelectedSection((current) =>
-    //     current?.id === sectionId ? { ...current, assignments } : current,
-    //   );
-    // } catch {
-    //   setSections((current) =>
-    //     current.map((section) =>
-    //       section.id === sectionId ? { ...section, assignments: [] } : section,
-    //     ),
-    //   );
-    // }
-  };
   // load section and document
   useEffect(() => {
     if (!documentId) {

@@ -6,7 +6,7 @@ import {
 } from "@syncfusion/ej2-react-documenteditor";
 import { FileText, Home, PanelLeft, Save } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-import { APP_ROUTES } from "../constants/routes";
+
 import { documentService } from "../services/documentService";
 import { toast } from "react-toastify";
 
@@ -196,7 +196,7 @@ const DocumentEditor = () => {
         <div className="flex h-16 items-center gap-3 px-4 md:px-6">
           <button
             type="button"
-            onClick={() => navigate(APP_ROUTES.home)}
+            onClick={() => navigate("/admin")}
             className="inline-flex h-10 w-10 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100"
             aria-label="Back to home"
           >

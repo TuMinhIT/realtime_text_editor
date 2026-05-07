@@ -1,16 +1,15 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { use, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Lock, Plus, Trash2, TrashIcon, Users } from "lucide-react";
+import { ArrowLeft, BookA, Lock, Menu, X, Plus, Users } from "lucide-react";
 import { toast } from "react-toastify";
-import {
-  DocumentEditorContainerComponent,
-  Inject,
-  Toolbar,
-} from "@syncfusion/ej2-react-documenteditor";
-import { extractHeadingAndBodyFromSfdt } from "../utils/sfdtParser";
+
 import sectionService from "../services/sectionService";
 import documentService from "../services/documentService";
+import { sessionService } from "../services/sessionService";
 import DocViewer from "../components/SectionAuth/DocViewer";
+import UserPermission from "../components/SectionAuth/UserPermission";
+
+import DocEdit from "../components/SectionUser/DocEdit";
 
 const SERVICE_URL =
   "https://ej2services.syncfusion.com/production/web-services/api/documenteditor/";
@@ -31,23 +30,6 @@ const normalizeJson = (value) => {
   }
 };
 
-// const getAssignments = (section) => {
-//   if (Array.isArray(section?.assignments)) {
-//     return section.assignments;
-//   }
-
-//   if (Array.isArray(section?.users)) {
-//     return section.users;
-//   }
-
-//   return [];
-// };
-
-const getAssignments = (section) => {
-  // return Array.isArray(section?.assignments) ? section.assignments : [];
-  return [{ name: "OKe" }, { name: "Heie" }, { name: "HUEM" }];
-};
-
 const mapPermissionToAssignment = (item) => {
   const permission = (item?.permission || "").toLowerCase();
 
@@ -63,16 +45,6 @@ const mapPermissionToAssignment = (item) => {
   };
 };
 
-const canEditSection = (section) => {
-  const assignments = getAssignments(section);
-
-  if (!assignments.length) {
-    return false;
-  }
-
-  return assignments.some((assignment) => assignment.canEdit);
-};
-
 const SectionAuthority = () => {
   const location = useLocation();
   const { documentId } = useParams();
@@ -86,16 +58,11 @@ const SectionAuthority = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [selectedSection, setSelectedSection] = useState(null);
-  const [sectionHeading, setSectionHeading] = useState("");
-  const [sectionBody, setSectionBody] = useState("");
   const [previewSfdt, setPreviewSfdt] = useState("");
   const [originalPreview, setOriginalPreview] = useState("");
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
-  const [isDirty, setIsDirty] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [newUserEmail, setNewUserEmail] = useState("");
-  const [isAddingUser, setIsAddingUser] = useState(false);
-  const [showNavigationPane, setShowNavigationPane] = useState(true);
+  const [assignment, setAssignment] = useState(null);
+  const [openAside, setOpenAside] = useState(true);
 
   const openPreview = (sfdt) => {
     const editor = editorRef.current?.documentEditor;
@@ -106,14 +73,14 @@ const SectionAuthority = () => {
     editor.open(sfdt);
   };
 
-  const applyReadOnlyMode = (section) => {
+  const applyReadOnlyMode = (flag) => {
     const editor = editorRef.current?.documentEditor;
     if (!editor) {
       return;
     }
 
     try {
-      editor.isReadOnly = !canEditSection(section);
+      editor.isReadOnly = flag;
     } catch {
       // Ignore if this Syncfusion build does not expose the flag yet.
     }
@@ -127,6 +94,8 @@ const SectionAuthority = () => {
       setDocumentTitle(
         loadedDocument?.title || location.state?.documentTitle || "Tài liệu",
       );
+      setPreviewSfdt(loadedDocument.jsonContent);
+      setOriginalPreview(loadedDocument.jsonContent);
       return;
     }
 
@@ -146,35 +115,36 @@ const SectionAuthority = () => {
     setSections(list);
   };
 
-  const loadSectionUsers = async (sectionId) => {
+  const loadUserAssignments = async () => {
+    if (!selectedSection) {
+      setAssignment(null);
+      return;
+    }
+
+    const currentUser = sessionService.getCurrentUser();
+    if (!currentUser?.id) {
+      setAssignment(null);
+      return;
+    }
+
     try {
-      const result = await sectionService.getSectionUsers(sectionId);
-      const users = Array.isArray(result)
-        ? result
-        : Array.isArray(result?.data)
-          ? result.data
-          : [];
+      const result = await sectionService.getUserAssignments({
+        userId: currentUser.id,
+        sectionId: selectedSection.id,
+      });
 
-      const assignments = users.map(mapPermissionToAssignment);
+      if (!result) {
+        setAssignment(null);
+        return;
+      }
 
-      setSections((current) =>
-        current.map((section) =>
-          section.id === sectionId ? { ...section, assignments } : section,
-        ),
-      );
-
-      setSelectedSection((current) =>
-        current?.id === sectionId ? { ...current, assignments } : current,
-      );
-    } catch {
-      setSections((current) =>
-        current.map((section) =>
-          section.id === sectionId ? { ...section, assignments: [] } : section,
-        ),
-      );
+      setAssignment(result);
+    } catch (err) {
+      setAssignment(null);
     }
   };
 
+  // load section and document
   useEffect(() => {
     if (!documentId) {
       setErrorMessage("Không tìm thấy documentId trên route.");
@@ -203,12 +173,13 @@ const SectionAuthority = () => {
   useEffect(() => {
     if (!sections.length) {
       setSelectedSection(null);
+
       return;
     }
-
+    //  trả tỏng quan khi vừa load
     setSelectedSection((current) => {
       if (!current) {
-        return sections[0];
+        return "tongquan";
       }
 
       return (
@@ -217,150 +188,98 @@ const SectionAuthority = () => {
     });
   }, [sections]);
 
-  useEffect(() => {
-    if (!selectedSection?.id || selectedSection.assignments !== undefined) {
-      return;
-    }
+  const loadPreview = async () => {
+    setIsPreviewLoading(true);
+    setErrorMessage("");
 
-    loadSectionUsers(selectedSection.id);
-  }, [selectedSection?.id, selectedSection?.assignments]);
+    try {
+      const sectionContent = normalizeJson(
+        selectedSection.content || selectedSection.jsonContent,
+      );
+
+      if (!sectionContent) {
+        throw new Error("Thiếu dữ liệu section để dựng preview.");
+      }
+      if (selectedSection.level == 1) return;
+
+      const preview = await sectionService.previewSection(
+        selectedSection.id,
+        sectionContent,
+        documentId,
+      );
+
+      if (!preview.sfdtContent) {
+        throw new Error("Backend không trả về SFDT preview hợp lệ.");
+      }
+
+      setPreviewSfdt(preview.sfdtContent);
+    } catch (error) {
+      setPreviewSfdt(originalPreview);
+      setErrorMessage(
+        error?.message || "Không thể dựng preview section từ backend.",
+      );
+    } finally {
+      setIsPreviewLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!selectedSection || !documentId) {
-      setSectionHeading("");
-      setSectionBody("");
-      setPreviewSfdt("");
-      setOriginalPreview("");
-      setIsDirty(false);
+      if (sectionService.level == 1) return;
+      setPreviewSfdt(originalPreview);
       return;
     }
 
-    let isActive = true;
-
-    const loadPreview = async () => {
-      setIsPreviewLoading(true);
-      setErrorMessage("");
-
-      try {
-        const sectionContent = normalizeJson(
-          selectedSection.content || selectedSection.jsonContent,
-        );
-
-        if (!sectionContent) {
-          throw new Error("Thiếu dữ liệu section để dựng preview.");
-        }
-
-        const preview = await sectionService.previewSection(
-          documentId,
-          sectionContent,
-        );
-
-        const normalizedPreview = normalizeJson(preview);
-
-        if (!normalizedPreview) {
-          throw new Error("Backend không trả về SFDT preview hợp lệ.");
-        }
-
-        if (!isActive) {
-          return;
-        }
-
-        setPreviewSfdt(normalizedPreview);
-        setOriginalPreview(normalizedPreview);
-
-        try {
-          const { heading, body } =
-            extractHeadingAndBodyFromSfdt(normalizedPreview);
-          setSectionHeading(heading || selectedSection.title || "");
-          setSectionBody(body || "");
-        } catch {
-          setSectionHeading(selectedSection.title || "");
-          setSectionBody("");
-        }
-
-        setIsDirty(false);
-      } catch (error) {
-        if (!isActive) {
-          return;
-        }
-
-        setPreviewSfdt("");
-        setOriginalPreview("");
-        setSectionHeading(selectedSection.title || "");
-        setSectionBody("");
-        setErrorMessage(
-          error?.message || "Không thể dựng preview section từ backend.",
-        );
-      } finally {
-        if (isActive) {
-          setIsPreviewLoading(false);
-        }
-      }
-    };
-
+    // Nếu là tổng quan, hiển thị tài liệu gốc
+    if (selectedSection === "tongquan") {
+      setPreviewSfdt(originalPreview);
+      return;
+    }
     loadPreview();
-
-    return () => {
-      isActive = false;
-    };
-  }, [selectedSection, documentId]);
+    loadUserAssignments();
+  }, [selectedSection, documentId, originalPreview]);
 
   useEffect(() => {
     openPreview(previewSfdt);
-    applyReadOnlyMode(selectedSection);
-  }, [previewSfdt, selectedSection?.id, selectedSection?.assignments]);
-
-  useEffect(() => {
-    const editor = editorRef.current?.documentEditor;
-    if (editor?.documentEditorSettings) {
-      editor.documentEditorSettings.showNavigationPane = showNavigationPane;
-    }
-  }, [showNavigationPane]);
+    // nếu assignment cho phép edit thì đặt readOnly = false
+    const canEdit = assignment?.permission == 1;
+    applyReadOnlyMode(!canEdit);
+  }, [previewSfdt, selectedSection?.id, assignment?.permission == 1]);
 
   const handleCreated = () => {
     openPreview(previewSfdt);
-    applyReadOnlyMode(selectedSection);
+    applyReadOnlyMode(true);
   };
 
-  const handleSave = () => {
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+
+  const handleSave = async () => {
     const editor = editorRef.current?.documentEditor;
     if (!editor || !selectedSection) {
       return;
     }
 
-    setIsSaving(true);
+    if (!assignment?.permission == 1) {
+      toast.error("Bạn không có quyền chỉnh sửa section này.");
+      return;
+    }
 
+    setIsSaving(true);
     try {
       const serialized = normalizeJson(editor.serialize());
 
-      setSections((current) =>
-        current.map((section) =>
-          section.id === selectedSection.id
-            ? {
-                ...section,
-                content: serialized,
-                jsonContent: serialized,
-              }
-            : section,
-        ),
-      );
+      // // Lưu nội dung section qua endpoint document/section content
+      await sectionService.updateSectionContent(selectedSection.id, serialized);
 
-      setSelectedSection((current) =>
-        current
-          ? {
-              ...current,
-              content: serialized,
-              jsonContent: serialized,
-            }
-          : current,
-      );
+      // Reload sections để cập nhật dữ liệu trong selectedSection
+      await loadSections();
+      await loadDocument();
 
-      setPreviewSfdt(serialized);
-      setOriginalPreview(serialized);
       setIsDirty(false);
-      toast.success("Đã lưu section trong trạng thái hiện tại.");
-    } catch {
-      toast.error("Không thể lưu nội dung section.");
+      toast.success("Lưu section thành công.");
+    } catch (err) {
+      toast.error(err?.message || "Lưu thất bại. Vui lòng thử lại.");
     } finally {
       setIsSaving(false);
     }
@@ -373,132 +292,12 @@ const SectionAuthority = () => {
     }
 
     const currentSerialized = normalizeJson(editor.serialize());
-    setIsDirty(currentSerialized !== originalPreview);
+    setIsDirty(currentSerialized !== normalizeJson(originalPreview));
   };
 
   const handleSelectSection = (section) => {
     setSelectedSection(section);
   };
-  // thêm user mới
-  const handleAddUser = async () => {
-    if (!newUserEmail.trim() || !selectedSection) {
-      toast.warn("Vui lòng nhập email người dùng");
-      return;
-    }
-
-    setIsAddingUser(true);
-
-    try {
-      const newPermission = {
-        id: `perm-${Date.now()}`,
-        userId: `user-${Date.now()}`,
-        userEmail: newUserEmail.trim(),
-        userName: newUserEmail.split("@")[0],
-        canEdit: true,
-        canDelete: false,
-      };
-
-      setSections((current) =>
-        current.map((section) =>
-          section.id === selectedSection.id
-            ? {
-                ...section,
-                assignments: [...getAssignments(section), newPermission],
-              }
-            : section,
-        ),
-      );
-
-      setSelectedSection((current) =>
-        current
-          ? {
-              ...current,
-              assignments: [...getAssignments(current), newPermission],
-            }
-          : current,
-      );
-
-      setNewUserEmail("");
-      setIsDirty(true);
-      toast.success("Đã thêm quyền cho người dùng");
-    } catch {
-      toast.error("Không thể thêm người dùng");
-    } finally {
-      setIsAddingUser(false);
-    }
-  };
-
-  const handleRemoveUser = async (permissionId) => {
-    if (!selectedSection) {
-      return;
-    }
-
-    try {
-      setSections((current) =>
-        current.map((section) =>
-          section.id === selectedSection.id
-            ? {
-                ...section,
-                assignments: getAssignments(section).filter(
-                  (assignment) => assignment.id !== permissionId,
-                ),
-              }
-            : section,
-        ),
-      );
-
-      setSelectedSection((current) =>
-        current
-          ? {
-              ...current,
-              assignments: getAssignments(current).filter(
-                (assignment) => assignment.id !== permissionId,
-              ),
-            }
-          : current,
-      );
-
-      setIsDirty(true);
-      toast.success("Đã xóa quyền");
-    } catch {
-      toast.error("Không thể xóa quyền");
-    }
-  };
-
-  const handleTogglePermission = async (permissionId, permissionType) => {
-    if (!selectedSection) {
-      return;
-    }
-
-    try {
-      const updatedAssignments = getAssignments(selectedSection).map(
-        (assignment) =>
-          assignment.id === permissionId
-            ? { ...assignment, [permissionType]: !assignment[permissionType] }
-            : assignment,
-      );
-
-      setSections((current) =>
-        current.map((section) =>
-          section.id === selectedSection.id
-            ? { ...section, assignments: updatedAssignments }
-            : section,
-        ),
-      );
-
-      setSelectedSection((current) =>
-        current ? { ...current, assignments: updatedAssignments } : current,
-      );
-
-      setIsDirty(true);
-      toast.success("Cập nhật quyền thành công");
-    } catch {
-      toast.error("Không thể cập nhật quyền");
-    }
-  };
-
-  const selectedAssignments = getAssignments(selectedSection);
-  const canEditSelectedSection = canEditSection(selectedSection);
 
   if (isLoading) {
     return (
@@ -522,189 +321,178 @@ const SectionAuthority = () => {
               <ArrowLeft size={18} />
             </button>
 
+            <button
+              type="button"
+              onClick={() => setOpenAside(!openAside)}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100"
+              aria-label="Toggle sidebar"
+            >
+              {openAside ? <X size={18} /> : <Menu size={18} />}
+            </button>
+
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1a73e8] text-white">
-              <Lock size={18} />
+              <BookA size={16} />
             </div>
 
             <div>
-              <h1 className="text-lg font-semibold text-slate-900">
-                Phân quyền section
-              </h1>
-              <p className="text-xs text-slate-500">
-                Chỉnh sửa theo từng section
-              </p>
+              <span className="text-slate-500">Văn bản:</span>{" "}
+              <span className="font-medium text-slate-900">
+                {documentTitle}
+              </span>
             </div>
-          </div>
-
-          <div className="ml-auto text-right text-sm md:text-base">
-            <span className="text-slate-500">Văn bản:</span>{" "}
-            <span className="font-medium text-slate-900">{documentTitle}</span>
           </div>
         </div>
       </header>
-
-      <div className="mx-auto flex h-[calc(100vh-73px)] w-full max-w-[1600px] gap-4 overflow-hidden p-4">
-        <aside className="flex w-full max-w-[360px] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 px-4 py-4">
-            <div className="flex items-center gap-2">
-              <Users size={18} className="text-[#1a73e8]" />
-              <h2 className="text-base font-semibold">Sections</h2>
-            </div>
-            <p className="mt-1 text-xs text-slate-500">
-              Chọn section để xem và chỉnh nội dung tương ứng.
-            </p>
-          </div>
-
-          <div className="flex-1 space-y-3 overflow-y-auto p-3">
-            {sections.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
-                Chưa có section nào.
-              </div>
-            ) : null}
-
-            {sections.map((section) => {
-              const indentPx = Math.max(0, (section.level || 1) - 1) * 12;
-              const isSelected = selectedSection?.id === section.id;
-
-              return (
+      <div className="flex flex-wrap gap-3 p-4 ">
+        {openAside && (
+          <aside
+            className={` max-w-[360px] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg transition-all duration-300  `}
+          >
+            <div className="border-b border-slate-200 px-4 py-4">
+              <div className="flex flex-row justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <Users size={18} className="text-[#1a73e8]" />
+                  <h2 className="text-base font-semibold">Sections</h2>
+                </div>
                 <button
-                  key={section.id}
-                  type="button"
-                  onClick={() => handleSelectSection(section)}
-                  style={{ marginLeft: indentPx }}
-                  className={`w-full rounded-2xl border px-4 py-3 text-left transition ${
-                    isSelected
-                      ? "border-blue-200 bg-blue-50 shadow-sm"
-                      : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
-                  }`}
+                  onClick={() => setOpenAside(false)}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100 md:hidden"
+                  aria-label="Close sidebar"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-semibold text-slate-900">
-                        {section.title}
-                      </div>
-                      <div className="mt-1 text-xs text-slate-500">
-                        {getAssignments(section).length} người được gán
-                      </div>
-                    </div>
+                  <X size={18} />
+                </button>
+              </div>
+              <p className="mt-1 text-xs text-slate-500">
+                Chọn section để xem và chỉnh nội dung tương ứng.
+              </p>
+            </div>
 
-                    <div className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-600">
-                      Lv{section.level || 1}
+            <div className="flex-1 space-y-3 overflow-y-auto p-3">
+              {sections.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                  Chưa có section nào.
+                </div>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => setSelectedSection("tongquan")}
+                className={`w-full rounded-2xl  border px-2 py-1 text-left transition ${
+                  selectedSection == "tongquan"
+                    ? "border-blue-200 bg-blue-50 shadow-sm"
+                    : "border-slate-200 bg-gray-300 hover:border-slate-300 hover:bg-slate-50"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="truncate text-md  font-bold text-slate-900">
+                      Tổng quan
                     </div>
                   </div>
-                </button>
-              );
-            })}
-          </div>
-        </aside>
+                </div>
+              </button>
+              {sections.map((section) => {
+                const indentPx = Math.max(0, (section.level || 1) - 1) * 12;
+                const isSelected = selectedSection?.id === section.id;
+                if (section.level == 1)
+                  return (
+                    <div
+                      key={section.id}
+                      type="button"
+                      className={`w-full  border-b px-2 py-1 text-left transition ${"border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"}`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="truncate text-md  font-bold text-slate-900">
+                            {section.title}
+                          </div>
+                        </div>
+
+                        <div className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-600">
+                          Lv{section.level || 1}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                else
+                  return (
+                    <button
+                      key={section.id}
+                      type="button"
+                      onClick={() => handleSelectSection(section)}
+                      style={{ marginLeft: indentPx }}
+                      className={`w-full border-b  px-2 py-2 text-left transition ${
+                        isSelected
+                          ? "border-blue-200 bg-blue-50 shadow-sm"
+                          : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-semibold text-slate-900">
+                            {section.title}
+                          </div>
+                        </div>
+
+                        <div className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-600">
+                          Lv{section.level || 1}
+                        </div>
+                      </div>
+                    </button>
+                  );
+              })}
+            </div>
+          </aside>
+        )}
 
         {/* header Nọi dung */}
-        <section className="flex min-w-0 flex-1 flex-col gap-4 overflow-y-auto">
+        <section className="flex max-w-7xl m-auto min-w-0 flex-1 flex-col gap-4 overflow-hidden">
           {errorMessage ? (
             <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
               {errorMessage}
             </div>
           ) : null}
-          <div className="rounded-3xl  border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="flex flex-row gap-4 items-center lg:flex-row lg:items-start lg:justify-between">
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-lg font-semibold text-slate-900">
-                    {selectedSection?.title || "Chưa chọn section"}
-                  </h2>
-                </div>
-              </div>
 
-              <span
-                className={`rounded-full px-3 py-1 text-xs font-medium ${
-                  isDirty
-                    ? "bg-amber-100 text-amber-700"
-                    : "bg-emerald-100 text-emerald-700"
-                }`}
-              >
-                {isDirty ? "Chưa lưu" : "Đã đồng bộ"}
-              </span>
-
-              <span
-                className={`rounded-full px-3 py-1 text-xs font-medium ${
-                  canEditSelectedSection
-                    ? "bg-blue-100 text-blue-700"
-                    : "bg-slate-100 text-slate-600"
-                }`}
-              >
-                {canEditSelectedSection ? "Có thể chỉnh sửa" : "Chỉ xem"}
-              </span>
-
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowNavigationPane((current) => !current)}
-                  className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400"
-                >
-                  {showNavigationPane ? "Ẩn heading" : "Hiện heading"}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleSave}
-                  disabled={isSaving || !selectedSection}
-                  className="rounded-full bg-[#1a73e8] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#1765cc] disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {isSaving ? "Đang lưu..." : "Lưu section"}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleAddUser}
-                  className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  <Plus size={16} />
-                  Thêm Edit
-                </button>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2 ">
-              {selectedSection ? (
-                getAssignments(selectedSection).map((assignment) => (
-                  <div
-                    key={assignment.id}
-                    className="rounded-2xl border border-slate-200 bg-slate-50 px-2"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="truncate text-sm font-medium text-slate-900">
-                        Ten 1
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveUser(assignment.id)}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-full text-red-600"
-                        aria-label="Xóa quyền"
-                      >
-                        <TrashIcon size={16} />
-                      </button>
-                    </div>
+          {selectedSection == "tongquan" ? null : (
+            <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="flex flex-row gap-4 items-center justify-between">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-lg font-semibold text-slate-900">
+                      {selectedSection?.title || "Chưa chọn section"}
+                    </h2>
                   </div>
-                ))
-              ) : (
-                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
-                  Hãy chọn một section ở cột bên trái.
+                  <div>
+                    {assignment?.permission == 1 ? (
+                      <button
+                        onClick={handleSave}
+                        disabled={isSaving || !isDirty}
+                        className="mt-2 inline-flex items-center gap-2 rounded-full bg-green-600 px-3 py-1 text-sm font-medium text-white transition disabled:opacity-50"
+                      >
+                        {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
+                      </button>
+                    ) : (
+                      <div className="mt-2 text-sm text-slate-500">Chỉ xem</div>
+                    )}
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
-          </div>
+          )}
 
-          <DocViewer
-            editorRef={editorRef}
-            previewSfdt={previewSfdt}
-            isPreviewLoading={isPreviewLoading}
-            showNavigationPane={showNavigationPane}
-            handleCreated={handleCreated}
-            handleContentChange={handleContentChange}
-            handleSave={handleSave}
-            isSaving={isSaving}
-            originalPreview={originalPreview}
-          />
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <DocEdit
+              editorRef={editorRef}
+              selectedSection={selectedSection}
+              previewSfdt={previewSfdt}
+              isPreviewLoading={isPreviewLoading}
+              showNavigationPane={true}
+              handleCreated={handleCreated}
+              handleContentChange={handleContentChange}
+              handleSave={handleSave}
+              originalPreview={originalPreview}
+              canEdit={assignment?.permission == 1}
+            />
+          </div>
         </section>
       </div>
     </main>

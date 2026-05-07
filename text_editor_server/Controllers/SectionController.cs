@@ -26,7 +26,7 @@ namespace text_editor_server.Controllers
 
         //Hàm get tất cả section của một document:
         [HttpGet("document/{documentId:guid}")]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")
         public async Task<IActionResult> GetAllSectionsByDocument(Guid documentId)
         {
             var result = await _sectionService.GetAllSectionsByDocumentAsync(documentId);
@@ -120,29 +120,20 @@ namespace text_editor_server.Controllers
         }
 
 
+        //Hàm get assignment trên 1 section 
+        [HttpGet("user/{userId:guid}/section/{sectionId:guid}")]
+        [Authorize]
+        public async Task<IActionResult> GetUserAssignmentOnSection(Guid userId, Guid sectionId)
+        {
+            var assignment = await _sectionService.GetUserPermissonAsync(userId,sectionId);
+            if (assignment != null)
+            return Ok(assignment);
+            return Ok(null);
+        }
 
-        ////Hàm update section:
-        //[HttpPut("section/{id}")]
-        //public async Task<IActionResult> UpdateSection(Guid id, [FromBody] UpdateSectionReq req)
-        //{
-        //    var section = await _db.Sections.FirstOrDefaultAsync(s => s.Id == id);
-        //    if (section == null)
-        //        return NotFound();
-
-        //    // 🔥 chống conflict
-        //    if (section.Version != req.Version)
-        //        return Conflict("Section has been modified");
-
-        //    section.Content = req.Content;
-        //    section.Version++;
-        //    section.Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-
-        //    await _db.SaveChangesAsync();
-
-        //    return Ok();
-        //}
-
+        // cập nhật nội dung seciton
         [HttpPut("{sectionId}")]
+        [Authorize]
         public async Task<IActionResult> UpdateSectionContent(
        Guid sectionId,
        [FromBody] UpdateSectionReq req)
@@ -165,7 +156,6 @@ namespace text_editor_server.Controllers
             });
         }
 
-        //
 
     }
 

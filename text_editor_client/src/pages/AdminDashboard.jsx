@@ -34,19 +34,26 @@ const formatDate = (value) => {
   });
 };
 
-const mapDocumentListItem = (doc, fallbackOwner) => {
-  const creatorName = doc.creator?.fullName;
+const mapDocumentListItem = (doc, fallbackOwner) => ({
+  id: doc.documentId || doc.id,
+  title: doc.title || doc.documentTitle || "Untitled document",
+  description: doc.description || doc.originalFileName || "Tai lieu da tai len",
+  updatedAt:
+    doc.updatedAt ||
+    doc.lastModifiedAt ||
+    doc.createdAt ||
+    new Date().toISOString(),
+  sections:
+    doc.sectionsCount ||
+    doc.sectionCount ||
+    doc.sections?.length ||
+    doc.blocks?.length ||
+    "-",
+  owner: doc.ownerName || doc.owner || fallbackOwner,
+  lastEditor: doc.lastEditorName || doc.lastEditor || fallbackOwner,
+});
 
-  return {
-    id: doc.documentId || doc.id,
-    title: doc.title || "Untitled document",
-    description: doc.description || "Tai lieu da tai len",
-    updatedAt: doc.createdAt || new Date().toISOString(),
-    owner: creatorName,
-  };
-};
-
-const HomePage = () => {
+const AdminDashBoard = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
   const currentUser = sessionService.getCurrentUser();
@@ -95,6 +102,38 @@ const HomePage = () => {
     });
   }, [documents, keyword]);
 
+  const handleUpload = async (file) => {
+    const isDocx = file.name.toLowerCase().endsWith(".docx");
+    if (!isDocx) {
+      window.alert("Vui long chon file .docx");
+      return;
+    }
+
+    setIsUploading(true);
+    setErrorMessage("");
+
+    try {
+      const response = await documentService.uploadDocument(file);
+      if (response) {
+        const documentId = response?.documentId || response?.id;
+        if (documentId) {
+          setTimeout(() => {
+            navigate(`document/${documentId}`);
+          }, 500);
+        } else {
+          loadDocuments();
+        }
+      }
+    } catch (error) {
+      setErrorMessage(
+        error?.message || "Upload that bai. Hay kiem tra token va API.",
+      );
+      toast.error("Upload that bai");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleFileChange = (event) => {
     const file = event.target.files?.[0];
     if (!file) {
@@ -105,8 +144,41 @@ const HomePage = () => {
     event.target.value = "";
   };
 
+  const handleCreateBlank = () => {
+    window.alert(
+      "Backend hien tai moi co upload/getAll/content. Neu muon tao file trang, ban can them endpoint tao document rong tra ve SFDT mac dinh.",
+    );
+  };
+
+  const handleDelete = async (id) => {
+    const isConfirmed = window.confirm("Bạn có chắc muốn xóa tài liệu này?");
+
+    if (!isConfirmed) return;
+
+    try {
+      const response = await documentService.deleteDocument(id);
+
+      if (response) {
+        toast.success("Đã xóa!");
+        loadDocuments();
+      }
+    } catch (error) {
+      setErrorMessage(
+        error?.message || "Xóa thất bại. Hãy kiểm tra token và API.",
+      );
+    }
+  };
+
   const openDocument = (documentId) => {
     navigate(`document/${documentId}`);
+  };
+
+  const openSectionAuthority = (documentId, title) => {
+    navigate(`sections/${documentId}`, {
+      state: {
+        documentTitle: title,
+      },
+    });
   };
 
   const handleLogout = () => {
@@ -137,7 +209,7 @@ const HomePage = () => {
             <input
               value={keyword}
               onChange={(event) => setKeyword(event.target.value)}
-              placeholder="Tìm tài liệu"
+              placeholder="Tim tai lieu"
               className="w-full bg-transparent text-sm outline-none"
             />
           </label>
@@ -157,13 +229,53 @@ const HomePage = () => {
       </header>
 
       <div className="mx-auto w-full max-w-[1200px] px-4 py-6 md:px-6">
+        <section className="rounded-3xl bg-white p-5 md:p-6">
+          <p className="text-sm font-medium text-slate-500">
+            Start a new document
+          </p>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <button
+              type="button"
+              onClick={handleCreateBlank}
+              className="flex h-40 flex-col items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white transition hover:border-[#1a73e8] hover:shadow-sm"
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#e8f0fe] text-[#1a73e8]">
+                <Plus size={22} />
+              </div>
+              <p className="text-sm font-medium">Blank document</p>
+            </button>
+            {isUploading ? (
+              <ClipLoader color="red" />
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex h-40 flex-col items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white transition hover:border-[#1a73e8] hover:shadow-sm"
+                disabled={isUploading}
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#e8f0fe] text-[#1a73e8]">
+                  <Upload size={20} />
+                </div>
+                <p className="text-sm font-medium">Upload .docx</p>
+              </button>
+            )}
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".docx"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+        </section>
+
         <section className="mt-6 rounded-3xl bg-white p-5 md:p-6">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-medium text-slate-900">
-              Tài liệu gần đây
+              Recent documents
             </h2>
             <span className="text-sm text-slate-500">
-              {filteredDocuments.length} tài liệu
+              {filteredDocuments.length} tai lieu
             </span>
           </div>
 
@@ -178,17 +290,17 @@ const HomePage = () => {
               <thead>
                 <tr className="text-left text-xs uppercase tracking-wide text-slate-500">
                   <th className="border-b border-slate-200 px-4 py-3 font-medium">
-                    Tên
+                    Name
                   </th>
                   <th className="border-b border-slate-200 px-4 py-3 font-medium">
-                    Người tạo
+                    Owner
                   </th>
                   <th className="border-b border-slate-200 px-4 py-3 font-medium">
-                    Cập nhật
+                    Last modified
                   </th>
 
                   <th className="border-b border-slate-200 px-4 py-3 font-medium">
-                    Hành động
+                    Action
                   </th>
                 </tr>
               </thead>
@@ -199,7 +311,7 @@ const HomePage = () => {
                       colSpan={5}
                       className="border-b border-slate-100 px-4 py-8 text-center text-sm text-slate-500"
                     >
-                      Đang tải danh sách tài liệu...
+                      Dang tai danh sach tai lieu...
                     </td>
                   </tr>
                 ) : filteredDocuments.length ? (
@@ -224,13 +336,8 @@ const HomePage = () => {
                         </div>
                       </td>
                       <td className="border-b border-slate-100 px-4 py-4">
-                        <div>
-                          <p className="font-medium text-slate-900">
-                            {doc.owner || "Workspace"}
-                          </p>
-                        </div>
+                        {doc.owner || "Workspace"}
                       </td>
-
                       <td className="border-b border-slate-100 px-4 py-4">
                         <span className="inline-flex items-center gap-2">
                           <Clock3 size={14} />
@@ -245,7 +352,25 @@ const HomePage = () => {
                           className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-3 py-1.5 text-sm font-medium transition hover:border-[#1a73e8] hover:text-[#1a73e8]"
                         >
                           <FolderOpen size={15} />
-                          Mở
+                          Open
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(doc.id)}
+                          className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-3 py-1.5 text-sm font-medium transition hover:bg-red-400"
+                        >
+                          <DeleteIcon size={15} />
+                          Delete
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            openSectionAuthority(doc.id, doc.title)
+                          }
+                          className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-3 py-1.5 text-sm font-medium transition hover:bg-red-400"
+                        >
+                          <UserCheck size={15} />
+                          Authority
                         </button>
                       </td>
                     </tr>
@@ -256,7 +381,7 @@ const HomePage = () => {
                       colSpan={5}
                       className="border-b border-slate-100 px-4 py-8 text-center text-sm text-slate-500"
                     >
-                      Chưa có tài liệu nào.
+                      Chua co tai lieu nao. Hay upload file `.docx` dau tien.
                     </td>
                   </tr>
                 )}
@@ -269,4 +394,4 @@ const HomePage = () => {
   );
 };
 
-export default HomePage;
+export default AdminDashBoard;

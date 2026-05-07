@@ -32,4 +32,25 @@ export const sessionService = {
     const user = this.getCurrentUser();
     return Boolean(token && user?.id);
   },
+
+  // Kiểm tra role của user
+  getUserRole() {
+    const user = this.getCurrentUser();
+    return user?.role || "user"; // mặc định là "user"
+  },
+
+  // Kiểm tra xem user có phải admin không
+  isAdmin() {
+    return this.getUserRole() === "Admin";
+  },
+
+  // Kiểm tra xem user có phải user bình thường không
+  isUser() {
+    return this.getUserRole() === "user";
+  },
+
+  // Kiểm tra xem user có role nào đó không
+  hasRole(role) {
+    return this.getUserRole() === role;
+  },
 };

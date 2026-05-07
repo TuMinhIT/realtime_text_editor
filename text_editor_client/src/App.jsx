@@ -1,15 +1,42 @@
 import { Navigate, Route, Routes } from "react-router-dom";
-import { APP_ROUTES } from "./constants/routes";
 import LoginPage from "./pages/LoginPage";
 import HomePage from "./pages/HomePage";
+import AdminDashboard from "./pages/AdminDashboard";
 import { sessionService } from "./services/sessionService";
 import DocumentEditor from "./components/DocumentEditor";
 import SectionAuthority from "./pages/SectionAuthority";
+import SectionUserEdit from "./pages/SectionUserEdit";
 
 function ProtectedRoute({ children }) {
   if (!sessionService.isAuthenticated()) {
     return <Navigate to={"/login"} replace />;
   }
+  return children;
+}
+
+// Route bảo vệ cho Admin
+function AdminRoute({ children }) {
+  if (!sessionService.isAuthenticated()) {
+    return <Navigate to={"/login"} replace />;
+  }
+
+  if (!sessionService.isAdmin()) {
+    return <Navigate to={"/"} replace />;
+  }
+
+  return children;
+}
+
+// Route bảo vệ cho User bình thường
+function UserRoute({ children }) {
+  if (!sessionService.isAuthenticated()) {
+    return <Navigate to={"/login"} replace />;
+  }
+
+  if (sessionService.isAdmin()) {
+    return <Navigate to={"/admin"} replace />;
+  }
+
   return children;
 }
 
@@ -24,6 +51,7 @@ function GuestRoute({ children }) {
 function App() {
   return (
     <Routes>
+      {/* Guest Routes - dành cho chưa login */}
       <Route
         path={"/login"}
         element={
@@ -32,30 +60,56 @@ function App() {
           </GuestRoute>
         }
       />
+
+      {/* User document routes (accessible by normal users) */}
+
+      {/* User Routes - dành cho user bình thường */}
       <Route
         path={"/"}
         element={
-          <ProtectedRoute>
+          <UserRoute>
             <HomePage />
-          </ProtectedRoute>
+          </UserRoute>
         }
       />
+
       <Route
         path={`document/:documentId`}
         element={
-          <ProtectedRoute>
+          <UserRoute>
+            <SectionUserEdit />
+          </UserRoute>
+        }
+      />
+
+      {/* Admin document routes (prefix with /admin) */}
+      <Route
+        path={`admin/document/:documentId`}
+        element={
+          <AdminRoute>
             <DocumentEditor />
-          </ProtectedRoute>
+          </AdminRoute>
         }
       />
       <Route
-        path={`sections/:documentId`}
+        path={`admin/sections/:documentId`}
         element={
-          <ProtectedRoute>
+          <AdminRoute>
             <SectionAuthority />
-          </ProtectedRoute>
+          </AdminRoute>
         }
       />
+
+      <Route
+        path={`admin`}
+        element={
+          <AdminRoute>
+            <AdminDashboard />
+          </AdminRoute>
+        }
+      />
+
+      {/* Catch-all route */}
       <Route
         path={"*"}
         element={

@@ -11,7 +11,7 @@ import {
   Sparkles,
   User,
 } from "lucide-react";
-import { APP_ROUTES } from "../constants/routes";
+
 import { sessionService } from "../services/sessionService";
 import { userService } from "../services/userService";
 
@@ -77,7 +77,7 @@ const LoginPage = () => {
       if (response.user) {
         persistCurrentUser(response, formData.name, formData.email);
       }
-      navigate(response.token ? APP_ROUTES.dashboard : APP_ROUTES.login);
+      navigate(response.token ? "/admin" : "/login");
     } catch (err) {
       setError(err.message || "Đã xảy ra lỗi. Vui lòng thử lại.");
     } finally {

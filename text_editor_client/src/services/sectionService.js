@@ -15,20 +15,10 @@ export const sectionService = {
     }
   },
 
-  //Hiển thị tên tài liệu + contentDocumentContent
-  async getDocumentContent(documentId) {
+  async updateSectionContent(sectionId, jsonContent) {
     try {
-      const res = await http.get(`${resource}/${documentId}/content`);
-      return res.data;
-    } catch (err) {
-      throw toError(err);
-    }
-  },
-
-  async updateDocumentContent(documentId, jsonContent) {
-    try {
-      const res = await http.put(`${resource}/${documentId}/content`, {
-        jsonContent,
+      const res = await http.put(`${resource}/${sectionId}`, {
+        Content: jsonContent,
       });
       return res.data;
       return true;
@@ -74,6 +64,19 @@ export const sectionService = {
   async getSectionAssignments(sectionId) {
     try {
       const res = await http.get(`${resource}/assignments/${sectionId}`);
+      return res.data;
+    } catch (err) {
+      throw toError(err);
+    }
+  },
+
+  // user/ { user Id: guid } / section / { sectionId: guid }"
+  // get quyền của 1 user trên 1 section
+  async getUserAssignments({ userId, sectionId }) {
+    try {
+      const res = await http.get(
+        `${resource}/user/${userId}/section/${sectionId}`,
+      );
       return res.data;
     } catch (err) {
       throw toError(err);
