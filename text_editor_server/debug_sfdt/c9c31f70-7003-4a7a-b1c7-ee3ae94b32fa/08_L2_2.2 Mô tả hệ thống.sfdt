@@ -1,0 +1,96 @@
+{
+  "sectionId": "cdf0fc10-fdc8-4577-b2f8-5f47ae745436",
+  "title": "2.2 Mô tả hệ thống",
+  "level": 2,
+  "startIndex": 16,
+  "endIndex": 19,
+  "blockCount": 4,
+  "blocks": [
+    {
+      "pf": {
+        "bdrs": {
+          "tp": {},
+          "lt": {},
+          "rg": {},
+          "bt": {},
+          "h": {},
+          "v": {}
+        },
+        "stn": "Heading 2",
+        "lif": {}
+      },
+      "cf": {
+        "id": 1066
+      },
+      "i": [
+        {
+          "cf": {
+            "id": 1066
+          },
+          "tlp": "2.2 Mô tả hệ thống"
+        }
+      ]
+    },
+    {
+      "pf": {
+        "bdrs": {
+          "tp": {},
+          "lt": {},
+          "rg": {},
+          "bt": {},
+          "h": {},
+          "v": {}
+        },
+        "stn": "Normal",
+        "lif": {}
+      },
+      "cf": {
+        "id": 1066
+      },
+      "i": [
+        {
+          "cf": {
+            "id": 1066
+          },
+          "tlp": "Hệ thống được xây dựng là một trình soạn thảo văn bản realtime, cho phép nhiều người chỉnh sửa cùng lúc."
+        }
+      ]
+    },
+    {
+      "pf": {
+        "bdrs": {
+          "tp": {},
+          "lt": {},
+          "rg": {},
+          "bt": {},
+          "h": {},
+          "v": {}
+        },
+        "stn": "Normal",
+        "lif": {}
+      },
+      "cf": {
+        "id": 1066
+      },
+      "i": []
+    },
+    {
+      "pf": {
+        "bdrs": {
+          "tp": {},
+          "lt": {},
+          "rg": {},
+          "bt": {},
+          "h": {},
+          "v": {}
+        },
+        "stn": "Normal",
+        "lif": {}
+      },
+      "cf": {
+        "id": 1066
+      },
+      "i": []
+    }
+  ]
+}

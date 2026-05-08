@@ -1,0 +1,60 @@
+{
+  "sectionId": "0d58ae17-a085-4ba0-80a1-ef85dd3fc13b",
+  "title": "1.1 Thông tin sinh viên",
+  "level": 2,
+  "startIndex": 1,
+  "endIndex": 2,
+  "blockCount": 2,
+  "blocks": [
+    {
+      "pf": {
+        "bdrs": {
+          "tp": {},
+          "lt": {},
+          "rg": {},
+          "bt": {},
+          "h": {},
+          "v": {}
+        },
+        "stn": "Heading 2",
+        "lif": {}
+      },
+      "cf": {
+        "id": 1066
+      },
+      "i": [
+        {
+          "cf": {
+            "id": 1066
+          },
+          "tlp": "1.1 Thông tin sinh viên"
+        }
+      ]
+    },
+    {
+      "pf": {
+        "bdrs": {
+          "tp": {},
+          "lt": {},
+          "rg": {},
+          "bt": {},
+          "h": {},
+          "v": {}
+        },
+        "stn": "Normal",
+        "lif": {}
+      },
+      "cf": {
+        "id": 1066
+      },
+      "i": [
+        {
+          "cf": {
+            "id": 1066
+          },
+          "tlp": "Sinh viên thực hiện báo cáo là sinh viên năm cuối chuyên ngành CNTT. Mục tiêu của kỳ thực tập là áp dụng kiến thức đã học vào dự án thực tế."
+        }
+      ]
+    }
+  ]
+}

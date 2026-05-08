@@ -158,7 +158,9 @@ namespace text_editor_server.Services
         }
 
         //Cập nhật section:
-        public async Task<bool> UpdateSectionContentAsync(Guid sectionId, string newContent)
+        public async Task<bool> UpdateSectionContentAsync(
+      Guid sectionId,
+      string newContent)
         {
             try
             {
@@ -168,14 +170,31 @@ namespace text_editor_server.Services
                 if (section == null)
                     return false;
 
-                // 1. Extract block từ SFDT
+                // =========================
+                // 1. Extract blocks từ preview SFDT
+                // =========================
                 var blocks = ExtractBlocksFromSfdt(newContent);
 
                 if (blocks.Count == 0)
                     return false;
 
-                // 2. FIX: lưu toàn bộ blocks (KHÔNG lấy First())
-                section.Content = JsonConvert.SerializeObject(blocks);
+                // =========================
+                // 2. SAVE FORMAT CHUẨN
+                // { "b": [...] }
+                // =========================
+                section.Content = new JObject
+                {
+                    ["b"] = new JArray(blocks)
+                }.ToString(Formatting.None);
+
+                // =========================
+                // 3. UPDATE META
+                // =========================
+                section.Version += 1;
+
+                section.Timestamp =
+                    DateTimeOffset.UtcNow
+                        .ToUnixTimeMilliseconds();
 
                 await _context.SaveChangesAsync();
 
@@ -183,7 +202,9 @@ namespace text_editor_server.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating section content");
+                _logger.LogError(ex,
+                    "Error updating section content");
+
                 return false;
             }
         }
@@ -192,21 +213,34 @@ namespace text_editor_server.Services
         {
             var result = new List<JObject>();
 
-            var jObj = JObject.Parse(json);
-            var sections = jObj["sec"] as JArray;
-
-            if (sections == null) return result;
-
-            foreach (var sec in sections)
+            try
             {
-                var blocks = sec["b"] as JArray;
-                if (blocks == null) continue;
+                var jObj = JObject.Parse(json);
 
-                foreach (var block in blocks)
+                var sections = jObj["sec"] as JArray;
+
+                if (sections == null)
+                    return result;
+
+                foreach (var sec in sections)
                 {
-                    if (block is JObject obj)
-                        result.Add(obj);
+                    var blocks = sec?["b"] as JArray;
+
+                    if (blocks == null)
+                        continue;
+
+                    foreach (var block in blocks)
+                    {
+                        if (block is JObject obj)
+                        {
+                            result.Add((JObject)obj.DeepClone());
+                        }
+                    }
                 }
+            }
+            catch
+            {
+                return result;
             }
 
             return result;

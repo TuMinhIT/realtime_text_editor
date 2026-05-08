@@ -12,7 +12,7 @@ using text_editor_server.Data;
 namespace text_editor_server.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260505144703_InitialCreate")]
+    [Migration("20260508015758_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -146,6 +146,9 @@ namespace text_editor_server.Migrations
                     b.Property<Guid>("DocumentId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int>("EndIndex")
+                        .HasColumnType("int");
+
                     b.Property<int>("Level")
                         .HasColumnType("int");
 
@@ -154,6 +157,9 @@ namespace text_editor_server.Migrations
 
                     b.Property<Guid?>("ParentSectionId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("StartIndex")
+                        .HasColumnType("int");
 
                     b.Property<long>("Timestamp")
                         .HasColumnType("bigint");

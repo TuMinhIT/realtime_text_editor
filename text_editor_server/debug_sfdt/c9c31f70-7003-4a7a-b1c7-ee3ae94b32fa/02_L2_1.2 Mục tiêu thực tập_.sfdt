@@ -1,0 +1,122 @@
+{
+  "sectionId": "d79a5c47-3d82-43bd-830d-3e2ff263fafb",
+  "title": "1.2 Mục tiêu thực tập:",
+  "level": 2,
+  "startIndex": 3,
+  "endIndex": 6,
+  "blockCount": 4,
+  "blocks": [
+    {
+      "pf": {
+        "bdrs": {
+          "tp": {},
+          "lt": {},
+          "rg": {},
+          "bt": {},
+          "h": {},
+          "v": {}
+        },
+        "stn": "Heading 2",
+        "lif": {}
+      },
+      "cf": {
+        "id": 1066
+      },
+      "i": [
+        {
+          "cf": {
+            "id": 1066
+          },
+          "tlp": "1.2 Mục tiêu thực tập:"
+        }
+      ]
+    },
+    {
+      "pf": {
+        "bdrs": {
+          "tp": {},
+          "lt": {},
+          "rg": {},
+          "bt": {},
+          "h": {},
+          "v": {}
+        },
+        "stn": "List Paragraph",
+        "lif": {
+          "lid": 0,
+          "lilno": 0,
+          "nsid": 1789397582
+        }
+      },
+      "cf": {
+        "id": 1066
+      },
+      "i": [
+        {
+          "cf": {
+            "id": 1066
+          },
+          "tlp": "Hiểu quy trình phát triển phần mềm thực tế."
+        }
+      ]
+    },
+    {
+      "pf": {
+        "bdrs": {
+          "tp": {},
+          "lt": {},
+          "rg": {},
+          "bt": {},
+          "h": {},
+          "v": {}
+        },
+        "stn": "List Paragraph",
+        "lif": {
+          "lid": 0,
+          "lilno": 0,
+          "nsid": 1789397582
+        }
+      },
+      "cf": {
+        "id": 1066
+      },
+      "i": [
+        {
+          "cf": {
+            "id": 1066
+          },
+          "tlp": "Làm việc với ASP .NET Core Web API."
+        }
+      ]
+    },
+    {
+      "pf": {
+        "bdrs": {
+          "tp": {},
+          "lt": {},
+          "rg": {},
+          "bt": {},
+          "h": {},
+          "v": {}
+        },
+        "stn": "List Paragraph",
+        "lif": {
+          "lid": 0,
+          "lilno": 0,
+          "nsid": 1789397582
+        }
+      },
+      "cf": {
+        "id": 1066
+      },
+      "i": [
+        {
+          "cf": {
+            "id": 1066
+          },
+          "tlp": "Xây dựng hệ thống realtime editor."
+        }
+      ]
+    }
+  ]
+}

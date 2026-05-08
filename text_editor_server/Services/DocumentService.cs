@@ -335,7 +335,7 @@ namespace text_editor_server.Services
 				// logger.LogInformation("Is original SFDT equal to rebuilt SFDT? {IsEqual}", isEqual);
 
 				//Xuất file để kiểm thử thủ công:
-				//await _sectionParser.ExportDebugFiles(documentId, newContent);
+				await _sectionParser.ExportDebugFiles(documentId, newContent);
 				//END TEST
                 return true;
 
@@ -349,38 +349,134 @@ namespace text_editor_server.Services
 
 
         //Update JSONCONTENT khi cập nhật section:
+
+
+
         public async Task RebuildFromSectionAsync(Guid sectionId)
         {
+            // =========================
+            // 1. LOAD SECTION
+            // =========================
             var section = await _context.Sections
                 .FirstOrDefaultAsync(s => s.Id == sectionId);
 
-            if (section == null) return;
+            if (section == null)
+                return;
 
-            var documentId = section.DocumentId;
+            // =========================
+            // 2. LOAD SNAPSHOT
+            // =========================
+            var snapshot = await _context.DocumentSnapshots
+                .FirstOrDefaultAsync(x => x.DocumentId == section.DocumentId);
 
-            var documentSnapshot = await _context.DocumentSnapshots
-                .FirstOrDefaultAsync(d => d.DocumentId == documentId);
+            if (snapshot == null)
+                return;
 
-            if (documentSnapshot == null) return;
+            // =========================
+            // 3. PARSE SFDT
+            // =========================
+            var sfdt = JObject.Parse(snapshot.JsonContent);
 
-            // 1. load sections
-            var sections = await _context.Sections
-                .Where(s => s.DocumentId == documentId)
-                .OrderBy(s => s.OrderIndex)
-                .ToListAsync();
+            var secArray = sfdt["sec"] as JArray;
 
-            // 2. rebuild sfdt
-            var originalSfdt = JObject.Parse(documentSnapshot.JsonContent);
+            if (secArray == null)
+                return;
 
-            var rebuiltSfdt = _sectionParser.RebuildSfdt(sections, originalSfdt);
+            // =========================
+            // 4. LOAD SECTION BLOCKS
+            // =========================
+            var sectionObj =
+                JObject.Parse(section.Content);
 
-            // 3. update document
-            documentSnapshot.JsonContent = rebuiltSfdt;
+            var sectionBlocks =
+                sectionObj["b"] as JArray;
+
+            if (sectionBlocks == null)
+                return;
+
+            // =========================
+            // 5. RANGE VALIDATION
+            // =========================
+            int expectedLength =
+                section.EndIndex - section.StartIndex + 1;
+
+            if (expectedLength != sectionBlocks.Count)
+            {
+                throw new Exception(
+                    $"Section range mismatch. " +
+                    $"Expected: {expectedLength}, " +
+                    $"Actual: {sectionBlocks.Count}");
+            }
+
+            // =========================
+            // 6. INJECT BLOCKS
+            // =========================
+            int globalIndex = 0;
+
+            foreach (var sec in secArray)
+            {
+                var blocks = sec?["b"] as JArray;
+
+                if (blocks == null)
+                    continue;
+
+                for (int i = 0; i < blocks.Count; i++)
+                {
+                    if (globalIndex >= section.StartIndex &&
+                        globalIndex <= section.EndIndex)
+                    {
+                        int localIndex =
+                            globalIndex - section.StartIndex;
+
+                        blocks[i] =
+                            sectionBlocks[localIndex]
+                                .DeepClone();
+                    }
+
+                    globalIndex++;
+                }
+            }
+
+            // =========================
+            // 7. SAVE SNAPSHOT
+            // =========================
+            snapshot.JsonContent =
+                sfdt.ToString(Formatting.None);
 
             await _context.SaveChangesAsync();
-
-            _logger.LogInformation("Document {DocumentId} synced from section {SectionId}",
-                documentId, sectionId);
         }
+        //public async Task RebuildFromSectionAsync(Guid sectionId)
+        //{
+        //    //var section = await _context.Sections
+        //    //    .FirstOrDefaultAsync(s => s.Id == sectionId);
+
+        //    //if (section == null) return;
+
+        //    //var documentId = section.DocumentId;
+
+        //    //var documentSnapshot = await _context.DocumentSnapshots
+        //    //    .FirstOrDefaultAsync(d => d.DocumentId == documentId);
+
+        //    //if (documentSnapshot == null) return;
+
+        //    //// 1. load sections
+        //    //var sections = await _context.Sections
+        //    //    .Where(s => s.DocumentId == documentId)
+        //    //    .OrderBy(s => s.OrderIndex)
+        //    //    .ToListAsync();
+
+        //    //// 2. rebuild sfdt
+        //    //var originalSfdt = JObject.Parse(documentSnapshot.JsonContent);
+
+        //    //var rebuiltSfdt = _sectionParser.RebuildSfdt(sections, originalSfdt);
+
+        //    //// 3. update document
+        //    //documentSnapshot.JsonContent = rebuiltSfdt;
+
+        //    //await _context.SaveChangesAsync();
+
+        //    //_logger.LogInformation("Document {DocumentId} synced from section {SectionId}",
+        //    //    documentId, sectionId);
+        //}
     }
 }

@@ -1,0 +1,35 @@
+{
+  "sectionId": "00bdbdf3-7eb0-48ac-8745-59c72c358e58",
+  "title": "I. GIỚI THIỆU CHUNG",
+  "level": 1,
+  "startIndex": 0,
+  "endIndex": 0,
+  "blockCount": 1,
+  "blocks": [
+    {
+      "pf": {
+        "bdrs": {
+          "tp": {},
+          "lt": {},
+          "rg": {},
+          "bt": {},
+          "h": {},
+          "v": {}
+        },
+        "stn": "Heading 1",
+        "lif": {}
+      },
+      "cf": {
+        "id": 1066
+      },
+      "i": [
+        {
+          "cf": {
+            "id": 1066
+          },
+          "tlp": "I. GIỚI THIỆU CHUNG"
+        }
+      ]
+    }
+  ]
+}
