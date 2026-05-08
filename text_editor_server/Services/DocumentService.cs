@@ -335,7 +335,7 @@ namespace text_editor_server.Services
 				// logger.LogInformation("Is original SFDT equal to rebuilt SFDT? {IsEqual}", isEqual);
 
 				//Xuất file để kiểm thử thủ công:
-				await _sectionParser.ExportDebugFiles(documentId, newContent);
+				//await _sectionParser.ExportDebugFiles(documentId, newContent);
 				//END TEST
                 return true;
 
@@ -445,38 +445,6 @@ namespace text_editor_server.Services
 
             await _context.SaveChangesAsync();
         }
-        //public async Task RebuildFromSectionAsync(Guid sectionId)
-        //{
-        //    //var section = await _context.Sections
-        //    //    .FirstOrDefaultAsync(s => s.Id == sectionId);
-
-        //    //if (section == null) return;
-
-        //    //var documentId = section.DocumentId;
-
-        //    //var documentSnapshot = await _context.DocumentSnapshots
-        //    //    .FirstOrDefaultAsync(d => d.DocumentId == documentId);
-
-        //    //if (documentSnapshot == null) return;
-
-        //    //// 1. load sections
-        //    //var sections = await _context.Sections
-        //    //    .Where(s => s.DocumentId == documentId)
-        //    //    .OrderBy(s => s.OrderIndex)
-        //    //    .ToListAsync();
-
-        //    //// 2. rebuild sfdt
-        //    //var originalSfdt = JObject.Parse(documentSnapshot.JsonContent);
-
-        //    //var rebuiltSfdt = _sectionParser.RebuildSfdt(sections, originalSfdt);
-
-        //    //// 3. update document
-        //    //documentSnapshot.JsonContent = rebuiltSfdt;
-
-        //    //await _context.SaveChangesAsync();
-
-        //    //_logger.LogInformation("Document {DocumentId} synced from section {SectionId}",
-        //    //    documentId, sectionId);
-        //}
+       
     }
 }
