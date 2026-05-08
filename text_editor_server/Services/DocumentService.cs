@@ -349,9 +349,6 @@ namespace text_editor_server.Services
 
 
         //Update JSONCONTENT khi cập nhật section:
-
-
-
         public async Task RebuildFromSectionAsync(Guid sectionId)
         {
             // =========================
