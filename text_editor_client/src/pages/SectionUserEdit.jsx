@@ -50,6 +50,7 @@ const SectionAuthority = () => {
   const { documentId } = useParams();
   const navigate = useNavigate();
   const editorRef = useRef(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const [sections, setSections] = useState([]);
   const [documentTitle, setDocumentTitle] = useState(
@@ -94,7 +95,6 @@ const SectionAuthority = () => {
       setDocumentTitle(
         loadedDocument?.title || location.state?.documentTitle || "Tài liệu",
       );
-      setPreviewSfdt(loadedDocument.jsonContent);
       setOriginalPreview(loadedDocument.jsonContent);
       return;
     }
@@ -170,23 +170,15 @@ const SectionAuthority = () => {
     loadData();
   }, [documentId]);
 
-  useEffect(() => {
-    if (!sections.length) {
-      setSelectedSection(null);
+ useEffect(() => {
+  if (!sections.length) return;
 
-      return;
-    }
-    //  trả tỏng quan khi vừa load
-    setSelectedSection((current) => {
-      if (!current) {
-        return "tongquan";
-      }
+  setSelectedSection(
+    sections.find(s => s.level === 2) || sections[0]
+  );
 
-      return (
-        sections.find((section) => section.id === current.id) || sections[0]
-      );
-    });
-  }, [sections]);
+  setIsInitialized(true);
+}, [sections]);
 
   const loadPreview = async () => {
     setIsPreviewLoading(true);
@@ -200,7 +192,7 @@ const SectionAuthority = () => {
       if (!sectionContent) {
         throw new Error("Thiếu dữ liệu section để dựng preview.");
       }
-      if (selectedSection.level == 1) return;
+      if (!selectedSection?.id) return;
 
       const preview = await sectionService.previewSection(
         selectedSection.id,
@@ -223,28 +215,21 @@ const SectionAuthority = () => {
     }
   };
 
-  useEffect(() => {
-    if (!selectedSection || !documentId) {
-      if (sectionService.level == 1) return;
-      setPreviewSfdt(originalPreview);
-      return;
-    }
+useEffect(() => {
+  if (!isInitialized) return;
+  if (!selectedSection || !documentId) return;
 
-    // Nếu là tổng quan, hiển thị tài liệu gốc
-    if (selectedSection === "tongquan") {
-      setPreviewSfdt(originalPreview);
-      return;
-    }
-    loadPreview();
-    loadUserAssignments();
-  }, [selectedSection, documentId, originalPreview]);
+  loadPreview();
+  loadUserAssignments();
+}, [selectedSection, documentId, isInitialized]);
 
-  useEffect(() => {
-    openPreview(previewSfdt);
-    // nếu assignment cho phép edit thì đặt readOnly = false
-    const canEdit = assignment?.permission == 1;
-    applyReadOnlyMode(!canEdit);
-  }, [previewSfdt, selectedSection?.id, assignment?.permission == 1]);
+useEffect(() => {
+  if (!previewSfdt || !selectedSection) return;
+
+  openPreview(previewSfdt);
+  const canEdit = assignment?.permission == 1;
+  applyReadOnlyMode(!canEdit);
+}, [previewSfdt, selectedSection?.id, assignment?.permission]);
 
   const handleCreated = () => {
     openPreview(previewSfdt);
@@ -373,23 +358,7 @@ const SectionAuthority = () => {
                   Chưa có section nào.
                 </div>
               ) : null}
-              <button
-                type="button"
-                onClick={() => setSelectedSection("tongquan")}
-                className={`w-full rounded-2xl  border px-2 py-1 text-left transition ${
-                  selectedSection == "tongquan"
-                    ? "border-blue-200 bg-blue-50 shadow-sm"
-                    : "border-slate-200 bg-gray-300 hover:border-slate-300 hover:bg-slate-50"
-                }`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="truncate text-md  font-bold text-slate-900">
-                      Tổng quan
-                    </div>
-                  </div>
-                </div>
-              </button>
+             
               {sections.map((section) => {
                 const indentPx = Math.max(0, (section.level || 1) - 1) * 12;
                 const isSelected = selectedSection?.id === section.id;
@@ -452,7 +421,7 @@ const SectionAuthority = () => {
             </div>
           ) : null}
 
-          {selectedSection == "tongquan" ? null : (
+          {selectedSection &&(
             <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="flex flex-row gap-4 items-center justify-between">
                 <div className="min-w-0 flex-1">

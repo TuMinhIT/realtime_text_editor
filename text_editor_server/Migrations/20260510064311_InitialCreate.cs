@@ -109,8 +109,6 @@ namespace text_editor_server.Migrations
                     Level = table.Column<int>(type: "int", nullable: false),
                     OrderIndex = table.Column<int>(type: "int", nullable: false),
                     ParentSectionId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    StartIndex = table.Column<int>(type: "int", nullable: false),
-                    EndIndex = table.Column<int>(type: "int", nullable: false),
                     Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Version = table.Column<int>(type: "int", nullable: false),
                     Timestamp = table.Column<long>(type: "bigint", nullable: false)

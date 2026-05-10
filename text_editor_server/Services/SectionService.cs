@@ -157,10 +157,11 @@ namespace text_editor_server.Services
             return permission;
         }
 
-        //Cập nhật section:
+
+
         public async Task<bool> UpdateSectionContentAsync(
-      Guid sectionId,
-      string newContent)
+         Guid sectionId,
+         string newContent)
         {
             try
             {
@@ -170,26 +171,22 @@ namespace text_editor_server.Services
                 if (section == null)
                     return false;
 
-                // =========================
-                // 1. Extract blocks từ preview SFDT
-                // =========================
+                // validate json
+                JObject.Parse(newContent);
+
+                // extract ONLY blocks
                 var blocks = ExtractBlocksFromSfdt(newContent);
 
-                if (blocks.Count == 0)
-                    return false;
+                // save lightweight structure
+                var sectionJson = new JObject
+                {
+                    ["b"] = JArray.FromObject(blocks)
+                };
 
-                // =========================
-                // 2. SAVE FORMAT CHUẨN
-                // { "b": [...] }
-                // =========================
                 section.Content = new JObject
                 {
-                    ["b"] = new JArray(blocks)
+                    ["b"] = JArray.FromObject(blocks)
                 }.ToString(Formatting.None);
-
-                // =========================
-                // 3. UPDATE META
-                // =========================
                 section.Version += 1;
 
                 section.Timestamp =
@@ -209,38 +206,49 @@ namespace text_editor_server.Services
             }
         }
         //Hàm chuyển từ sfdt gốc sang section content:
-        public List<JObject> ExtractBlocksFromSfdt(string json)
+        public static List<JObject> ExtractBlocksFromSfdt(string json)
         {
             var result = new List<JObject>();
 
+            if (string.IsNullOrWhiteSpace(json))
+                return result;
+
             try
             {
-                var jObj = JObject.Parse(json);
+                var root = JObject.Parse(json);
 
-                var sections = jObj["sec"] as JArray;
-
-                if (sections == null)
+                if (root["sec"] is not JArray sections)
                     return result;
+
+                // Optional: estimate capacity
+                int estimatedCount = 0;
 
                 foreach (var sec in sections)
                 {
-                    var blocks = sec?["b"] as JArray;
+                    if (sec?["b"] is JArray b)
+                        estimatedCount += b.Count;
+                }
 
-                    if (blocks == null)
+                result = new List<JObject>(estimatedCount);
+
+                foreach (var sec in sections)
+                {
+                    if (sec?["b"] is not JArray blocks)
                         continue;
 
                     foreach (var block in blocks)
                     {
                         if (block is JObject obj)
                         {
-                            result.Add((JObject)obj.DeepClone());
+                            // KHÔNG clone nếu không cần mutate
+                            result.Add(obj);
                         }
                     }
                 }
             }
             catch
             {
-                return result;
+                return new List<JObject>();
             }
 
             return result;

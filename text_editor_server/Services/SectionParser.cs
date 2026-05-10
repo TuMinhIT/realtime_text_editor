@@ -50,25 +50,23 @@ namespace text_editor_server.Services
             }
         }
 
-       
+
         // CORE PARSER
-       
+
         private List<Section> ParseSectionsFromSfdt(
-            string sfdtJson,
-            Guid documentId)
+     string sfdtJson,
+     Guid documentId)
         {
-
-
-            //Danh sách section cuối cùng:
             var result = new List<Section>();
 
-            // PARSE SFDT SAFE
-           
+            // =========================
+            // 1. PARSE SFDT SAFE
+            // =========================
             JObject sfdt;
 
             try
             {
-                sfdt = JObject.Parse(sfdtJson); //Chuyển từ chuỗi JSON thành đối tượng JObject để dễ dàng truy cập các phần tử bên trong. Nếu chuỗi JSON không hợp lệ, sẽ ném ra một ngoại lệ và được bắt trong khối catch.
+                sfdt = JObject.Parse(sfdtJson);
             }
             catch (Exception ex)
             {
@@ -79,12 +77,11 @@ namespace text_editor_server.Services
                 return result;
             }
 
-
-            //Lay sec array:
+            // =========================
+            // 2. LOAD SEC ARRAY
+            // =========================
             var secArray = sfdt["sec"] as JArray;
 
-
-            // Check sec array:
             if (secArray == null || secArray.Count == 0)
             {
                 _logger.LogWarning(
@@ -94,62 +91,54 @@ namespace text_editor_server.Services
                 return result;
             }
 
+            // =========================
+            // 3. BUILD STYLE MAP
+            // =========================
             var styleLevelMap = BuildStyleLevelMap(sfdt);
 
-
-            // Parser STATE
-            // Sử dụng stack để quản lý hierarchy của section dựa trên level của heading
+            // =========================
+            // 4. PARSER STATE
+            // =========================
             var stack = new Stack<Section>();
 
-            Section? currentSection = null; //section hiện tại đang bỏ.
+            Section? currentSection = null;
 
-            var currentBlocks = new List<JObject>(); //Tất cả Block của section hiện tại 
-            int globalIndex = 0; //Đánh index toàn cục cho tất cả block để xác định phạm vi của section
-            int orderIndex = 0; //Đánh index cho thứ tự section trong document, tăng dần theo thứ tự xuất hiện
+            var currentBlocks = new List<JObject>();
 
+            int orderIndex = 0;
 
-            // Duyet từng section và block trong SFDT để xác định heading và phân chia section
-
+            // =========================
+            // 5. LOOP ALL BLOCKS
+            // =========================
             foreach (var secToken in secArray)
             {
-                //Kiem tra phan tu sec co phai la JObject khong, neu khong thi bo qua
-                if (secToken is not JObject secObj) //
+                if (secToken is not JObject secObj)
                     continue;
 
-
-                //Lay mang block tu sec, neu khong co block thi bo qua
                 var blocks = secObj["b"] as JArray;
 
-
-                
                 if (blocks == null || blocks.Count == 0)
                     continue;
-                //Duyet tung block trong sec
-                
+
                 foreach (var blockToken in blocks)
                 {
-                    
+                    // =========================
                     // SAFE BLOCK
-                    
+                    // =========================
                     if (blockToken is not JObject rawBlock)
-                    {
-                        globalIndex++; //giữ tăng index ngay cả khi block không hợp lệ.
                         continue;
-                    }
 
-                    //Tạo bản sao của block để tránh thay đổi dữ liệu gốc trong snapshot, vì chúng ta sẽ lưu nộ
-                    //1. Tách block ra khỏi cây Json gốc.
-                    //2. Section giữ snapshot độc lập
-                    //3. Tránh Mutate reference shared 
-                    var block = (JObject)rawBlock.DeepClone();
+                    // clone tránh mutate reference
+                    var block =
+                        (JObject)rawBlock.DeepClone();
 
-                    
+                    // =========================
                     // HEADING DETECTION
-                    
+                    // =========================
                     var styleName =
-                        block.SelectToken("pf.stn")?.ToString();
-                    
-                    //int level = ExtractLevel(styleName);
+                        block.SelectToken("pf.stn")
+                            ?.ToString();
+
                     int level = 0;
 
                     if (!string.IsNullOrWhiteSpace(styleName) &&
@@ -158,32 +147,30 @@ namespace text_editor_server.Services
                         level = l;
                     }
 
-                    bool isHeading = level > 0 && level <= 2 ;
+                    bool isHeading =
+                        level > 0 &&
+                        level <= 2;
 
-                    
+                    // =========================
                     // NEW SECTION
-                    
+                    // =========================
                     if (isHeading)
                     {
-                        // flush previous section
+                        // flush old section
                         if (currentSection != null)
                         {
-                            currentSection.EndIndex =
-                            Math.Max(
-                                currentSection.StartIndex,
-                                globalIndex - 1);
-
                             currentSection.Content =
                                 SerializeBlocks(currentBlocks);
 
                             result.Add(currentSection);
 
-                            currentBlocks = new List<JObject>();
+                            currentBlocks =
+                                new List<JObject>();
                         }
 
-                        
+                        // =========================
                         // BUILD HIERARCHY
-                        
+                        // =========================
                         while (stack.Count > 0 &&
                                stack.Peek().Level >= level)
                         {
@@ -195,9 +182,9 @@ namespace text_editor_server.Services
                                 ? stack.Peek().Id
                                 : null;
 
-                        
+                        // =========================
                         // CREATE SECTION
-                        
+                        // =========================
                         var section = new Section
                         {
                             Id = Guid.NewGuid(),
@@ -212,10 +199,6 @@ namespace text_editor_server.Services
 
                             OrderIndex = orderIndex++,
 
-                            StartIndex = globalIndex,
-
-                            EndIndex = globalIndex,
-
                             Version = 0,
 
                             Timestamp =
@@ -223,7 +206,6 @@ namespace text_editor_server.Services
                                     .ToUnixTimeMilliseconds()
                         };
 
-                        // push hierarchy
                         stack.Push(section);
 
                         currentSection = section;
@@ -232,42 +214,33 @@ namespace text_editor_server.Services
                     }
                     else
                     {
-                        
+                        // =========================
                         // NORMAL CONTENT
-                        
+                        // =========================
                         if (currentSection != null)
                         {
                             currentBlocks.Add(block);
-
-                            currentSection.EndIndex = globalIndex;
                         }
                     }
-
-                    globalIndex++;
                 }
             }
 
-            
-            // 4. FLUSH LAST SECTION
-            
+            // =========================
+            // 6. FLUSH LAST SECTION
+            // =========================
             if (currentSection != null)
             {
-                currentSection.EndIndex =
-                Math.Max(
-                    currentSection.StartIndex,
-                    globalIndex - 1);
-
                 currentSection.Content =
                     SerializeBlocks(currentBlocks);
 
                 result.Add(currentSection);
             }
 
-            
-            // 5. FINAL SORT
-            
+            // =========================
+            // 7. FINAL SORT
+            // =========================
             return result
-                .OrderBy(x => x.StartIndex)
+                .OrderBy(x => x.OrderIndex)
                 .ToList();
         }
         private string ExtractTitle(JObject block)
@@ -366,56 +339,6 @@ namespace text_editor_server.Services
             }.ToString(Formatting.None);
         }
 
-       
-
-        // Hàm inject section content vào SFDT gốc để preview (giữ nguyên metadata, chỉ thay đổi content)
-        public string BuildPreviewInject(Guid documentId, Guid sectionId)
-        {
-            var section = _db.Sections.First(x => x.Id == sectionId);
-            var snapshot = _db.DocumentSnapshots.First(x => x.DocumentId == documentId);
-
-            var sfdt = JObject.Parse(snapshot.JsonContent);
-            var secArray = (JArray)sfdt["sec"];
-
-            var sectionObj = JObject.Parse(section.Content);
-            var sectionBlocks = (JArray)sectionObj["b"];
-
-
-            var expectedLength =
-    section.EndIndex - section.StartIndex + 1;
-
-            if (expectedLength != sectionBlocks.Count)
-            {
-                throw new Exception(
-                    $"Section range mismatch. Expected: {expectedLength}, Actual: {sectionBlocks.Count}");
-            }
-
-            int index = 0;
-
-            for (int s = 0; s < secArray.Count; s++)
-            {
-                var blocks = secArray[s]?["b"] as JArray;
-                if (blocks == null) continue;
-
-                for (int b = 0; b < blocks.Count; b++)
-                {
-                    if (index >= section.StartIndex && index <= section.EndIndex)
-                    {
-                        int localIndex = index - section.StartIndex;
-                        if (localIndex < sectionBlocks.Count)
-                        {
-                            blocks[b] = (JObject)sectionBlocks[localIndex].DeepClone();
-                        }
-                    }
-
-                    index++;
-                }
-            }
-
-            return sfdt.ToString(Formatting.None);
-        }
-
-
 
 
         public string BuildSectionPreview(string sectionContent, JObject originalSfdt)
@@ -474,187 +397,6 @@ namespace text_editor_server.Services
       
             return BuildSectionPreview(sectionContent, originalSfdt);
         }
-
-
-
-        public async Task ExportDebugFiles(Guid documentId, string originalContent)
-        {
-            try
-            {
-                var baseDir = Path.Combine(
-                    Directory.GetCurrentDirectory(),
-                    "debug_sfdt",
-                    documentId.ToString()
-                );
-
-                Directory.CreateDirectory(baseDir);
-
-                
-                // 1. PARSE SAFE SFDT
-                
-                JObject originalSfdt;
-
-                try
-                {
-                    originalSfdt = JObject.Parse(originalContent);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Invalid SFDT JSON");
-                    return;
-                }
-
-                await File.WriteAllTextAsync(
-                    Path.Combine(baseDir, "0_original.sfdt"),
-                    originalSfdt.ToString(Formatting.Indented)
-                );
-
-                
-                // 2. LOAD SECTIONS FROM DB
-                
-                var sections = await _db.Sections
-                    .Where(s => s.DocumentId == documentId)
-                    .OrderBy(s => s.OrderIndex)
-                    .ToListAsync();
-
-                
-                // 3. SAFE GET SEC ARRAY
-                
-                var secArray = originalSfdt["sec"] as JArray;
-
-                if (secArray == null || secArray.Count == 0)
-                {
-                    _logger.LogWarning("SFDT has no sections");
-                    return;
-                }
-
-                
-                // 4. FLATTEN BLOCKS (SAFE VERSION)
-                
-                var allBlocks = new List<JObject>();
-                var indexMap = new List<object>();
-
-                int globalIndex = 0;
-
-                foreach (var sec in secArray)
-                {
-                    var blocks = sec?["b"] as JArray;
-
-                    if (blocks == null || blocks.Count == 0)
-                        continue;
-
-                    foreach (var b in blocks)
-                    {
-                        if (b is not JObject obj)
-                            continue;
-
-                        var clone = (JObject)obj.DeepClone();
-
-                        allBlocks.Add(clone);
-
-                        var runs = clone["i"] as JArray;
-
-                        var preview = (runs != null && runs.Count > 0)
-                            ? runs[0]?["tlp"]?.ToString() ?? ""
-                            : "";
-
-                        indexMap.Add(new
-                        {
-                            Index = globalIndex,
-                            Type = clone.SelectToken("pf.stn")?.ToString() ?? "normal",
-                            Preview = preview
-                        });
-
-                        globalIndex++;
-                    }
-                }
-                
-                // 5. EXPORT INDEX MAP
-                
-                await File.WriteAllTextAsync(
-                    Path.Combine(baseDir, "index_map.json"),
-                    JsonConvert.SerializeObject(indexMap, Formatting.Indented)
-                );
-
-                
-                // 6. EXPORT SECTION DEBUG
-                
-                int fileIndex = 0;
-
-                foreach (var section in sections)
-                {
-                    try
-                    {
-                        if (string.IsNullOrWhiteSpace(section.Content))
-                            continue;
-
-                        var sectionObj = JObject.Parse(section.Content);
-                        var sectionBlocks = sectionObj["b"] as JArray;
-
-                        var debugObj = new JObject
-                        {
-                            ["sectionId"] = section.Id,
-                            ["title"] = section.Title,
-                            ["level"] = section.Level,
-                            ["startIndex"] = section.StartIndex,
-                            ["endIndex"] = section.EndIndex,
-                            ["blockCount"] = sectionBlocks?.Count ?? 0,
-                            ["blocks"] = sectionBlocks ?? new JArray()
-                        };
-
-                        var safeName = string.Join("_",
-                            section.Title.Split(Path.GetInvalidFileNameChars()));
-
-                        var path = Path.Combine(baseDir,
-                            $"{fileIndex:D2}_L{section.Level}_{safeName}.sfdt");
-
-                        await File.WriteAllTextAsync(
-                            path,
-                            debugObj.ToString(Formatting.Indented)
-                        );
-
-                        fileIndex++;
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, $"Export section failed: {section.Id}");
-                    }
-                }
-
-                
-                // 7. SECTION RANGE CHECK
-                
-                var rangeCheck = sections.Select(s => new
-                {
-                    s.Title,
-                    s.StartIndex,
-                    s.EndIndex,
-                    Length = s.EndIndex >= s.StartIndex
-                        ? s.EndIndex - s.StartIndex + 1
-                        : 0
-                });
-
-                await File.WriteAllTextAsync(
-                    Path.Combine(baseDir, "section_ranges.json"),
-                    JsonConvert.SerializeObject(rangeCheck, Formatting.Indented)
-                );
-
-                
-                // 8. FLATTENED BLOCKS EXPORT
-                
-                await File.WriteAllTextAsync(
-                    Path.Combine(baseDir, "flatten_blocks.json"),
-                    JsonConvert.SerializeObject(allBlocks, Formatting.Indented)
-                );
-
-                _logger.LogInformation("DEBUG EXPORT DONE: {Dir}", baseDir);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "ExportDebugFiles failed");
-            }
-        }
-
 
     }
 }

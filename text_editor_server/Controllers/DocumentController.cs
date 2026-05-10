@@ -89,7 +89,7 @@ namespace text_editor_server.Controllers
         [HttpGet("{documentId:guid}/content")]
         public async Task<IActionResult> GetDocumentContent(Guid documentId)
         {
-            var result = await _documentService.GetDocumentSnapshotAsync(documentId);
+            var result = await _documentService.GetDocumentFromSectionsAsync(documentId);
             return Ok(result);
         }
 

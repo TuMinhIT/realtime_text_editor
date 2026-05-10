@@ -148,8 +148,8 @@ namespace text_editor_server.Controllers
                 return NotFound("Section not found or update failed");
 
 
-            ////Cập nhật document:
-            await _documentService.RebuildFromSectionAsync(sectionId);
+            //////Cập nhật document:
+            //await _documentService.RebuildFromSectionAsync(sectionId);
             return Ok(new
             {
                 message = "Section updated successfully"

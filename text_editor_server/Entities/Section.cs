@@ -11,8 +11,8 @@ namespace text_editor_server.Entities
         public int OrderIndex { get; set; }
         public Guid? ParentSectionId { get; set; }
         //Xác định vị trí của section trong cây cấu trúc tài liệu, giúp xác định thứ tự hiển thị và quan hệ cha con giữa các section
-        public int StartIndex { get; set; }
-        public int EndIndex { get; set; }
+        //public int StartIndex { get; set; }
+        //public int EndIndex { get; set; }
 
 
         public Section? ParentSection { get; set; }
