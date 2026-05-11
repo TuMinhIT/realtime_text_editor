@@ -244,14 +244,12 @@ namespace text_editor_server.Services
 			return ServiceResult<List<BlockPermissionRes>>.Ok(null);
 		}
 
-        //lấy snapshot của document (Chuyển sang lấy từ các section để đảm bảo luôn lấy được content mới nhất)
-     
-        public async Task<ServiceResult<DocumentSnapshot>> GetDocumentFromSectionsAsync(
-            Guid documentId)
+
+        public async Task<ServiceResult<DocumentSnapshot>>
+            GetDocumentContentAsync(Guid documentId)
         {
             try
             {
-                // lấy snapshot gốc để giữ metadata
                 var snapshot = await _context.DocumentSnapshots
                     .AsNoTracking()
                     .FirstOrDefaultAsync(x => x.DocumentId == documentId);
@@ -262,37 +260,43 @@ namespace text_editor_server.Services
                         .Fail("Document snapshot not found");
                 }
 
-                // merge runtime từ sections
+                // check đã parse section chưa
+                var hasSections = await _context.Sections
+                    .AsNoTracking()
+                    .AnyAsync(x => x.DocumentId == documentId);
+
+                // ==========================
+                // CASE 1: upload lần đầu
+                // chưa có section
+                // => dùng snapshot gốc
+                // ==========================
+                if (!hasSections)
+                {
+                    return ServiceResult<DocumentSnapshot>
+                        .Ok(snapshot);
+                }
+
+                // ==========================
+                // CASE 2: đã parse section
+                // => merge từ sections
+                // ==========================
                 var mergedSfdt =
                     await MergeAllSectionsAsync(documentId);
 
-                // build response mới
-                var rebuiltSnapshot = new DocumentSnapshot
-                {
-                    Id = snapshot.Id,
-
-                    DocumentId = snapshot.DocumentId,
-
-                    Title = snapshot.Title,
-
-                    Version = snapshot.Version,
-
-                    JsonContent = mergedSfdt
-                };
+                snapshot.JsonContent = mergedSfdt;
 
                 return ServiceResult<DocumentSnapshot>
-                    .Ok(rebuiltSnapshot);
+                    .Ok(snapshot);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex,
-                    "Failed to rebuild document from sections");
+                    "Failed to get document content");
 
                 return ServiceResult<DocumentSnapshot>
-                    .Fail("Failed to rebuild document");
+                    .Fail("Failed to get document");
             }
         }
-
         // update title document
         public async Task<bool> updateTitleAsync(Guid documentId, string title)
         {
@@ -342,12 +346,26 @@ namespace text_editor_server.Services
                 if (documentSnapshot != null)
                 {
                     documentSnapshot.JsonContent= newContent;
+
+
                 }
                 await _context.SaveChangesAsync();
 				
 				await _sectionParser.ParseNow(documentId);
 
-				//END TEST
+
+                //Thêm cập nhật đã sửa ban đầu:
+                var document = await _context.Documents
+    .FirstOrDefaultAsync(d => d.Id == documentId);
+
+                if (document != null)
+                {
+                    document.HasParsedSections = true;
+                }
+
+                await _context.SaveChangesAsync();
+
+                //END TEST
                 return true;
 
             }

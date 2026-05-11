@@ -37,7 +37,8 @@ namespace text_editor_server.Migrations
                     JsonContent = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     SourceFilePath = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    HasParsedSections = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {

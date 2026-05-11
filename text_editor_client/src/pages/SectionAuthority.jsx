@@ -199,7 +199,7 @@ const SectionAuthority = () => {
     // Nếu là tổng quan, hiển thị tài liệu gốc
     if (selectedSection === "tongquan") {
       setPreviewSfdt(originalPreview);
-      return;
+      return;z
     }
 
     loadPreview();

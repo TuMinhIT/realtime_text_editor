@@ -12,7 +12,7 @@ using text_editor_server.Data;
 namespace text_editor_server.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260510064311_InitialCreate")]
+    [Migration("20260511031616_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -36,6 +36,9 @@ namespace text_editor_server.Migrations
 
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("HasParsedSections")
+                        .HasColumnType("bit");
 
                     b.Property<string>("JsonContent")
                         .IsRequired()

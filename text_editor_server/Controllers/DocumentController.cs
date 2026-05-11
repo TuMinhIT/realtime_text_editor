@@ -85,13 +85,35 @@ namespace text_editor_server.Controllers
             return Ok(result);
         }
 
-        //Lấy document snapshots
         [HttpGet("{documentId:guid}/content")]
-        public async Task<IActionResult> GetDocumentContent(Guid documentId)
+        public async Task<IActionResult>
+    GetDocumentContent(Guid documentId)
         {
-            var result = await _documentService.GetDocumentFromSectionsAsync(documentId);
+            var result =
+                await _documentService
+                    .GetDocumentContentAsync(documentId);
+
             return Ok(result);
         }
+
+
+        ////Lấy document snapshots
+        //[HttpGet("{documentId:guid}/content")]
+        //public async Task<IActionResult> GetDocumentContent(Guid documentId)
+        //{
+        //    //var result = await _documentService.GetDocumentFromSectionsAsync(documentId);
+
+        //    var result = await _documentService.GetDocumentSnapshotAsync(documentId);
+        //    return Ok(result);
+        //}
+
+        ////Lấy document content bằng section ghép lại:
+        //[HttpGet("{documentId:guid}/content-from-sections")]
+        //public async Task<IActionResult> GetDocumentContentFromSections(Guid documentId)
+        //{
+        //    var result = await _documentService.GetDocumentFromSectionsAsync(documentId);
+        //    return Ok(result);
+        //}
 
         // lưu title
         [HttpPost("{documentId:guid}/title")]

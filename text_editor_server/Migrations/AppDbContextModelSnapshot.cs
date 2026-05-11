@@ -34,6 +34,9 @@ namespace text_editor_server.Migrations
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("HasParsedSections")
+                        .HasColumnType("bit");
+
                     b.Property<string>("JsonContent")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");

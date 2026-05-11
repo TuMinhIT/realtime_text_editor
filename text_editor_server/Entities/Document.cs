@@ -11,5 +11,8 @@ namespace text_editor_server.Entities
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public User? Creator { get; set; }
         public ICollection<Section> Sections { get; set; } = new List<Section>();
+
+        //Thêm biến kiểm soát số lần preview :
+        public bool HasParsedSections { get; set; } = false;
     }
 }
