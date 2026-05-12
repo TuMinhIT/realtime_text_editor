@@ -11,8 +11,7 @@ import UserPermission from "../components/SectionAuth/UserPermission";
 
 import DocEdit from "../components/SectionUser/DocEdit";
 
-const SERVICE_URL =
-  "https://ej2services.syncfusion.com/production/web-services/api/documenteditor/";
+const SERVICE_URL = import.meta.env.VITE_API_URL + "/document";
 
 const normalizeJson = (value) => {
   if (!value) {
@@ -170,15 +169,13 @@ const SectionAuthority = () => {
     loadData();
   }, [documentId]);
 
- useEffect(() => {
-  if (!sections.length) return;
+  useEffect(() => {
+    if (!sections.length) return;
 
-  setSelectedSection(
-    sections.find(s => s.level === 2) || sections[0]
-  );
+    setSelectedSection(sections.find((s) => s.level === 2) || sections[0]);
 
-  setIsInitialized(true);
-}, [sections]);
+    setIsInitialized(true);
+  }, [sections]);
 
   const loadPreview = async () => {
     setIsPreviewLoading(true);
@@ -215,21 +212,21 @@ const SectionAuthority = () => {
     }
   };
 
-useEffect(() => {
-  if (!isInitialized) return;
-  if (!selectedSection || !documentId) return;
+  useEffect(() => {
+    if (!isInitialized) return;
+    if (!selectedSection || !documentId) return;
 
-  loadPreview();
-  loadUserAssignments();
-}, [selectedSection, documentId, isInitialized]);
+    loadPreview();
+    loadUserAssignments();
+  }, [selectedSection, documentId, isInitialized]);
 
-useEffect(() => {
-  if (!previewSfdt || !selectedSection) return;
+  useEffect(() => {
+    if (!previewSfdt || !selectedSection) return;
 
-  openPreview(previewSfdt);
-  const canEdit = assignment?.permission == 1;
-  applyReadOnlyMode(!canEdit);
-}, [previewSfdt, selectedSection?.id, assignment?.permission]);
+    openPreview(previewSfdt);
+    const canEdit = assignment?.permission == 1;
+    applyReadOnlyMode(!canEdit);
+  }, [previewSfdt, selectedSection?.id, assignment?.permission]);
 
   const handleCreated = () => {
     openPreview(previewSfdt);
@@ -358,7 +355,7 @@ useEffect(() => {
                   Chưa có section nào.
                 </div>
               ) : null}
-             
+
               {sections.map((section) => {
                 const indentPx = Math.max(0, (section.level || 1) - 1) * 12;
                 const isSelected = selectedSection?.id === section.id;
@@ -421,7 +418,7 @@ useEffect(() => {
             </div>
           ) : null}
 
-          {selectedSection &&(
+          {selectedSection && (
             <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="flex flex-row gap-4 items-center justify-between">
                 <div className="min-w-0 flex-1">

@@ -3,7 +3,7 @@ using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Syncfusion.EJ2.DocumentEditor;
+
 using text_editor_server.Data;
 using text_editor_server.DTOs.res;
 using text_editor_server.Entities;
@@ -98,7 +98,7 @@ namespace text_editor_server.Services
                 // ======================
                 // Gọi helper convert DOCX -> SFDT JSON
                 // ======================
-                string sfdtJson = await HelperFunc.ConvertDocxToSfdtAsync(file);
+                string sfdtJson = await SyncfusionHelper.ConvertSFDT(file);
 
                 // ======================
                 // Save DB
@@ -130,7 +130,6 @@ namespace text_editor_server.Services
                 _context.DocumentSnapshots.Add(documentSnapshot);
                 await _context.SaveChangesAsync();
 
-			
 
                 return ServiceResult<DocumentUploadRes>.Ok(
                     new DocumentUploadRes
@@ -147,76 +146,7 @@ namespace text_editor_server.Services
             }
         }
 
-
-       
-
-		public async Task<ServiceResult<BlockPermissionRes>> AssignUserToBlockAsync(Guid sectionId, Guid userId, PermissionLevel permission)
-		{
-			//var sectionExists = await _context.Sections.AnyAsync(s => s.Id == sectionId);
-			//if (!sectionExists)
-			//{
-			//	return ServiceResult<BlockPermissionRes>.Fail("Block not found");
-			//}
-
-			//var user = await _context.Users
-			//	.AsNoTracking()
-			//	.FirstOrDefaultAsync(u => u.Id == userId);
-
-			//if (user == null)
-			//{
-			//	return ServiceResult<BlockPermissionRes>.Fail("User not found");
-			//}
-
-			//var assignment = await _context.SectionUsers
-			//	.FirstOrDefaultAsync(su => su.SectionId == sectionId && su.UserId == userId);
-
-			//if (assignment == null)
-			//{
-			//	assignment = new SectionPermission
-			//	{
-			//		Id = Guid.NewGuid(),
-			//		SectionId = sectionId,
-			//		UserId = userId,
-			//		Permission = permission,
-			//		AssignedAt = DateTime.UtcNow
-			//	};
-			//	_context.SectionUsers.Add(assignment);
-			//}
-			//else
-			//{
-			//	assignment.Permission = permission;
-			//	assignment.AssignedAt = DateTime.UtcNow;
-			//}
-
-			//await _context.SaveChangesAsync();
-
-			//return ServiceResult<BlockPermissionRes>.Ok(new BlockPermissionRes
-			//{
-			//	SectionId = sectionId,
-			//	UserId = userId,
-			//	UserEmail = user.Email,
-			//	Permission = permission.ToString(),
-			//	AssignedAt = assignment.AssignedAt
-			//});
-			return null;
-		}
-
-		public async Task<ServiceResult<bool>> RemoveUserFromBlockAsync(Guid sectionId, Guid userId)
-		{
-			//var assignment = await _context.SectionUsers
-			//	.FirstOrDefaultAsync(su => su.SectionId == sectionId && su.UserId == userId);
-
-			//if (assignment == null)
-			//{
-			//	return ServiceResult<bool>.Fail("Permission assignment not found");
-			//}
-
-			//_context.SectionUsers.Remove(assignment);
-			//await _context.SaveChangesAsync();
-
-			return ServiceResult<bool>.Ok(true);
-		}
-
+      
 		public async Task<ServiceResult<List<BlockPermissionRes>>> GetBlockUsersAsync(Guid sectionId)
 		{
 			var sectionExists = await _context.Sections.AnyAsync(s => s.Id == sectionId);
@@ -225,25 +155,10 @@ namespace text_editor_server.Services
 				return ServiceResult<List<BlockPermissionRes>>.Fail("Block not found");
 			}
 
-			//var users = await _context.SectionUsers
-			//	.Where(su => su.SectionId == sectionId)
-			//	.Join(
-			//		_context.Users,
-			//		su => su.UserId,
-			//		u => u.Id,
-			//		(su, u) => new BlockPermissionRes
-			//		{
-			//			SectionId = su.SectionId,
-			//			UserId = su.UserId,
-			//			UserEmail = u.Email,
-			//			Permission = su.Permission.ToString(),
-			//			AssignedAt = su.AssignedAt
-			//		})
-			//	.ToListAsync();
+			
 
 			return ServiceResult<List<BlockPermissionRes>>.Ok(null);
 		}
-
 
         public async Task<ServiceResult<DocumentSnapshot>>
             GetDocumentContentAsync(Guid documentId)

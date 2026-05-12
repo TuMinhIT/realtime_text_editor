@@ -5,8 +5,7 @@ import {
   Toolbar,
 } from "@syncfusion/ej2-react-documenteditor";
 
-const SERVICE_URL =
-  "https://ej2services.syncfusion.com/production/web-services/api/documenteditor/";
+const SERVICE_URL = import.meta.env.VITE_API_URL + "/document";
 
 const DocViewer = ({
   editorRef,

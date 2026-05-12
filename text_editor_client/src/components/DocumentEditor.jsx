@@ -10,8 +10,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { documentService } from "../services/documentService";
 import { toast } from "react-toastify";
 
-const SERVICE_URL =
-  "https://ej2services.syncfusion.com/production/web-services/api/documenteditor/";
+const SERVICE_URL = import.meta.env.VITE_API_URL + "/document";
 
 const normalizeJson = (value) => {
   if (!value) {
@@ -94,6 +93,7 @@ const DocumentEditor = () => {
       openDocumentContent(sfdtContent);
       if (document?.version === 0) {
         setHasAutoSaved(true);
+        // chỉnh chố nayà
         handleSave();
       }
     }
@@ -142,6 +142,7 @@ const DocumentEditor = () => {
     try {
       const serialized = normalizeJson(editor.serialize());
 
+      console.log(serialized);
       await Promise.all([
         documentService.updateDocumentTitle(documentId, documentTitle.trim()),
         documentService.updateDocumentContent(documentId, serialized),

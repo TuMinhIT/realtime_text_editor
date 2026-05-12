@@ -8,7 +8,9 @@
 
   <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="3.5.0" />
+    <PackageReference Include="BitMiracle.LibTiff.NET" Version="2.4.660" />
     <PackageReference Include="Hangfire.AspNetCore" Version="1.8.23" />
+    <PackageReference Include="Microsoft.AspNetCore.OData" Version="8.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.25" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.2.9" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
@@ -20,8 +22,12 @@
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="Portable.BouncyCastle" Version="1.9.0" />
+    <PackageReference Include="SkiaSharp" Version="3.119.2" />
     <PackageReference Include="Syncfusion.DocIO.Net.Core" Version="33.2.3" />
+    <PackageReference Include="Syncfusion.EJ2.SpellChecker.AspNet.Core" Version="33.2.5" />
     <PackageReference Include="Syncfusion.EJ2.WordEditor.AspNet.Core" Version="33.2.3" />
+    <PackageReference Include="Syncfusion.Licensing" Version="33.2.5" />
+    <PackageReference Include="Syncfusion.Pdf.Net.Core" Version="33.2.5" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.0.0" />
     <PackageReference Include="DocumentFormat.OpenXml" Version="3.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />

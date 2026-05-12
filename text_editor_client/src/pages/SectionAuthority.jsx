@@ -8,8 +8,7 @@ import documentService from "../services/documentService";
 import DocViewer from "../components/SectionAuth/DocViewer";
 import UserPermission from "../components/SectionAuth/UserPermission";
 
-const SERVICE_URL =
-  "https://ej2services.syncfusion.com/production/web-services/api/documenteditor/";
+const SERVICE_URL = import.meta.env.VITE_API_URL + "/document";
 
 const normalizeJson = (value) => {
   if (!value) {
@@ -199,7 +198,8 @@ const SectionAuthority = () => {
     // Nếu là tổng quan, hiển thị tài liệu gốc
     if (selectedSection === "tongquan") {
       setPreviewSfdt(originalPreview);
-      return;z
+      return;
+      z;
     }
 
     loadPreview();
