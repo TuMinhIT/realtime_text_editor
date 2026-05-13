@@ -4,11 +4,25 @@ import {
   Inject,
   Toolbar,
 } from "@syncfusion/ej2-react-documenteditor";
-import { FileText, Home, PanelLeft, Save } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
+import {
+  Home,
+  PanelLeft,
+  Save,
+  Lock,
+  Menu,
+  X,
+  Plus,
+  Users,
+  BlocksIcon,
+} from "lucide-react";
 
+import { TbLockOpen } from "react-icons/tb";
+
+import { useNavigate, useParams } from "react-router-dom";
 import { documentService } from "../services/documentService";
 import { toast } from "react-toastify";
+import { BiLockAlt } from "react-icons/bi";
+import { CgUnblock } from "react-icons/cg";
 
 const SERVICE_URL = import.meta.env.VITE_API_URL + "/document";
 
@@ -36,7 +50,6 @@ const DocumentEditor = () => {
   const [sfdtContent, setSfdtContent] = useState("");
   const [showNavigationPane, setShowNavigationPane] = useState(true);
   const [document, setDocument] = useState({});
-
   const [hasAutoSaved, setHasAutoSaved] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
 
@@ -45,7 +58,7 @@ const DocumentEditor = () => {
     if (!editor || !sfdt) {
       return;
     }
-
+    editor.isReadOnly = document.isActive;
     editor.open(sfdt);
   };
 
@@ -56,27 +69,25 @@ const DocumentEditor = () => {
       return;
     }
     setIsLoading(true);
-    setErrorMessage("");
-
     try {
       const result = await documentService.getDocumentContent(documentId);
-      if (result.success) {
-        const loadedDocument = result.data;
-        const normalizedLoadedContent = normalizeJson(
-          loadedDocument.jsonContent,
-        );
+      if (result == null) {
+        navigate("/admin");
+      }
+      if (result != null) {
+        const jsonContent = result.jsonContent;
 
-        setDocument(loadedDocument);
-        setSfdtContent(normalizedLoadedContent);
-        setDocumentTitle(loadedDocument.title);
+        setDocument(result);
+        setSfdtContent(jsonContent);
+        setDocumentTitle(result.title);
 
         setIsDirty(false);
         setHasAutoSaved(false);
       } else {
-        setErrorMessage(result.message || "Khong tai duoc noi dung tai lieu.");
+        toast.error(result.message || "Khong tai duoc noi dung tai lieu.");
       }
     } catch (error) {
-      setErrorMessage(
+      toast.error(
         error?.message || "Khong tai duoc noi dung tai lieu tu backend.",
       );
     } finally {
@@ -91,13 +102,8 @@ const DocumentEditor = () => {
   useEffect(() => {
     if (!isLoading && sfdtContent) {
       openDocumentContent(sfdtContent);
-      if (document?.version === 0) {
-        setHasAutoSaved(true);
-        // chỉnh chố nayà
-        handleSave();
-      }
     }
-  }, [isLoading, sfdtContent, document?.version, hasAutoSaved]);
+  }, [isLoading, sfdtContent, hasAutoSaved, document.isActive]);
 
   const handleContentChange = () => {
     if (isLoading || isSaving) {
@@ -142,7 +148,6 @@ const DocumentEditor = () => {
     try {
       const serialized = normalizeJson(editor.serialize());
 
-      console.log(serialized);
       await Promise.all([
         documentService.updateDocumentTitle(documentId, documentTitle.trim()),
         documentService.updateDocumentContent(documentId, serialized),
@@ -168,6 +173,26 @@ const DocumentEditor = () => {
         error?.message || "Khong the luu tai lieu. Hay kiem tra API backend.",
       );
       toast.error("Luu that bai.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleChangeStatus = async () => {
+    setIsSaving(true);
+    setErrorMessage("");
+
+    try {
+      // Gọi API để toggle isActive
+      await documentService.updateStatus(documentId, !document.isActive);
+      setDocument((prev) => ({
+        ...prev,
+        isActive: !prev.isActive,
+      }));
+
+      toast.success("Cập nhật trạng thái thành công");
+    } catch (error) {
+      toast.error("Cập nhật thất bại.");
     } finally {
       setIsSaving(false);
     }
@@ -205,9 +230,14 @@ const DocumentEditor = () => {
           </button>
 
           <div className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#1a73e8] text-white">
-              <FileText size={18} />
-            </div>
+            <button
+              type="button"
+              onClick={handleToggleNavigationPane}
+              className="inline-flex items-center gap-2 rounded-full  bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400"
+            >
+              {showNavigationPane ? <X size={18} /> : <Menu size={18}></Menu>}
+            </button>
+
             <input
               value={documentTitle}
               onChange={(event) => {
@@ -215,7 +245,7 @@ const DocumentEditor = () => {
                 setDocumentTitle(nextTitle);
                 updateDirtyStateForTitle(nextTitle);
               }}
-              className="w-60  px-2 py-1.5 text-lg font-medium outline-none hover:bg-slate-100 focus:bg-slate-100 md:w-[360px]"
+              className="w-60 text-indigo-700 px-2 py-1.5 text-lg font-medium outline-none hover:bg-slate-100 focus:bg-slate-100 md:w-[360px]"
               placeholder="Untitled document"
             />
           </div>
@@ -236,14 +266,31 @@ const DocumentEditor = () => {
               </div>
             )}
 
-            <button
-              type="button"
-              onClick={handleToggleNavigationPane}
-              className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400"
-            >
-              <PanelLeft size={16} />
-              {showNavigationPane ? "An heading" : "Hien heading"}
-            </button>
+            {/*  block và unBlock cho phép chỉnh sửa hoặc không */}
+            {document != null && (
+              <button
+                type="button"
+                onClick={handleChangeStatus}
+                // disabled={isSaving}
+              >
+                {/* ==true là user dc sửa ngược lại thì admin chỉnh sửa */}
+                {document.isActive ? (
+                  <>
+                    <div className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-red-400 px-4 py-2 text-sm font-medium text-white transition hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-60">
+                      User chỉnh
+                      <TbLockOpen size={16} />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-green-500 px-4 py-2 text-sm font-medium text-white transition hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-60">
+                      Admin chỉnh
+                      <BiLockAlt size={16} />
+                    </div>
+                  </>
+                )}
+              </button>
+            )}
 
             <button
               type="button"
@@ -260,12 +307,6 @@ const DocumentEditor = () => {
       </header>
 
       <section className="h-[calc(100vh-64px)] min-h-0 bg-[#eef2ff] p-2 md:p-3">
-        {errorMessage ? (
-          <div className="mx-auto mb-3 max-w-[1400px] rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {errorMessage}
-          </div>
-        ) : null}
-
         <div className="mx-auto h-full  overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_40px_100px_-65px_rgba(15,23,42,0.7)]">
           <DocumentEditorContainerComponent
             ref={editorRef}

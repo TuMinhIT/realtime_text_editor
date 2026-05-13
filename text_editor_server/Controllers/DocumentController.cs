@@ -46,7 +46,6 @@ namespace text_editor_server.Controllers
         }
 
 
-
         [Authorize]
         [HttpGet("getAll")]
         public async Task<IActionResult> GetAllDocument()
@@ -85,35 +84,55 @@ namespace text_editor_server.Controllers
             return Ok(result);
         }
 
-        [HttpGet("{documentId:guid}/content")]
-        public async Task<IActionResult>
-    GetDocumentContent(Guid documentId)
+        // update status document
+   
+       
+        [Authorize(Roles = "Admin")]
+        [HttpPost("{documentId}/status")]
+    
+        public async Task<IActionResult> UpdateDocumentStatus(Guid documentId, bool isActive)
         {
-            var result =
-                await _documentService
-                    .GetDocumentContentAsync(documentId);
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrWhiteSpace(userIdClaim) || !Guid.TryParse(userIdClaim, out var currentUserId))
+            {
+                return Unauthorized("Invalid token payload");
+            }
+
+
+            var result = await _documentService.UpdateDocumentStatusAsync(documentId, isActive);
 
             return Ok(result);
         }
 
 
-        ////Lấy document snapshots
-        //[HttpGet("{documentId:guid}/content")]
-        //public async Task<IActionResult> GetDocumentContent(Guid documentId)
-        //{
-        //    //var result = await _documentService.GetDocumentFromSectionsAsync(documentId);
 
-        //    var result = await _documentService.GetDocumentSnapshotAsync(documentId);
-        //    return Ok(result);
-        //}
+        [HttpGet("{documentId:guid}/content")]
+        public async Task<IActionResult>
+        GetDocumentContent(Guid documentId)
+        {
+            //var result =
+            //    await _documentService
+            //        .GetDocumentContentAsync(documentId);
 
-        ////Lấy document content bằng section ghép lại:
-        //[HttpGet("{documentId:guid}/content-from-sections")]
-        //public async Task<IActionResult> GetDocumentContentFromSections(Guid documentId)
-        //{
-        //    var result = await _documentService.GetDocumentFromSectionsAsync(documentId);
-        //    return Ok(result);
-        //}
+            return Ok("Xóa r m");
+        }
+
+        [HttpGet("{documentId:guid}/detail")]
+        public async Task<IActionResult>
+        GetDocumentDetail(Guid documentId)
+        {
+            var result =
+                await _documentService
+                    .GetDocumentDetailAsync(documentId);
+
+            if (!result.Success)
+            {
+                return NotFound(new { message = result.Message });
+            }
+
+            return Ok(result.Data);
+        }
 
         // lưu title
         [HttpPost("{documentId:guid}/title")]
@@ -134,12 +153,12 @@ namespace text_editor_server.Controllers
         public async Task<IActionResult> UpdateContent(Guid documentId, [FromBody] UpdateJsonSfdtReq req)
         {
             var res = await _documentService.updateContentAsync(documentId, req.JsonContent);
-            if (!res)
+            if (!res.Success)
             {
-                return NotFound(new { message = "Document not found" });
+                return BadRequest(new { message = res.Message });
             }
 
-            return Ok("Update success!");
+            return Ok(res);
 
         }       
     }

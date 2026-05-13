@@ -17,7 +17,7 @@ namespace text_editor_server
     public class Program
     {
         public static void Main(string[] args)
-        {
+       {
             var builder = WebApplication.CreateBuilder(args);
 
 

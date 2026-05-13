@@ -1,7 +1,9 @@
 ﻿using DocumentFormat.OpenXml.InkML;
+using DocumentFormat.OpenXml.Office2010.Word;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using SkiaSharp;
 using text_editor_server.Data;
 using text_editor_server.Entities;
 
@@ -51,11 +53,9 @@ namespace text_editor_server.Services
         }
 
 
-        // CORE PARSER
-
         private List<Section> ParseSectionsFromSfdt(
-     string sfdtJson,
-     Guid documentId)
+             string sfdtJson,
+             Guid documentId)
         {
             var result = new List<Section>();
 
@@ -305,8 +305,8 @@ namespace text_editor_server.Services
         }
 
         private int? ResolveOutlineLevel(
-    JObject style,
-    Dictionary<string, JObject> styleMap)
+            JObject style,
+            Dictionary<string, JObject> styleMap)
         {
             // direct ol
             var directLevel =
@@ -345,50 +345,9 @@ namespace text_editor_server.Services
         }
 
 
-        //public string BuildSectionPreview(string sectionContent, JObject originalSfdt)
-        //{
-        //    if (string.IsNullOrWhiteSpace(sectionContent))
-        //        return null;
-
-        //    JArray sectionBlocks;
-
-        //    try
-        //    {
-        //        var obj = JObject.Parse(sectionContent);
-
-        //        sectionBlocks = obj["b"] as JArray;
-
-        //        if (sectionBlocks == null)
-        //            return null;
-        //    }
-        //    catch
-        //    {
-        //        return null;
-        //    }
-
-        //    var result = (JObject)originalSfdt.DeepClone();
-
-        //    var secArray = result["sec"] as JArray;
-        //    if (secArray == null || secArray.Count == 0)
-        //        return result.ToString();
-
-        //    var first = secArray[0] as JObject;
-        //    first["b"] = sectionBlocks;
-
-        //    // merge imgs
-        //    var sectionObj = JObject.Parse(sectionContent);
-
-        //    if (sectionObj["imgs"] is JObject sectionImgs)
-        //    {
-        //        result["imgs"] = sectionImgs.DeepClone();
-        //    }
-
-        //    return result.ToString(Formatting.None);
-        //}
-
         public string BuildSectionPreview(
-    string sectionContent,
-    JObject originalSfdt)
+        string sectionContent,
+        JObject originalSfdt)
         {
             if (string.IsNullOrWhiteSpace(sectionContent))
                 return null;

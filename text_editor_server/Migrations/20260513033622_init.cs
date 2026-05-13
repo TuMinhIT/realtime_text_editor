@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace text_editor_server.Migrations
 {
     /// <inheritdoc />
-    public partial class INITIALCREATE : Migration
+    public partial class init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -34,11 +34,11 @@ namespace text_editor_server.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    JsonContent = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     SourceFilePath = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    HasParsedSections = table.Column<bool>(type: "bit", nullable: false)
+                    isActive = table.Column<bool>(type: "bit", nullable: false),
+                    hasChanges = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {

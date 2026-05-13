@@ -62,9 +62,10 @@ export const documentService = {
 
   async getDocumentContent(documentId) {
     try {
-      const res = await http.get(`${resource}/${documentId}/content`);
+      const res = await http.get(`${resource}/${documentId}/detail`);
       return res.data;
     } catch (err) {
+      return null;
       throw toError(err);
     }
   },
@@ -86,6 +87,19 @@ export const documentService = {
       const res = await http.post(
         `${resource}/${documentId}/title?title=${title}`,
       );
+      return res.data;
+    } catch (err) {
+      throw toError(err);
+    }
+  },
+
+  async updateStatus(documentId, isActive) {
+    try {
+      console.log(isActive);
+      const res = await http.post(`${resource}/${documentId}/status`, {
+        isActive,
+      });
+
       return res.data;
     } catch (err) {
       throw toError(err);
