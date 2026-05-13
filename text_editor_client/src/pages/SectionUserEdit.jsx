@@ -325,10 +325,10 @@ const SectionAuthority = () => {
           </div>
         </div>
       </header>
-      <div className="flex flex-wrap gap-3 p-4 ">
+      <div className="flex flex-wrap gap-3 px-4 py-1 ">
         {openAside && (
           <aside
-            className={` max-w-[360px] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg transition-all duration-300  `}
+            className={` max-w-[360px] overflow-y-scroll h-screen  flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg transition-all duration-300  `}
           >
             <div className="border-b border-slate-200 px-4 py-4">
               <div className="flex flex-row justify-between items-center">
@@ -349,12 +349,30 @@ const SectionAuthority = () => {
               </p>
             </div>
 
-            <div className="flex-1 space-y-3 overflow-y-auto p-3">
+            <div className="flex-1 space-y-3  p-3">
               {sections.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
                   Chưa có section nào.
                 </div>
-              ) : null}
+              ) : (
+                <button
+                  type="button"
+                  // onClick={() => setSelectedSection("tongquan")}
+                  className={`w-full rounded-2xl  border px-2 py-1 text-left transition ${
+                    selectedSection == "tongquan"
+                      ? "border-blue-200 bg-blue-50 shadow-sm"
+                      : "border-slate-200 bg-gray-300 hover:border-slate-300 hover:bg-slate-50"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate text-md  font-bold text-slate-900">
+                        Tổng quan
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              )}
 
               {sections.map((section) => {
                 const indentPx = Math.max(0, (section.level || 1) - 1) * 12;
@@ -412,53 +430,43 @@ const SectionAuthority = () => {
 
         {/* header Nọi dung */}
         <section className="flex max-w-7xl m-auto min-w-0 flex-1 flex-col gap-4 overflow-hidden">
-          {errorMessage ? (
-            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {errorMessage}
-            </div>
-          ) : null}
-
           {selectedSection && (
-            <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-              <div className="flex flex-row gap-4 items-center justify-between">
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-lg font-semibold text-slate-900">
-                      {selectedSection?.title || "Chưa chọn section"}
-                    </h2>
-                  </div>
-                  <div>
-                    {assignment?.permission == 1 ? (
-                      <button
-                        onClick={handleSave}
-                        disabled={isSaving || !isDirty}
-                        className="mt-2 inline-flex items-center gap-2 rounded-full bg-green-600 px-3 py-1 text-sm font-medium text-white transition disabled:opacity-50"
-                      >
-                        {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
-                      </button>
-                    ) : (
-                      <div className="mt-2 text-sm text-slate-500">Chỉ xem</div>
-                    )}
-                  </div>
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-2 shadow-sm">
+              <div className="flex  items-center justify-between">
+                <div className="flex items-center gap-4 min-w-0">
+                  <h2 className="text-lg font-semibold text-slate-900">
+                    {selectedSection?.title || "Chưa chọn section"}
+                  </h2>
+                </div>
+                <div className="flex">
+                  {assignment?.permission == 1 ? (
+                    <button
+                      onClick={handleSave}
+                      disabled={isSaving || !isDirty}
+                      className="inline-flex items-center gap-2 rounded-full bg-green-600 px-3 py-1 text-sm font-medium text-white transition disabled:opacity-50"
+                    >
+                      {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
+                    </button>
+                  ) : (
+                    <div className="text-sm text-slate-500">Chỉ xem</div>
+                  )}
                 </div>
               </div>
             </div>
           )}
 
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <DocEdit
-              editorRef={editorRef}
-              selectedSection={selectedSection}
-              previewSfdt={previewSfdt}
-              isPreviewLoading={isPreviewLoading}
-              showNavigationPane={true}
-              handleCreated={handleCreated}
-              handleContentChange={handleContentChange}
-              handleSave={handleSave}
-              originalPreview={originalPreview}
-              canEdit={assignment?.permission == 1}
-            />
-          </div>
+          <DocEdit
+            editorRef={editorRef}
+            selectedSection={selectedSection}
+            previewSfdt={previewSfdt}
+            isPreviewLoading={isPreviewLoading}
+            showNavigationPane={true}
+            handleCreated={handleCreated}
+            handleContentChange={handleContentChange}
+            handleSave={handleSave}
+            originalPreview={originalPreview}
+            canEdit={assignment?.permission == 1}
+          />
         </section>
       </div>
     </main>

@@ -95,7 +95,6 @@ export const documentService = {
 
   async updateStatus(documentId, isActive) {
     try {
-      console.log(isActive);
       const res = await http.post(`${resource}/${documentId}/status`, {
         isActive,
       });

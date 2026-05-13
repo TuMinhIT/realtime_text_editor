@@ -83,17 +83,14 @@ const SectionAuthority = () => {
   const loadDocument = async () => {
     const result = await documentService.getDocumentContent(documentId);
 
-    if (result.success) {
-      const loadedDocument = result.data;
-      setDocumentTitle(
-        loadedDocument?.title || location.state?.documentTitle || "Tài liệu",
-      );
-      setPreviewSfdt(loadedDocument.jsonContent);
-      setOriginalPreview(loadedDocument.jsonContent);
-      return;
+    if (result != null) {
+      const jsonContent = result.jsonContent;
+      setDocumentTitle(result.title);
+      setPreviewSfdt(jsonContent);
+      setOriginalPreview(jsonContent);
+    } else {
+      toast.error(result.message || "Khong tai duoc noi dung tai lieu.");
     }
-
-    setErrorMessage(result.message || "Không tải được nội dung tài liệu.");
   };
 
   const loadSections = async () => {
@@ -138,7 +135,6 @@ const SectionAuthority = () => {
   useEffect(() => {
     if (!sections.length) {
       setSelectedSection(null);
-
       return;
     }
     //  trả tỏng quan khi vừa load
