@@ -33,4 +33,10 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Realtime\DTOs\" />
+    <Folder Include="Realtime\Hubs\" />
+    <Folder Include="Realtime\Services\" />
+  </ItemGroup>
+
 </Project>

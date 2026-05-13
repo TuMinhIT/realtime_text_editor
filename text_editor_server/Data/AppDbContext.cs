@@ -17,6 +17,10 @@ namespace text_editor_server.Data
         public AppDbContext(DbContextOptions<AppDbContext> options)
             : base(options) { }
 
+
+        //Hỗ trợ realtime collab:
+       // public DbSet<SectionOperation> SectionOperations { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -79,8 +83,21 @@ namespace text_editor_server.Data
                 
             modelBuilder.Entity<DocumentSnapshot>()
                 .HasIndex(ds => ds.DocumentId);
-      
+
+            ////Cấu hình bảng liên quan hỗ trợ realtime collab:
+            //modelBuilder.Entity<SectionOperation>()
+            //    .HasOne(so => so.Section)
+            //    .WithMany()
+            //    .HasForeignKey(so => so.SectionId)
+            //    .OnDelete(DeleteBehavior.Cascade);
+
+            ////Thêm Indexes:
+            //modelBuilder.Entity<SectionOperation>()
+            //    .HasIndex(so => new { so.SectionId, so.ResultVersion});
+
+            //
         }
     }
 }
+
 

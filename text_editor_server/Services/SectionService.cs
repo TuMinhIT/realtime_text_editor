@@ -159,9 +159,57 @@ namespace text_editor_server.Services
 
 
 
+        //public async Task<bool> UpdateSectionContentAsync(
+        // Guid sectionId,
+        // string newContent)
+        //{
+        //    try
+        //    {
+        //        var section = await _context.Sections
+        //            .FirstOrDefaultAsync(s => s.Id == sectionId);
+
+        //        if (section == null)
+        //            return false;
+
+        //        // validate json
+        //        JObject.Parse(newContent);
+
+        //        // extract ONLY blocks
+        //        var blocks = ExtractBlocksFromSfdt(newContent);
+
+        //        // save lightweight structure
+        //        var sectionJson = new JObject
+        //        {
+        //            ["b"] = JArray.FromObject(blocks)
+        //        };
+
+        //        section.Content = new JObject
+        //        {
+        //            ["b"] = JArray.FromObject(blocks)
+        //        }.ToString(Formatting.None);
+        //        section.Version += 1;
+
+        //        section.Timestamp =
+        //            DateTimeOffset.UtcNow
+        //                .ToUnixTimeMilliseconds();
+
+        //        await _context.SaveChangesAsync();
+
+        //        return true;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex,
+        //            "Error updating section content");
+
+        //        return false;
+        //    }
+        //}
+
+
         public async Task<bool> UpdateSectionContentAsync(
-         Guid sectionId,
-         string newContent)
+    Guid sectionId,
+    string newContent)
         {
             try
             {
@@ -171,27 +219,27 @@ namespace text_editor_server.Services
                 if (section == null)
                     return false;
 
-                // validate json
-                JObject.Parse(newContent);
+                // parse SFDT
+                var root = JObject.Parse(newContent);
 
-                // extract ONLY blocks
+                // extract blocks
                 var blocks = ExtractBlocksFromSfdt(newContent);
 
-                // save lightweight structure
-                var sectionJson = new JObject
+                // rebuild SAFE section content
+                var safeSectionJson = new JObject
                 {
-                    ["b"] = JArray.FromObject(blocks)
+                    ["b"] = new JArray(blocks),
+
+                   
+                    ["imgs"] = root["imgs"]
+                    //["cf"] = root["cf"],
+                    //["sty"] = root["sty"]
                 };
 
-                section.Content = new JObject
-                {
-                    ["b"] = JArray.FromObject(blocks)
-                }.ToString(Formatting.None);
-                section.Version += 1;
+                section.Content = safeSectionJson.ToString(Formatting.None);
 
-                section.Timestamp =
-                    DateTimeOffset.UtcNow
-                        .ToUnixTimeMilliseconds();
+                section.Version += 1;
+                section.Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
                 await _context.SaveChangesAsync();
 
@@ -199,9 +247,7 @@ namespace text_editor_server.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex,
-                    "Error updating section content");
-
+                _logger.LogError(ex, "Error updating section content");
                 return false;
             }
         }

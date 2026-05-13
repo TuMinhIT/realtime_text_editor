@@ -35,8 +35,6 @@ namespace text_editor_server
             builder.Services.AddScoped<SectionService>();
 
             builder.Services.AddHttpContextAccessor();
-
-            builder.Services.AddScoped< DocxParsingService>();
    
             // Add controllers
             builder.Services.AddControllers();

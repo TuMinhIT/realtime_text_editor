@@ -12,15 +12,14 @@ namespace text_editor_server.Services
 	public class DocumentService
 	{
 		private readonly AppDbContext _context;
-		private readonly DocxParsingService _docxParsingService;
+		//private readonly DocxParsingService _docxParsingService;
 		private readonly ILogger<DocumentService> _logger;
         private readonly SectionParser _sectionParser;
 
-        public DocumentService(AppDbContext context, DocxParsingService docxParsingService, ILogger<DocumentService> logger, SectionParser sectionParser)
+        public DocumentService(AppDbContext context, ILogger<DocumentService> logger, SectionParser sectionParser)
 		{
 			_context = context;
-			_docxParsingService = docxParsingService;
-			_logger = logger;
+			
 			_sectionParser = sectionParser;
 			
 		}
@@ -254,35 +253,29 @@ namespace text_editor_server.Services
         public async Task<bool> updateContentAsync(Guid documentId, string newContent)
         {
             try
-            {             
+            {
                 var documentSnapshot = await _context.DocumentSnapshots
                     .FirstOrDefaultAsync(ds => ds.DocumentId == documentId);
 
-                if (documentSnapshot != null)
-                {
-                    documentSnapshot.JsonContent= newContent;
-
-
-                }
-                await _context.SaveChangesAsync();
-				
-				await _sectionParser.ParseNow(documentId);
-
-
-                //Thêm cập nhật đã sửa ban đầu:
                 var document = await _context.Documents
-    .FirstOrDefaultAsync(d => d.Id == documentId);
+                    .FirstOrDefaultAsync(d => d.Id == documentId);
 
-                if (document != null)
+                if (documentSnapshot == null || document == null)
+                    return false;
+
+                // 1. update snapshot
+                documentSnapshot.JsonContent = newContent;
+
+                // 2. chỉ parse 1 lần duy nhất
+                if (!document.HasParsedSections)
                 {
+                    await _sectionParser.ParseNow(documentId);
                     document.HasParsedSections = true;
                 }
 
                 await _context.SaveChangesAsync();
 
-                //END TEST
                 return true;
-
             }
             catch (Exception ex)
             {
@@ -292,27 +285,117 @@ namespace text_editor_server.Services
         }
 
 
+
         //Update JSONCONTENT khi cập nhật section:
+        //public async Task<string> MergeAllSectionsAsync(Guid documentId)
+        //{
+        //    var snapshot = await _context.DocumentSnapshots
+        //        .FirstOrDefaultAsync(x => x.DocumentId == documentId);
+
+        //    if (snapshot == null)
+        //        return "";
+
+        //    var originalSfdt =
+        //        JObject.Parse(snapshot.JsonContent);
+
+        //    var secArray =
+        //        originalSfdt["sec"] as JArray;
+
+        //    if (secArray == null || secArray.Count == 0)
+        //        return "";
+
+        //    var allBlocks = new JArray();
+
+        //    var sections = await _context.Sections
+        //        .Where(x => x.DocumentId == documentId)
+        //        .OrderBy(x => x.OrderIndex)
+        //        .ToListAsync();
+
+        //    foreach (var section in sections)
+        //    {
+        //        if (string.IsNullOrWhiteSpace(section.Content))
+        //            continue;
+
+        //        var obj = JObject.Parse(section.Content);
+
+        //        var blocks = obj["b"] as JArray;
+
+        //        if (blocks == null)
+        //            continue;
+
+        //        foreach (var b in blocks)
+        //        {
+        //            allBlocks.Add(b.DeepClone());
+        //        }
+        //    }
+
+        //    var firstSec = secArray[0] as JObject;
+
+        //    if (firstSec != null)
+        //    {
+        //        firstSec["b"] = allBlocks;
+        //    }
+
+        //    // clear remaining sec
+        //    for (int i = 1; i < secArray.Count; i++)
+        //    {
+        //        if (secArray[i] is JObject s)
+        //        {
+        //            s["b"] = new JArray();
+        //        }
+        //    }
+
+        //    return originalSfdt.ToString(Formatting.None);
+        //}
+
         public async Task<string> MergeAllSectionsAsync(Guid documentId)
         {
             var snapshot = await _context.DocumentSnapshots
+                .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.DocumentId == documentId);
 
-            if (snapshot == null)
+            if (snapshot == null ||
+                string.IsNullOrWhiteSpace(snapshot.JsonContent))
+            {
                 return "";
+            }
 
-            var originalSfdt =
-                JObject.Parse(snapshot.JsonContent);
+            JObject originalSfdt;
 
+            try
+            {
+                originalSfdt =
+                    JObject.Parse(snapshot.JsonContent);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Invalid snapshot SFDT for document {DocumentId}",
+                    documentId);
+
+                return "";
+            }
+
+            // sec array
             var secArray =
                 originalSfdt["sec"] as JArray;
 
-            if (secArray == null || secArray.Count == 0)
-                return "";
+            if (secArray == null ||
+                secArray.Count == 0)
+            {
+                return originalSfdt.ToString(
+                    Formatting.None);
+            }
 
+            // collect all blocks
             var allBlocks = new JArray();
 
+            // collect merged images
+            var mergedImgs = new JObject();
+
             var sections = await _context.Sections
+                .AsNoTracking()
                 .Where(x => x.DocumentId == documentId)
                 .OrderBy(x => x.OrderIndex)
                 .ToListAsync();
@@ -322,36 +405,77 @@ namespace text_editor_server.Services
                 if (string.IsNullOrWhiteSpace(section.Content))
                     continue;
 
-                var obj = JObject.Parse(section.Content);
+                JObject sectionObj;
 
-                var blocks = obj["b"] as JArray;
-
-                if (blocks == null)
-                    continue;
-
-                foreach (var b in blocks)
+                try
                 {
-                    allBlocks.Add(b.DeepClone());
+                    sectionObj =
+                        JObject.Parse(section.Content);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(
+                        ex,
+                        "Invalid section content {SectionId}",
+                        section.Id);
+
+                    continue;
+                }
+
+                // =====================
+                // Merge blocks
+                // =====================
+                if (sectionObj["b"] is JArray blocks)
+                {
+                    foreach (var block in blocks)
+                    {
+                        allBlocks.Add(
+                            block.DeepClone());
+                    }
+                }
+
+                // =====================
+                // Merge imgs
+                // =====================
+                if (sectionObj["imgs"] is JObject imgs)
+                {
+                    foreach (var prop in imgs.Properties())
+                    {
+                        // overwrite-safe
+                        mergedImgs[prop.Name] =
+                            prop.Value.DeepClone();
+                    }
                 }
             }
 
-            var firstSec = secArray[0] as JObject;
-
-            if (firstSec != null)
+            // =====================
+            // Replace first section
+            // =====================
+            if (secArray[0] is JObject firstSec)
             {
                 firstSec["b"] = allBlocks;
             }
 
-            // clear remaining sec
+            // =====================
+            // Clear remaining sections
+            // tránh duplicate content
+            // =====================
             for (int i = 1; i < secArray.Count; i++)
             {
-                if (secArray[i] is JObject s)
+                if (secArray[i] is JObject sec)
                 {
-                    s["b"] = new JArray();
+                    sec["b"] = new JArray();
                 }
             }
 
-            return originalSfdt.ToString(Formatting.None);
+            // =====================
+            // IMPORTANT FIX
+            // replace imgs
+            // =====================
+            originalSfdt["imgs"] = mergedImgs;
+
+            return originalSfdt.ToString(
+                Formatting.None);
         }
     }
 }

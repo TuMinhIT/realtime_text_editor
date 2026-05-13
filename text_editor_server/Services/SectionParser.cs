@@ -30,7 +30,7 @@ namespace text_editor_server.Services
                     _logger.LogWarning("Snapshot not found: {DocumentId}", documentId);
                     return;
                 }
-
+                Console.WriteLine("Snapshot JSON: " + snapshot.JsonContent);
                 var sections = ParseSectionsFromSfdt(snapshot.JsonContent, documentId);
 
                 var old = _db.Sections.Where(x => x.DocumentId == documentId);
@@ -160,7 +160,7 @@ namespace text_editor_server.Services
                         if (currentSection != null)
                         {
                             currentSection.Content =
-                                SerializeBlocks(currentBlocks);
+                                SerializeBlocks(currentBlocks, sfdt);
 
                             result.Add(currentSection);
 
@@ -231,7 +231,7 @@ namespace text_editor_server.Services
             if (currentSection != null)
             {
                 currentSection.Content =
-                    SerializeBlocks(currentBlocks);
+                    SerializeBlocks(currentBlocks, sfdt     );
 
                 result.Add(currentSection);
             }
@@ -328,31 +328,79 @@ namespace text_editor_server.Services
 
             return ResolveOutlineLevel(parent, styleMap);
         }
-    
+
 
         // lưu RAW SFDT blocks
-        private string SerializeBlocks(List<JObject> blocks)
+        private string SerializeBlocks(List<JObject> blocks, JObject sfdt)
         {
             return new JObject
             {
-                ["b"] = new JArray(blocks)
+                ["b"] = new JArray(blocks),
+
+                // 🔥 FIX QUAN TRỌNG
+                ["imgs"] = sfdt["imgs"],
+                //["cf"] = sfdt["cf"],
+                //["sty"] = sfdt["sty"]
             }.ToString(Formatting.None);
         }
 
 
+        //public string BuildSectionPreview(string sectionContent, JObject originalSfdt)
+        //{
+        //    if (string.IsNullOrWhiteSpace(sectionContent))
+        //        return null;
 
-        public string BuildSectionPreview(string sectionContent, JObject originalSfdt)
+        //    JArray sectionBlocks;
+
+        //    try
+        //    {
+        //        var obj = JObject.Parse(sectionContent);
+
+        //        sectionBlocks = obj["b"] as JArray;
+
+        //        if (sectionBlocks == null)
+        //            return null;
+        //    }
+        //    catch
+        //    {
+        //        return null;
+        //    }
+
+        //    var result = (JObject)originalSfdt.DeepClone();
+
+        //    var secArray = result["sec"] as JArray;
+        //    if (secArray == null || secArray.Count == 0)
+        //        return result.ToString();
+
+        //    var first = secArray[0] as JObject;
+        //    first["b"] = sectionBlocks;
+
+        //    // merge imgs
+        //    var sectionObj = JObject.Parse(sectionContent);
+
+        //    if (sectionObj["imgs"] is JObject sectionImgs)
+        //    {
+        //        result["imgs"] = sectionImgs.DeepClone();
+        //    }
+
+        //    return result.ToString(Formatting.None);
+        //}
+
+        public string BuildSectionPreview(
+    string sectionContent,
+    JObject originalSfdt)
         {
             if (string.IsNullOrWhiteSpace(sectionContent))
                 return null;
 
             JArray sectionBlocks;
+            JObject sectionObj;
 
             try
             {
-                var obj = JObject.Parse(sectionContent);
+                sectionObj = JObject.Parse(sectionContent);
 
-                sectionBlocks = obj["b"] as JArray;
+                sectionBlocks = sectionObj["b"] as JArray;
 
                 if (sectionBlocks == null)
                     return null;
@@ -362,14 +410,26 @@ namespace text_editor_server.Services
                 return null;
             }
 
-            var result = (JObject)originalSfdt.DeepClone();
+            var result =
+                (JObject)originalSfdt.DeepClone();
 
-            var secArray = result["sec"] as JArray;
+            var secArray =
+                result["sec"] as JArray;
+
             if (secArray == null || secArray.Count == 0)
                 return result.ToString();
 
-            var first = secArray[0] as JObject;
+            var first =
+                secArray[0] as JObject;
+
             first["b"] = sectionBlocks;
+
+            // FIX IMAGE
+            if (sectionObj["imgs"] is JObject imgs)
+            {
+                result["imgs"] =
+                    imgs.DeepClone();
+            }
 
             return result.ToString(Formatting.None);
         }
