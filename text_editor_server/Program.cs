@@ -207,6 +207,9 @@ namespace text_editor_server
             app.UseSwagger();
             app.UseSwaggerUI();
 
+            app.UseStaticFiles();
+
+
             app.UseRouting();
             app.UseHttpsRedirection();
 

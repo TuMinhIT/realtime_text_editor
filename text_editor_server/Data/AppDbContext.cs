@@ -84,18 +84,19 @@ namespace text_editor_server.Data
             modelBuilder.Entity<DocumentSnapshot>()
                 .HasIndex(ds => ds.DocumentId);
 
-            ////Cấu hình bảng liên quan hỗ trợ realtime collab:
-            //modelBuilder.Entity<SectionOperation>()
-            //    .HasOne(so => so.Section)
-            //    .WithMany()
-            //    .HasForeignKey(so => so.SectionId)
-            //    .OnDelete(DeleteBehavior.Cascade);
 
-            ////Thêm Indexes:
-            //modelBuilder.Entity<SectionOperation>()
-            //    .HasIndex(so => new { so.SectionId, so.ResultVersion});
+            //modelBuilder.Entity<DocumentFileEntity>()
+            //    .HasOne(x => x.Document)
+            //    .WithMany(x => x.DocumentFiles)
+            //    .HasForeignKey(x => x.DocumentId);
 
-            //
+            //modelBuilder.Entity<DocumentFileEntity>()
+            //    .HasOne(x => x.File)
+            //    .WithMany(x => x.DocumentFiles)
+            //    .HasForeignKey(x => x.FileId);
+
+
+
         }
     }
 }

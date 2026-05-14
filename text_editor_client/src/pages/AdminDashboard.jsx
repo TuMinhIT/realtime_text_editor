@@ -242,7 +242,7 @@ const AdminDashBoard = () => {
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#e8f0fe] text-[#1a73e8]">
                 <Plus size={22} />
               </div>
-              <p className="text-sm font-medium">Blank document</p>
+              <p className="text-sm font-medium">Proof document</p>
             </button>
             {isUploading ? (
               <ClipLoader color="red" />

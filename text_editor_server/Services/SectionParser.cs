@@ -32,11 +32,11 @@ namespace text_editor_server.Services
                     _logger.LogWarning("Snapshot not found: {DocumentId}", documentId);
                     return;
                 }
-                Console.WriteLine("Snapshot JSON: " + snapshot.JsonContent);
+              
                 var sections = ParseSectionsFromSfdt(snapshot.JsonContent, documentId);
 
                 var old = _db.Sections.Where(x => x.DocumentId == documentId);
-                _db.Sections.RemoveRange(old);
+                 _db.Sections.RemoveRange(old);
 
                 _db.Sections.AddRange(sections);
                 await _db.SaveChangesAsync();
@@ -51,7 +51,6 @@ namespace text_editor_server.Services
                 throw;
             }
         }
-
 
         private List<Section> ParseSectionsFromSfdt(
              string sfdtJson,

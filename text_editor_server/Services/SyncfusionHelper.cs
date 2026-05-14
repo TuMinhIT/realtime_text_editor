@@ -1,5 +1,4 @@
-﻿
-using Syncfusion.EJ2.DocumentEditor;
+﻿using Syncfusion.EJ2.DocumentEditor;
 using WFormatType = Syncfusion.DocIO.FormatType;
 using BitMiracle.LibTiff.Classic;
 using Syncfusion.EJ2.SpellChecker;
@@ -38,7 +37,6 @@ namespace text_editor_server.Services
 
             document.Dispose();
             return sfdt;
-
         }
 
 
@@ -201,8 +199,5 @@ namespace text_editor_server.Services
             }
             return execAssembly.GetManifestResourceStream(fileName);
         }
-
-
-
     }
 }

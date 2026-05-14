@@ -106,7 +106,6 @@ namespace text_editor_server.Controllers
         }
 
 
-
         [HttpGet("{documentId:guid}/content")]
         public async Task<IActionResult>
         GetDocumentContent(Guid documentId)

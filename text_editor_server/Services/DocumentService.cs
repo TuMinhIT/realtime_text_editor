@@ -12,7 +12,7 @@ namespace text_editor_server.Services
 	public class DocumentService
 	{
 		private readonly AppDbContext _context;
-		//private readonly DocxParsingService _docxParsingService;
+	
 		private readonly ILogger<DocumentService> _logger;
         private readonly SectionParser _sectionParser;
 
@@ -168,7 +168,6 @@ namespace text_editor_server.Services
             }
         }
 
-      
 		public async Task<ServiceResult<List<BlockPermissionRes>>> GetBlockUsersAsync(Guid sectionId)
 		{
 			var sectionExists = await _context.Sections.AnyAsync(s => s.Id == sectionId);
@@ -279,6 +278,7 @@ namespace text_editor_server.Services
                     JsonContent = snapshot.JsonContent,
                     CreatedAt = document.CreatedAt,
                     SourceFilePath = document.SourceFilePath,
+                    Version = snapshot.Version,
                 };
                 return ServiceResult<DocumentRes>
                     .Ok(result);
@@ -332,19 +332,16 @@ namespace text_editor_server.Services
 
 
         // update json content
-        public async Task<ServiceResult<bool>> updateContentAsync(Guid documentId, string newContent)
+        public async Task<ServiceResult<DocumentSnapshot>> updateContentAsync(Guid documentId, string newContent)
         {
             try
-            {
-                
-                
-
+            {                            
                 Document document = await _context.Documents
                     .FirstOrDefaultAsync(d => d.Id == documentId);
         
-                if (document == null ||document.isActive == false  ) {
+                if (document == null ||document.isActive == true  ) {
 
-                    return ServiceResult<bool>.Fail("Document is not active");
+                    return ServiceResult<DocumentSnapshot>.Fail("Document is active, you must block user edit ");
                 } 
 
                DocumentSnapshot documentSnapshot = await _context.DocumentSnapshots
@@ -352,26 +349,25 @@ namespace text_editor_server.Services
 
 
                 if (documentSnapshot == null || document == null)
-                    return ServiceResult<bool>.Fail("Document or snapshot not found");
+                    return ServiceResult<DocumentSnapshot>.Fail("Document or snapshot not found");
 
                 //  update snapshot
                 documentSnapshot.JsonContent = newContent;
-
-                // parse khi up lần đầu
-                if (documentSnapshot.Version ==0)
-                {
-                    await _sectionParser.ParseNow(documentId);
-                    _logger.LogInformation($"Parsed sections for document {documentId} after first upload");
-                }
+       
+          
+                await _sectionParser.ParseNow(documentId);
+                _logger.LogInformation($"Parsed sections for document {documentId} after first upload");
+               
+                documentSnapshot.Version += 1;
 
                 await _context.SaveChangesAsync();
 
-                return ServiceResult<bool>.Ok(true);
+                return ServiceResult<DocumentSnapshot>.Ok(documentSnapshot);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Failed to update content for document {documentId}");
-                return ServiceResult<bool>.Fail("Failed to update content");
+                return ServiceResult<DocumentSnapshot>.Fail("Failed to update content");
             }
         }
 

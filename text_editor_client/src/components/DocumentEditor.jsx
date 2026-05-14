@@ -14,6 +14,7 @@ import {
   Plus,
   Users,
   BlocksIcon,
+  Download,
 } from "lucide-react";
 
 import { TbLockOpen } from "react-icons/tb";
@@ -42,6 +43,7 @@ const DocumentEditor = () => {
   const { documentId } = useParams();
   const navigate = useNavigate();
   const editorRef = useRef(null);
+  const hasInitializedVersionZero = useRef(false);
   const [documentTitle, setDocumentTitle] = useState("Untitled document");
   const [lastSavedAt, setLastSavedAt] = useState("Chua luu");
   const [isLoading, setIsLoading] = useState(true);
@@ -104,6 +106,37 @@ const DocumentEditor = () => {
       openDocumentContent(sfdtContent);
     }
   }, [isLoading, sfdtContent, hasAutoSaved, document.isActive]);
+
+  useEffect(() => {
+    const initializeDocumentContent = async () => {
+      if (
+        isLoading ||
+        !sfdtContent ||
+        hasInitializedVersionZero.current ||
+        document?.version !== 0
+      ) {
+        return;
+      }
+
+      const editor = editorRef.current?.documentEditor;
+      if (!editor) {
+        return;
+      }
+
+      hasInitializedVersionZero.current = true;
+
+      try {
+        const serialized = normalizeJson(editor.serialize());
+        await documentService.updateDocumentContent(documentId, serialized);
+        setSfdtContent(serialized);
+      } catch (error) {
+        hasInitializedVersionZero.current = false;
+        toast.error(error?.message || "Khong the cap nhat noi dung ban dau.");
+      }
+    };
+
+    initializeDocumentContent();
+  }, [isLoading, sfdtContent, document?.version, documentId]);
 
   const handleContentChange = () => {
     if (isLoading || isSaving) {
@@ -209,6 +242,24 @@ const DocumentEditor = () => {
     }
   };
 
+  const handleDownloadDocx = () => {
+    const editor = editorRef.current?.documentEditor;
+    if (!editor) {
+      toast.error("Không thể xuất tài liệu.");
+      return;
+    }
+
+    try {
+      // Export as DOCX format
+      const fileName = documentTitle.trim() || "Untitled";
+      editor.save(fileName, "Docx");
+      toast.success("Tải xuống thành công!");
+    } catch (error) {
+      toast.error("Lỗi khi tải xuống tài liệu.");
+      console.error("Download error:", error);
+    }
+  };
+
   useEffect(() => {
     const editor = editorRef.current?.documentEditor;
     if (editor?.documentEditorSettings) {
@@ -301,6 +352,15 @@ const DocumentEditor = () => {
               {isSaving ? <span>Luu...</span> : null}
               <Save size={16} />
               {!isSaving ? <span>Save</span> : null}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDownloadDocx}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400"
+            >
+              <Download size={16} />
+              <span>Download</span>
             </button>
           </div>
         </div>

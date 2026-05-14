@@ -13,5 +13,7 @@
         public bool isActive { get; set; }
         //check xem document có thay đổi gì không, nếu có thì mới tạo snapshot, nếu không thì thôi
         public bool hasChanges { get; set; }
+
+        public int Version { get; set; }
     }
 }
