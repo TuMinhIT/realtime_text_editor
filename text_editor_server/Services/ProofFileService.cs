@@ -2,6 +2,9 @@
 using Microsoft.EntityFrameworkCore;
 using text_editor_server.Data;
 using text_editor_server.DTOs.res;
+using text_editor_server.Entities;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace text_editor_server.Services
 {
@@ -19,83 +22,102 @@ namespace text_editor_server.Services
 
         }
 
-        public async Task<ServiceResult<ProofFileRes>> UploadProofFileAsync(IFormFile file, string? title, Guid currentUserId)
+
+    public async Task<ServiceResult<ProofFileRes>> UploadProofFileAsync(
+        IFormFile file,
+        string? title,
+        Guid currentUserId)
         {
-            return ServiceResult<ProofFileRes>.Fail("Chức năng đang được phát triển");
-                    //new ProofFileRes
-                    //{
-                    //    Id = Guid.NewGuid(),
-                    //    FileName = file.FileName,
-                    //    StoredFileName = $"{Guid.NewGuid()}_{Path.GetFileName(file.FileName)}",
-                    //    FileUrl = $"uploads/{Guid.NewGuid()}_{Path.GetFileName(file.FileName)}",
-                    //    Data = Array.Empty<byte>(),
-                    //    FileSize = file.Length,
-                    //    ContentType = file.ContentType,
-                    //    IsGlobal = false,
-                    //    CreatedAt = DateTime.UtcNow
-                    //});
-                    //}
+            try
+            {
+                if (file == null || file.Length == 0)
+                    return ServiceResult<ProofFileRes>.Fail("File không hợp lệ");
 
-            //try
-            //{
-            //    if (file == null || file.Length == 0)
-            //        return BadRequest("File không hợp lệ");
+                byte[] fileBytes;
 
-            //    // tên file unique
-            //    var storedFileName =
-            //        $"{Guid.NewGuid()}_{Path.GetFileName(file.FileName) }";
+                using (var memoryStream = new MemoryStream())
+                {
+                    await file.CopyToAsync(memoryStream);
+                    fileBytes = memoryStream.ToArray();
+                }
 
-            //    var uploadPath = Path.Combine(
-            //        Directory.GetCurrentDirectory(),
-            //        "wwwroot",
-            //        "uploads"
-            //    );
+                // Mã hóa file
+                var encryptedData = EncryptFile(fileBytes);
 
-            //    if (!Directory.Exists(uploadPath))
-            //        Directory.CreateDirectory(uploadPath);
+                var entity = new ProofFile
+                {
+                    Id = Guid.NewGuid(),
+                    FileName = file.FileName,
+                    StoredFileName = $"{Guid.NewGuid()}_{file.FileName}",
+                    FileSize = file.Length,
+                    ContentType = file.ContentType,
+                    Data = encryptedData,
+                    CreatedAt = DateTime.UtcNow,
+                    IsGlobal = false
+                };
 
-            //    var filePath = Path.Combine(uploadPath, storedFileName);
+                _context.ProofFiles.Add(entity);
+                await _context.SaveChangesAsync();
+
+                return ServiceResult<ProofFileRes>.Ok(new ProofFileRes
+                {
+                    Id = entity.Id,
+                    FileName = entity.FileName,
+                    StoredFileName = entity.StoredFileName,
+                    FileSize = entity.FileSize,
+                    ContentType = entity.ContentType,
+                    CreatedAt = entity.CreatedAt
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to upload proof file");
+                return ServiceResult<ProofFileRes>.Fail("Đã xảy ra lỗi khi tải tệp: " + ex.Message);
+            }
+        }
+
+        private byte[] EncryptFile(byte[] data)
+        {
+            var key = Encoding.UTF8.GetBytes("12345678901234561234567890123456"); // 32 bytes
+            var iv = Encoding.UTF8.GetBytes("1234567890123456"); // 16 bytes
+
+            using var aes = Aes.Create();
+
+            aes.Key = key;
+            aes.IV = iv;
+
+            using var encryptor = aes.CreateEncryptor();
+            using var ms = new MemoryStream();
+
+            using (var cryptoStream = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
+            {
+                cryptoStream.Write(data, 0, data.Length);
+            }
+
+            return ms.ToArray();
+
+        }
 
 
-            //    using var memoryStream = new MemoryStream();
+        private byte[] DecryptFile(byte[] encryptedData)
+        {
+            var key = Encoding.UTF8.GetBytes("12345678901234561234567890123456");
+            var iv = Encoding.UTF8.GetBytes("1234567890123456");
 
-            //    await file.CopyToAsync(memoryStream);
+            using var aes = Aes.Create();
 
-            //    var entity = new FileEntity
-            //    {
-            //        Id = Guid.NewGuid(),
-            //        FileName = file.FileName,
-            //        Data = memoryStream.ToArray(),
-            //        ContentType = file.ContentType
-            //    };
+            aes.Key = key;
+            aes.IV = iv;
 
-            //    _dbContext.Files.Add(entity);
+            using var decryptor = aes.CreateDecryptor();
+            using var ms = new MemoryStream(encryptedData);
 
-            //    await _dbContext.SaveChangesAsync();
+            using var cryptoStream = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
+            using var resultStream = new MemoryStream();
 
+            cryptoStream.CopyTo(resultStream);
 
-            //    // save DB
-            //    var fileEntity = new FileEntity
-            //    {
-            //        Id = Guid.NewGuid(),
-            //        FileName = file.FileName,
-            //        StoredFileName = storedFileName,
-            //        FileUrl = fileUrl,
-            //        FileSize = file.Length,
-            //        ContentType = file.ContentType,
-            //        IsGlobal = false,
-            //        CreatedAt = DateTime.UtcNow
-            //    };
-
-            //    _dbContext.Files.Add(fileEntity);
-
-            //    await _dbContext.SaveChangesAsync()
-            //}
-            //catch (Exception ex)
-            //{
-            //    _logger.LogError(ex, "Failed to get documents");
-            //    return null;
-            //}
+            return resultStream.ToArray();
         }
 
 

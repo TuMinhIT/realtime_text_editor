@@ -78,7 +78,7 @@ namespace text_editor_server.Migrations
 
                     b.HasIndex("FileId");
 
-                    b.ToTable("DocumentFile");
+                    b.ToTable("DocumentFiles");
                 });
 
             modelBuilder.Entity("text_editor_server.Entities.DocumentSnapshot", b =>
@@ -135,10 +135,6 @@ namespace text_editor_server.Migrations
                     b.Property<long>("FileSize")
                         .HasColumnType("bigint");
 
-                    b.Property<string>("FileUrl")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<bool>("IsGlobal")
                         .HasColumnType("bit");
 
@@ -148,7 +144,7 @@ namespace text_editor_server.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ProofFile");
+                    b.ToTable("ProofFiles");
                 });
 
             modelBuilder.Entity("text_editor_server.Entities.RefreshToken", b =>

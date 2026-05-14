@@ -8,8 +8,6 @@
 
         public string StoredFileName { get; set; } = null!;
 
-        public string FileUrl { get; set; } = null!;
-
         public byte[] Data { get; set; } = null!;
 
         public long FileSize { get; set; }

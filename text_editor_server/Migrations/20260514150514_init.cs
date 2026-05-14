@@ -6,11 +6,30 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace text_editor_server.Migrations
 {
     /// <inheritdoc />
-    public partial class init2 : Migration
+    public partial class init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "ProofFiles",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    FileName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    StoredFileName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    FileUrl = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Data = table.Column<byte[]>(type: "varbinary(max)", nullable: false),
+                    FileSize = table.Column<long>(type: "bigint", nullable: false),
+                    ContentType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsGlobal = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProofFiles", x => x.Id);
+                });
+
             migrationBuilder.CreateTable(
                 name: "Users",
                 columns: table => new
@@ -74,6 +93,33 @@ namespace text_editor_server.Migrations
                         name: "FK_RefreshTokens_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "DocumentFiles",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    DocumentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    FileId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    AttachedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    AttachedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DocumentFiles", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_DocumentFiles_Documents_DocumentId",
+                        column: x => x.DocumentId,
+                        principalTable: "Documents",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_DocumentFiles_ProofFiles_FileId",
+                        column: x => x.FileId,
+                        principalTable: "ProofFiles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -158,6 +204,16 @@ namespace text_editor_server.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_DocumentFiles_DocumentId",
+                table: "DocumentFiles",
+                column: "DocumentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DocumentFiles_FileId",
+                table: "DocumentFiles",
+                column: "FileId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Documents_CreatedBy",
                 table: "Documents",
                 column: "CreatedBy");
@@ -203,6 +259,9 @@ namespace text_editor_server.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "DocumentFiles");
+
+            migrationBuilder.DropTable(
                 name: "DocumentSnapshots");
 
             migrationBuilder.DropTable(
@@ -210,6 +269,9 @@ namespace text_editor_server.Migrations
 
             migrationBuilder.DropTable(
                 name: "SectionPermissions");
+
+            migrationBuilder.DropTable(
+                name: "ProofFiles");
 
             migrationBuilder.DropTable(
                 name: "Sections");

@@ -12,8 +12,8 @@ using text_editor_server.Data;
 namespace text_editor_server.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260514083822_init3")]
-    partial class init3
+    [Migration("20260514150514_init")]
+    partial class init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -81,7 +81,7 @@ namespace text_editor_server.Migrations
 
                     b.HasIndex("FileId");
 
-                    b.ToTable("DocumentFile");
+                    b.ToTable("DocumentFiles");
                 });
 
             modelBuilder.Entity("text_editor_server.Entities.DocumentSnapshot", b =>
@@ -151,7 +151,7 @@ namespace text_editor_server.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ProofFile");
+                    b.ToTable("ProofFiles");
                 });
 
             modelBuilder.Entity("text_editor_server.Entities.RefreshToken", b =>
