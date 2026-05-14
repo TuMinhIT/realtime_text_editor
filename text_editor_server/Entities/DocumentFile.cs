@@ -14,9 +14,9 @@ namespace text_editor_server.Entities
         public DateTime AttachedAt { get; set; }
 
         // navigation
-        //public DocumentEntity Document { get; set; } = null!;
+        public Document Document { get; set; } = null!;
 
-        //public FileEntity File { get; set; } = null!;
+        public ProofFile File { get; set; } = null!;
         
     }
 }

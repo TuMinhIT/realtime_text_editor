@@ -1,6 +1,8 @@
-﻿namespace text_editor_server.Entities
+﻿using text_editor_server.Entities;
+
+namespace text_editor_server.DTOs.res
 {
-    public class ProofFile
+    public class ProofFileRes
     {
         public Guid Id { get; set; }
 
@@ -19,9 +21,5 @@
         public bool IsGlobal { get; set; }
 
         public DateTime CreatedAt { get; set; }
-
-        public ICollection<DocumentFile> DocumentFiles { get; set; } = new List<DocumentFile>();
     }
-
-   
 }

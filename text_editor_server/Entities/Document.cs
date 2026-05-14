@@ -1,5 +1,4 @@
-﻿
-namespace text_editor_server.Entities
+﻿namespace text_editor_server.Entities
 {
     public class Document
     {
@@ -11,9 +10,9 @@ namespace text_editor_server.Entities
         public User? Creator { get; set; }
         public ICollection<Section> Sections { get; set; } = new List<Section>();
 
-        // admin khóa mở full document, user không thể chỉnh sửa gì cả, chỉ có thể xem
+        public ICollection<DocumentFile> DocumentFiles { get; set; } = new List<DocumentFile>();
+
         public bool isActive { get; set; } = false;
-        //check xem document có thay đổi gì không, nếu có thì mới tạo snapshot, nếu không thì thôi
         public bool hasChanges { get; set; } = false;
     }
 }

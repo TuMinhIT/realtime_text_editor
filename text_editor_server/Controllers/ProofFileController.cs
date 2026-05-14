@@ -1,84 +1,45 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+using text_editor_server.Services;
 
 namespace text_editor_server.Controllers
 {
-    public class ProofFileController
+    [ApiController]
+    [Route("api/[controller]")]
+    public class ProofFileController : ControllerBase
     {
+        private readonly ProofFileService _proofFileService;
 
-        //[HttpPost("upload")]
-        //public async Task<IActionResult> Upload(IFormFile file)
-        //{
-            //if (file == null || file.Length == 0)
-            //    return BadRequest("File không hợp lệ");
+        public ProofFileController(ProofFileService proofFileService)
+        {
+            _proofFileService = proofFileService;
+        }
 
-            //// tên file unique
-            //var storedFileName =
-            //    $"{Guid.NewGuid()}_{file.FileName}";
+        //[Authorize]
+        [HttpPost("upload")]
+        [RequestSizeLimit(104_857_600)] // 100MB
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> Upload(IFormFile file, [FromForm] string? title)
+        {
+            //var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            //var uploadPath = Path.Combine(
-            //    Directory.GetCurrentDirectory(),
-            //    "wwwroot",
-            //    "uploads"
-            //);
-
-            //if (!Directory.Exists(uploadPath))
-            //    Directory.CreateDirectory(uploadPath);
-
-            //var filePath = Path.Combine(uploadPath, storedFileName);
-
-
-            //using var memoryStream = new MemoryStream();
-
-            //await file.CopyToAsync(memoryStream);
-
-            //var entity = new FileEntity
+            //if (string.IsNullOrWhiteSpace(userIdClaim) ||
+            //    !Guid.TryParse(userIdClaim, out var currentUserId))
             //{
-            //    Id = Guid.NewGuid(),
-            //    FileName = file.FileName,
-            //    Data = memoryStream.ToArray(),
-            //    ContentType = file.ContentType
-            //};
+            //    return Unauthorized("Invalid token payload");
+            //}
+            var currentUserId = Guid.Parse("A0B986A7-FEEF-4F52-9AE6-7C2DEE6FC867");
 
-            //_dbContext.Files.Add(entity);
+            var result = await _proofFileService
+                .UploadProofFileAsync(file, title, currentUserId);
 
-            //await _dbContext.SaveChangesAsync();
+            if (!result.Success)
+            {
+                return BadRequest(new { message = result.Message });
+            }
 
-
-            //// save DB
-            //var fileEntity = new FileEntity
-            //{
-            //    Id = Guid.NewGuid(),
-            //    FileName = file.FileName,
-            //    StoredFileName = storedFileName,
-            //    FileUrl = fileUrl,
-            //    FileSize = file.Length,
-            //    ContentType = file.ContentType,
-            //    IsGlobal = false,
-            //    CreatedAt = DateTime.UtcNow
-            //};
-
-            //_dbContext.Files.Add(fileEntity);
-
-            //await _dbContext.SaveChangesAsync();
-
-            //return Ok(fileEntity);
-        //}
-
-
-        //[HttpGet("{id}")]
-        //public async Task<IActionResult> Download(Guid id)
-        //{
-        //    var file = await _dbContext.Files.FindAsync(id);
-
-        //    if (file == null)
-        //        return NotFound();
-
-        //    return File(
-        //        file.Data,
-        //        file.ContentType,
-        //        file.FileName
-        //    );
-        //}
+            return Ok(result.Data);
+        }
     }
 }

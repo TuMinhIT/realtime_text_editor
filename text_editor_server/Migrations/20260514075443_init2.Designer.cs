@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using text_editor_server.Data;
 
@@ -11,9 +12,11 @@ using text_editor_server.Data;
 namespace text_editor_server.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260514075443_init2")]
+    partial class init2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -54,33 +57,6 @@ namespace text_editor_server.Migrations
                     b.ToTable("Documents");
                 });
 
-            modelBuilder.Entity("text_editor_server.Entities.DocumentFile", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("AttachedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("AttachedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("DocumentId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("FileId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DocumentId");
-
-                    b.HasIndex("FileId");
-
-                    b.ToTable("DocumentFile");
-                });
-
             modelBuilder.Entity("text_editor_server.Entities.DocumentSnapshot", b =>
                 {
                     b.Property<Guid>("Id")
@@ -109,46 +85,6 @@ namespace text_editor_server.Migrations
                     b.HasIndex("DocumentId");
 
                     b.ToTable("DocumentSnapshots");
-                });
-
-            modelBuilder.Entity("text_editor_server.Entities.ProofFile", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("ContentType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<byte[]>("Data")
-                        .IsRequired()
-                        .HasColumnType("varbinary(max)");
-
-                    b.Property<string>("FileName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<long>("FileSize")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("FileUrl")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsGlobal")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("StoredFileName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("ProofFile");
                 });
 
             modelBuilder.Entity("text_editor_server.Entities.RefreshToken", b =>
@@ -311,25 +247,6 @@ namespace text_editor_server.Migrations
                     b.Navigation("Creator");
                 });
 
-            modelBuilder.Entity("text_editor_server.Entities.DocumentFile", b =>
-                {
-                    b.HasOne("text_editor_server.Entities.Document", "Document")
-                        .WithMany("DocumentFiles")
-                        .HasForeignKey("DocumentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("text_editor_server.Entities.ProofFile", "File")
-                        .WithMany("DocumentFiles")
-                        .HasForeignKey("FileId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Document");
-
-                    b.Navigation("File");
-                });
-
             modelBuilder.Entity("text_editor_server.Entities.DocumentSnapshot", b =>
                 {
                     b.HasOne("text_editor_server.Entities.Document", null)
@@ -384,14 +301,7 @@ namespace text_editor_server.Migrations
 
             modelBuilder.Entity("text_editor_server.Entities.Document", b =>
                 {
-                    b.Navigation("DocumentFiles");
-
                     b.Navigation("Sections");
-                });
-
-            modelBuilder.Entity("text_editor_server.Entities.ProofFile", b =>
-                {
-                    b.Navigation("DocumentFiles");
                 });
 
             modelBuilder.Entity("text_editor_server.Entities.Section", b =>

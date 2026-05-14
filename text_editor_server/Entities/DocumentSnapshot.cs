@@ -1,5 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-
+﻿
 namespace text_editor_server.Entities
 {
     public class DocumentSnapshot

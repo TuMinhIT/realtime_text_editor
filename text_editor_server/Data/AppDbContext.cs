@@ -12,6 +12,8 @@ namespace text_editor_server.Data
         public DbSet<RefreshToken> RefreshTokens { get; set; }
  
         public DbSet<DocumentSnapshot> DocumentSnapshots { get; set; }
+        public DbSet<ProofFile> ProofFiles { get; set; }
+        public DbSet<DocumentFile> DocumentFiles { get; set; }
    
         
         public AppDbContext(DbContextOptions<AppDbContext> options)
@@ -85,20 +87,20 @@ namespace text_editor_server.Data
                 .HasIndex(ds => ds.DocumentId);
 
 
-            //modelBuilder.Entity<DocumentFileEntity>()
-            //    .HasOne(x => x.Document)
-            //    .WithMany(x => x.DocumentFiles)
-            //    .HasForeignKey(x => x.DocumentId);
+             modelBuilder.Entity<DocumentFile>()
+                .HasOne(x => x.Document)
+                .WithMany(x => x.DocumentFiles)
+                .HasForeignKey(x => x.DocumentId);
 
-            //modelBuilder.Entity<DocumentFileEntity>()
-            //    .HasOne(x => x.File)
-            //    .WithMany(x => x.DocumentFiles)
-            //    .HasForeignKey(x => x.FileId);
-
-
-
+            modelBuilder.Entity<DocumentFile>()
+                .HasOne(x => x.File)
+                .WithMany(x => x.DocumentFiles)
+                .HasForeignKey(x => x.FileId);
         }
     }
 }
+
+
+
 
 
