@@ -1,4 +1,4 @@
-import React, { use, useEffect, useRef, useState } from "react";
+import React, {useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, BookA, Lock, Menu, X, Plus, Users } from "lucide-react";
 import { toast } from "react-toastify";
@@ -49,6 +49,23 @@ const mapPermissionToAssignment = (item) => {
   };
 };
 
+//Helper hiện số người đang xem:
+const getInitials = (name) => {
+
+  if (!name) {
+    return "?";
+  }
+
+  return name
+    .trim()
+    .split(" ")
+    .map((x) => x[0])
+    .slice(-2)
+    .join("")
+    .toUpperCase();
+};
+
+
 const SectionAuthority = () => {
   const location = useLocation();
   const { documentId } = useParams();
@@ -71,8 +88,11 @@ const SectionAuthority = () => {
 
 
   //Phục vụ realtime: lắng nghe sự kiện update từ server để tự động reload nội dung section khi có thay đổi từ người khác
-  const [presece, setPresence] = useState(null);
+  const [presence, setPresence] = useState(null);
   const [lockState, setLockState] = useState(null);
+  const [hasLockRequested,
+  setHasLockRequested]
+  = useState(false);
 
   const openPreview = (sfdt) => {
     const editor = editorRef.current?.documentEditor;
@@ -187,6 +207,102 @@ const SectionAuthority = () => {
     setIsInitialized(true);
   }, [sections]);
 
+  //Tự động realtime khi mới vào document:
+  useEffect(() => {
+  if (!selectedSection?.id) {
+    return;
+  }
+
+  const joinRealtime = async () => {
+    try {
+      await signalRService.joinSection(
+        selectedSection.id
+      );
+
+      console.log(
+        "[Realtime] auto joined:",
+        selectedSection.id
+      );
+    }
+    catch (err) {
+      console.error(
+        "[Realtime] auto join error",
+        err
+      );
+    }
+  };
+
+  joinRealtime();
+
+  return () => {
+    signalRService.leaveCurrentSection();
+  };
+
+}, [selectedSection?.id]);
+
+//Listen realtime event: (Để hiện số người đang xem)
+useEffect(() => {
+
+  const setupRealtime =
+    async () => {
+
+    await signalRService
+      .onPresenceUpdated(
+        (data) => {
+
+        console.log(
+          "PRESENCE",
+          data
+        );
+
+        setPresence(data);
+      });
+
+    await signalRService
+      .onLockUpdated(
+        (data) => {
+
+        console.log(
+          "LOCK",
+          data
+        );
+
+        setLockState(data);
+      });
+  };
+
+  setupRealtime();
+
+  return () => {
+
+    signalRService
+      .offPresenceUpdated();
+
+    signalRService
+      .offLockUpdated();
+  };
+
+}, []);
+
+//Lock realtime:
+useEffect(() => {
+
+  signalRService.onLockUpdated((data) => {
+
+    console.log(
+      "LOCK UPDATE:",
+      data
+    );
+
+    setLockState(data);
+  });
+
+  return () => {
+    signalRService.offLockUpdated();
+  };
+
+}, []);
+
   const loadPreview = async () => {
     setIsPreviewLoading(true);
     setErrorMessage("");
@@ -221,6 +337,76 @@ const SectionAuthority = () => {
       setIsPreviewLoading(false);
     }
   };
+
+  useEffect(() => {
+
+  if (
+    !lockState ||
+    !selectedSection?.id
+  ) {
+    return;
+  }
+
+  if (
+    lockState.sectionId !==
+    selectedSection.id
+  ) {
+    return;
+  }
+
+  const currentUser =
+    sessionService
+      .getCurrentUser();
+
+  const isLockedByMe =
+    lockState.lockedByUserId ===
+    currentUser?.id;
+
+  // mình giữ lock -> edit
+  if (isLockedByMe) {
+
+    applyReadOnlyMode(false);
+
+    return;
+  }
+
+  // người khác giữ lock
+  if (lockState.isLocked) {
+
+    applyReadOnlyMode(true);
+
+    toast.info(
+      `${lockState.lockedByUsername}
+       đang chỉnh sửa`
+    );
+  }
+
+}, [
+  lockState,
+  selectedSection?.id
+]);
+
+//Clean up khi rời khỏi section hoặc document:
+useEffect(() => {
+
+  return () => {
+
+    if (
+      selectedSection?.id
+    ) {
+
+      signalRService
+        .releaseEditSession(
+          selectedSection.id
+        );
+
+      signalRService
+        .leaveCurrentSection();
+    }
+  };
+
+}, []);
+
 
   useEffect(() => {
     if (!isInitialized) return;
@@ -283,13 +469,115 @@ const SectionAuthority = () => {
       return;
     }
 
+    //Request lock khi bắt đầu edit:
+    if (
+    assignment?.permission == 1 &&
+    !hasLockRequested
+  ) {
+    try {
+
+       signalRService
+        .requestEditSession(
+          selectedSection.id
+        );
+
+      setHasLockRequested(true);
+
+      console.log(
+        "Requested edit lock"
+      );
+
+    } catch (err) {
+
+      console.error(
+        "Request lock failed",
+        err
+      );
+    }
+  }
+
     const currentSerialized = normalizeJson(editor.serialize());
     setIsDirty(currentSerialized !== normalizeJson(originalPreview));
   };
+const handleSelectSection =
+  async (section) => {
 
-  const handleSelectSection = (section) => {
-    setSelectedSection(section);
-  };
+  try {
+
+    // click lại section cũ
+    if (
+      selectedSection?.id ===
+      section.id
+    ) {
+      return;
+    }
+
+    /* =========
+       LEAVE OLD
+    ========= */
+
+    if (
+      selectedSection?.id
+    ) {
+
+      // release lock cũ
+       signalRService
+        .releaseEditSession(
+          selectedSection.id
+        );
+
+      // leave realtime room
+       signalRService
+        .leaveCurrentSection();
+
+      console.log(
+        "Left section",
+        selectedSection.id
+      );
+    }
+
+    /* =========
+       RESET STATE
+    ========= */
+
+    setHasLockRequested(
+      false
+    );
+
+    setLockState(null);
+
+    /* =========
+       UPDATE UI
+    ========= */
+
+    setSelectedSection(
+      section
+    );
+
+    /* =========
+       JOIN NEW
+    ========= */
+
+    await signalRService
+      .joinSection(
+        section.id
+      );
+
+    console.log(
+      "Joined section",
+      section.id
+    );
+
+  } catch (err) {
+
+    console.error(err);
+
+    console.log(
+      `Không thể tham gia section ${section.id}
+      để realtime.`
+    );
+  }
+};
 
   if (isLoading) {
     return (
@@ -448,8 +736,133 @@ const SectionAuthority = () => {
                     {selectedSection?.title || "Chưa chọn section"}
                   </h2>
                 </div>
-                <div className="flex">
-                  {assignment?.permission == 1 ? (
+                <div className="flex items-center gap-3">
+
+          
+
+  {/* ========= USERS ========= */}
+  <div className="flex items-center">
+
+    {presence?.users?.map(
+      (user, index) => {
+
+        const isEditing =
+          user.isEditing;
+
+        return (
+          <div
+            key={user.userId}
+            title={
+              user.username +
+              (
+                isEditing
+                ? " đang chỉnh sửa..."
+                : " đang xem..."
+              )
+            }
+            style={{
+              marginLeft:
+                index === 0
+                  ? 0
+                  : -8
+            }}
+            className="
+              relative
+              flex
+              h-9
+              w-9
+              items-center
+              justify-center
+              rounded-full
+              border-2
+              border-white
+              bg-blue-500
+              text-xs
+              font-semibold
+              text-white
+              shadow
+            "
+          >
+            {getInitials(
+              user.username
+            )}
+
+            <span
+              className={`
+                absolute
+                bottom-0
+                right-0
+                h-3
+                w-3
+                rounded-full
+                border-2
+                border-white
+                ${
+                  isEditing
+                    ? "bg-orange-500"
+                    : "bg-green-500"
+                }
+              `}
+            />
+          </div>
+        );
+      }
+    )}
+
+  </div>
+
+  {/* ========= LOCK UI ========= */}
+  {lockState?.isLocked && (
+
+    <div
+      className={`
+      flex
+      items-center
+      gap-2
+      rounded-full
+      border
+      px-3
+      py-1
+      text-sm
+      ${
+        lockState.lockedByUserId ===
+        sessionService
+          .getCurrentUser()?.id
+          ? `
+            border-green-200
+            bg-green-50
+            text-green-700
+          `
+          : `
+            border-amber-200
+            bg-amber-50
+            text-amber-700
+          `
+      }
+    `}
+    >
+
+      <Lock size={14} />
+
+      {lockState.lockedByUserId ===
+      sessionService
+        .getCurrentUser()?.id
+        ? (
+          <span>
+            Bạn đang chỉnh sửa
+          </span>
+        ) : (
+          <span>
+            {lockState.lockedByUsername}
+            {" "}đang chỉnh sửa
+          </span>
+        )}
+
+    </div>
+  )}
+
+  {/* ========= SAVE ========= */}
+  {assignment?.permission == 1 ? (
                     <button
                       onClick={handleSave}
                       disabled={isSaving || !isDirty}
