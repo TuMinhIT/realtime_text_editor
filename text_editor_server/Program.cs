@@ -8,9 +8,16 @@ using System.Text;
 using text_editor_server.Data;
 using text_editor_server.Entities;
 using text_editor_server.Middleware;
-
-//using text_editor_server.Hubs;
 using text_editor_server.Services;
+
+
+//Realtime:
+using text_editor_server.Realtime.Hubs;
+using text_editor_server.Realtime.Interfaces;
+using text_editor_server.Realtime.Services;
+using text_editor_server.Realtime.Managers;
+
+
 
 namespace text_editor_server
 {
@@ -53,8 +60,14 @@ namespace text_editor_server
                 });
             });
 
-            // Add SignalR
+            // Add Realtime:
             builder.Services.AddSignalR();
+            builder.Services.AddSingleton<IRealtimeStateManager, RealtimeStateManager>();
+            builder.Services.AddScoped<IPresenceService, PresenceService>();
+
+
+
+
 
             // Add JWT authentication
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -73,6 +86,41 @@ namespace text_editor_server
                             Encoding.UTF8.GetBytes(config["Jwt:Key"])
                         ),
                         ClockSkew = TimeSpan.Zero
+                    };
+
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnMessageReceived = context =>
+                        {
+                            var accessToken =
+                                context.Request.Query["access_token"];
+
+                            var path =
+                                context.HttpContext.Request.Path;
+
+                            Console.WriteLine($"PATH: {path}");
+                            Console.WriteLine($"TOKEN EXISTS: {!string.IsNullOrEmpty(accessToken)}");
+
+                            if (
+                                !string.IsNullOrEmpty(accessToken)
+                                &&
+                                path.StartsWithSegments("/hubs/collaboration"))
+                            {
+                                Console.WriteLine("SIGNALR TOKEN SET");
+
+                                context.Token = accessToken;
+                            }
+
+                            return Task.CompletedTask;
+                        },
+
+                        OnAuthenticationFailed = context =>
+                        {
+                            Console.WriteLine(
+                                $"AUTH FAILED: {context.Exception.Message}");
+
+                            return Task.CompletedTask;
+                        }
                     };
                 });
 
@@ -209,9 +257,6 @@ namespace text_editor_server
             app.UseSwagger();
             app.UseSwaggerUI();
 
-            app.UseStaticFiles();
-
-
             app.UseRouting();
             app.UseHttpsRedirection();
 
@@ -223,7 +268,10 @@ namespace text_editor_server
             app.MapControllers();
 
             // Map SignalR hub
-           // app.MapHub<DocumentHub>("/hubs/document");
+            app.MapHub<CollaborationHub>(
+    "/hubs/collaboration");
+
+
 
             // Health check
             app.MapGet("/health", () => Results.Ok("Server is running"));
