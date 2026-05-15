@@ -7,6 +7,11 @@ import DocumentEditor from "./components/DocumentEditor";
 import SectionAuthority from "./pages/SectionAuthority";
 import SectionUserEdit from "./pages/SectionUserEdit";
 
+//test realtime:
+import { useEffect } from "react";
+import { testSignalR } from "./testSignalR";
+
+
 function ProtectedRoute({ children }) {
   if (!sessionService.isAuthenticated()) {
     return <Navigate to={"/login"} replace />;
@@ -49,6 +54,13 @@ function GuestRoute({ children }) {
 }
 
 function App() {
+
+  //Test chức năng realtime với SignalR
+  useEffect(() => {
+    testSignalR();
+  }, []);
+
+
   return (
     <Routes>
       {/* Guest Routes - dành cho chưa login */}
