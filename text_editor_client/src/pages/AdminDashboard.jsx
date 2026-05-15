@@ -22,6 +22,9 @@ import { ClipLoader } from "react-spinners";
 import { toast } from "react-toastify";
 import { SiAuthelia } from "react-icons/si";
 
+//import realtime:
+import { signalRService } from "../services/signalRService";
+
 const formatDate = (value) => {
   if (!value) {
     return "-";
@@ -181,7 +184,10 @@ const AdminDashBoard = () => {
     });
   };
 
-  const handleLogout = () => {
+  const handleLogout =() => {
+    //Kết thúc signalR khi đăng xuất:
+    signalRService.disconnect();
+
     sessionService.clearStore();
     http.setToken(null);
     window.localStorage.removeItem("accessToken");

@@ -9,7 +9,11 @@ import SectionUserEdit from "./pages/SectionUserEdit";
 
 //test realtime:
 import { useEffect } from "react";
-import { testSignalR } from "./testSignalR";
+//Test chức năng realtime với SignalR
+// import { testSignalR } from "./testSignalR"; 
+
+//Gọi service realtime:
+import { signalRService} from "./services/signalRService";
 
 
 function ProtectedRoute({ children }) {
@@ -55,10 +59,16 @@ function GuestRoute({ children }) {
 
 function App() {
 
-  //Test chức năng realtime với SignalR
-  useEffect(() => {
-    testSignalR();
-  }, []);
+  // //Test chức năng realtime với SignalR
+  // useEffect(() => {
+  //   signalRService.connect();
+
+  //   return () => {
+  //       signalRService.disconnect();
+  //   };
+
+
+  // }, []);
 
 
   return (

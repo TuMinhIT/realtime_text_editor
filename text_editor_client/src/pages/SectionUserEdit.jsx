@@ -11,6 +11,11 @@ import UserPermission from "../components/SectionAuth/UserPermission";
 
 import DocEdit from "../components/SectionUser/DocEdit";
 
+
+//Thêm realtime service:
+import { signalRService } from "../services/signalRService";
+
+
 const SERVICE_URL = import.meta.env.VITE_API_URL + "/document";
 
 const normalizeJson = (value) => {
@@ -63,6 +68,11 @@ const SectionAuthority = () => {
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [assignment, setAssignment] = useState(null);
   const [openAside, setOpenAside] = useState(true);
+
+
+  //Phục vụ realtime: lắng nghe sự kiện update từ server để tự động reload nội dung section khi có thay đổi từ người khác
+  const [presece, setPresence] = useState(null);
+  const [lockState, setLockState] = useState(null);
 
   const openPreview = (sfdt) => {
     const editor = editorRef.current?.documentEditor;

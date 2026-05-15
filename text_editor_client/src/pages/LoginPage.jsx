@@ -13,6 +13,9 @@ import {
 } from "lucide-react";
 
 import { sessionService } from "../services/sessionService";
+//Thêm signalR để tự động gọi sinalR khi connect:
+import { signalRService } from "../services/signalRService";
+
 import { userService } from "../services/userService";
 
 const INITIAL_FORM_DATA = {
@@ -56,7 +59,13 @@ const LoginPage = () => {
           formData.password,
         );
         if (response) {
+
+
           sessionService.setLogin(response.user, response.accessToken);
+          
+          //Kết nối SignalR sau khi đăng nhập thành công
+          signalRService.connect();
+          
           navigate("/", { replace: true });
         }
 
