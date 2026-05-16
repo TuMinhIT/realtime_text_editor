@@ -499,6 +499,7 @@ useEffect(() => {
     const currentSerialized = normalizeJson(editor.serialize());
     setIsDirty(currentSerialized !== normalizeJson(originalPreview));
   };
+  
 const handleSelectSection =
   async (section) => {
 
