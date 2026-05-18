@@ -41,5 +41,37 @@ namespace text_editor_server.Controllers
 
             return Ok(result.Data);
         }
+
+        [HttpGet("{id:guid}/download")]
+        public async Task<IActionResult> Download(Guid id)
+        {
+            var result = await _proofFileService
+                .DownloadProofFileAsync(id);
+
+            if (!result.Success || result.Data == null)
+            {
+                return NotFound(new { message = result.Message });
+            }
+
+            return File(
+                result.Data.Data,
+                result.Data.ContentType,
+                result.Data.FileName
+            );
+        }
+
+        [HttpDelete("{id:guid}")]
+        public async Task<IActionResult> Delete(Guid id)
+        {
+            var result = await _proofFileService
+                .DeleteProofFileAsync(id);
+
+            if (!result.Success)
+            {
+                return NotFound(new { message = result.Message });
+            }
+
+            return Ok(new { success = true });
+        }
     }
 }

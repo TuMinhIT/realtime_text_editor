@@ -171,7 +171,6 @@ const SectionAuthority = () => {
     const loadData = async () => {
       setIsLoading(true);
       setErrorMessage("");
-
       try {
         await Promise.all([loadSections()]);
       } catch (error) {

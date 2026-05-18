@@ -1,11 +1,10 @@
-import * as signalR from '@microsoft/signalr';
+import * as signalR from "@microsoft/signalr";
 
-const HUB_URL = 'https://localhost:8001/hubs/collaboration';
+const HUB_URL = "https://localhost:8001/hubs/collaboration";
 
 let connection = null; //websocket connection instance
 let connectionPromise = null; // race condition guard for connection initialization
-
-let presenceCallback = null; 
+let presenceCallback = null;
 let lockCallback = null;
 let currentSectionId = null;
 
@@ -14,72 +13,65 @@ let currentSectionId = null;
 ========================= */
 
 async function ensureConnection() {
+  // 1. Already connected
+  if (connection && connection.state === signalR.HubConnectionState.Connected) {
+    return connection;
+  }
 
-    // 1. Already connected
-    if (connection &&
-        connection.state === signalR.HubConnectionState.Connected) {
-        return connection;
-    }
+  // 2. Prevent race condition
+  if (connectionPromise) {
+    return connectionPromise;
+  }
 
-    // 2. Prevent race condition
-    if (connectionPromise) {
-        return connectionPromise;
-    }
+  // 3. Create connection once
+  connectionPromise = (async () => {
+    connection = new signalR.HubConnectionBuilder()
+      .withUrl(HUB_URL, {
+        accessTokenFactory: () => localStorage.getItem("accessToken") || "",
+      })
+      .withAutomaticReconnect()
+      .configureLogging(signalR.LogLevel.Information)
+      .build();
 
-    // 3. Create connection once
-    connectionPromise = (async () => {
+    /* ========= LIFE CYCLE ========= */
 
-        connection = new signalR.HubConnectionBuilder()
-            .withUrl(HUB_URL, {
-                accessTokenFactory: () =>
-                    localStorage.getItem('accessToken') || ""
-            })
-            .withAutomaticReconnect()
-            .configureLogging(signalR.LogLevel.Information)
-            .build();
+    connection.onreconnecting((err) => {
+      console.warn("[SignalR] reconnecting...", err);
+    });
 
-        /* ========= LIFE CYCLE ========= */
+    connection.onreconnected(async () => {
+      console.log("[SignalR] reconnected");
 
-        connection.onreconnecting(err => {
-            console.warn('[SignalR] reconnecting...', err);
-        });
+      // restore state after reconnect
+      if (currentSectionId) {
+        await connection.invoke("JoinSection", { sectionId: currentSectionId });
+      }
 
-        connection.onreconnected(async () => {
-            console.log('[SignalR] reconnected');
+      // rebind events safely
+      if (presenceCallback) {
+        connection.on("SectionPresenceUpdated", presenceCallback);
+      }
 
-            // restore state after reconnect
-            if (currentSectionId) {
-                await connection.invoke(
-                    "JoinSection",
-                    { sectionId: currentSectionId }
-                );
-            }
+      if (lockCallback) {
+        connection.on("SectionLockUpdated", lockCallback);
+      }
+    });
 
-            // rebind events safely
-            if (presenceCallback) {
-                connection.on("SectionPresenceUpdated", presenceCallback);
-            }
+    connection.onclose((err) => {
+      console.warn("[SignalR] connection closed", err);
+    });
 
-            if (lockCallback) {
-                connection.on("SectionLockUpdated", lockCallback);
-            }
-        });
+    await connection.start();
 
-        connection.onclose(err => {
-            console.warn('[SignalR] connection closed', err);
-        });
+    console.log("[SignalR] connected");
 
-        await connection.start();
+    return connection;
+  })();
 
-        console.log('[SignalR] connected');
+  const conn = await connectionPromise;
+  connectionPromise = null;
 
-        return connection;
-    })();
-
-    const conn = await connectionPromise;
-    connectionPromise = null;
-
-    return conn;
+  return conn;
 }
 
 /* =========================
@@ -87,142 +79,141 @@ async function ensureConnection() {
 ========================= */
 
 export const signalRService = {
+  /* ---------- CONNECT ---------- */
+  async connect() {
+    try {
+      await ensureConnection();
+      return true;
+    } catch (err) {
+      console.error("[SignalR] connect error", err);
+      return false;
+    }
+  },
 
-    /* ---------- CONNECT ---------- */
-    async connect() {
-        try {
-            await ensureConnection();
-            return true;
-        } catch (err) {
-            console.error("[SignalR] connect error", err);
-            return false;
-        }
-    },
+  /* ---------- DISCONNECT ---------- */
+  async disconnect() {
+    try {
+      if (!connection) return true;
 
-    /* ---------- DISCONNECT ---------- */
-    async disconnect() {
-        try {
-            if (!connection) return true;
+      await connection.stop();
 
-            await connection.stop();
+      connection = null;
+      connectionPromise = null;
+      presenceCallback = null;
+      lockCallback = null;
+      currentSectionId = null;
 
-            connection = null;
-            connectionPromise = null;
-            presenceCallback = null;
-            lockCallback = null;
-            currentSectionId = null;
+      return true;
+    } catch (err) {
+      console.error("[SignalR] disconnect error", err);
+      return false;
+    }
+  },
 
-            return true;
-        } catch (err) {
-            console.error("[SignalR] disconnect error", err);
-            return false;
-        }
-    },
+  /* ---------- SECTION ---------- */
+  async joinSection(sectionId) {
+    try {
+      const conn = await ensureConnection();
 
-    /* ---------- SECTION ---------- */
-    async joinSection(sectionId) {
-        try {
-            const conn = await ensureConnection();
+      currentSectionId = sectionId;
 
-            currentSectionId = sectionId;
+      await conn.invoke("JoinSection", { sectionId });
 
-            await conn.invoke("JoinSection", { sectionId });
+      return true;
+    } catch (err) {
+      console.error("[SignalR] joinSection error", err);
+      throw err;
+    }
+  },
 
-            return true;
-        } catch (err) {
-            console.error("[SignalR] joinSection error", err);
-            throw err;
-        }
-    },
+  async leaveCurrentSection() {
+    try {
+      const conn = await ensureConnection();
 
-    async leaveCurrentSection() {
-        try {
-            const conn = await ensureConnection();
+      currentSectionId = null;
 
-            currentSectionId = null;
+      await conn.invoke("LeaveCurrentSection");
 
-            await conn.invoke("LeaveCurrentSection");
+      return true;
+    } catch (err) {
+      console.error("[SignalR] leaveCurrentSection error", err);
+      throw err;
+    }
+  },
 
-            return true;
-        } catch (err) {
-            console.error("[SignalR] leaveCurrentSection error", err);
-            throw err;
-        }
-    },
+  /* ---------- EDIT SESSION ---------- */
+  async requestEditSession(sectionId) {
+    try {
+      const conn = await ensureConnection();
 
-    /* ---------- EDIT SESSION ---------- */
-    async requestEditSession(sectionId) {
-        try {
-            const conn = await ensureConnection();
+      await conn.invoke("RequestEditSession", sectionId);
 
-            await conn.invoke("RequestEditSession", sectionId);
+      return true;
+    } catch (err) {
+      console.error("[SignalR] requestEditSession error", err);
+      throw err;
+    }
+  },
 
-            return true;
-        } catch (err) {
-            console.error("[SignalR] requestEditSession error", err);
-            throw err;
-        }
-    },
-    
-    // Mở lại phiên chỉnh sửa cho một section, thường được gọi khi người dùng rời khỏi section hoặc mất kết nối
-    async releaseEditSession(sectionId) {
-        try {
-            const conn = await ensureConnection();
+  // Mở lại phiên chỉnh sửa cho một section, thường được gọi khi người dùng rời khỏi section hoặc mất kết nối
+  async releaseEditSession(sectionId) {
+    try {
+      const conn = await ensureConnection();
 
-            await conn.invoke("ReleaseEditSession", sectionId);
+      await conn.invoke("ReleaseEditSession", sectionId);
 
-            return true;
-        } catch (err) {
-            console.error("[SignalR] releaseEditSession error", err);
-            throw err;
-        }
-    },
+      return true;
+    } catch (err) {
+      console.error("[SignalR] releaseEditSession error", err);
+      throw err;
+    }
+  },
 
-    /* =========================
+  /* =========================
        EVENTS
     ========================= */
 
-    async onPresenceUpdated(callback) {
-        const conn = await ensureConnection();
+  async onPresenceUpdated(callback) {
+    const conn = await ensureConnection();
 
-        presenceCallback = callback;
+    presenceCallback = callback;
 
-        conn.off("SectionPresenceUpdated");
-        conn.on("SectionPresenceUpdated", callback);
-    },
+    conn.off("SectionPresenceUpdated");
+    conn.on("SectionPresenceUpdated", callback);
+  },
 
-    async onLockUpdated(callback) {
-        const conn = await ensureConnection();
+  async onLockUpdated(callback) {
+    const conn = await ensureConnection();
 
-        lockCallback = callback;
+    lockCallback = callback;
 
-        conn.off("SectionLockUpdated");
-        conn.on("SectionLockUpdated", callback);
-    },
+    conn.off("SectionLockUpdated");
+    conn.on("SectionLockUpdated", callback);
+  },
 
-    offPresenceUpdated() {
-        if (connection && presenceCallback) {
-            connection.off("SectionPresenceUpdated", presenceCallback);
-            presenceCallback = null;
-        }
-    },
+  offPresenceUpdated() {
+    if (connection && presenceCallback) {
+      connection.off("SectionPresenceUpdated", presenceCallback);
+      presenceCallback = null;
+    }
+  },
 
-    offLockUpdated() {
-        if (connection && lockCallback) {
-            connection.off("SectionLockUpdated", lockCallback);
-            lockCallback = null;
-        }
-    },
+  offLockUpdated() {
+    if (connection && lockCallback) {
+      connection.off("SectionLockUpdated", lockCallback);
+      lockCallback = null;
+    }
+  },
 
-    /* =========================
+  /* =========================
        UTILS
     ========================= */
 
-    isConnected() {
-        return connection?.state === signalR.HubConnectionState.Connected;
-    },
+  isConnected() {
+    return connection?.state === signalR.HubConnectionState.Connected;
+  },
 
-    getConnection() {
-        return connection;
-    }
+  getConnection() {
+    return connection;
+  },
 };
