@@ -159,57 +159,10 @@ namespace text_editor_server.Services
 
 
 
-        //public async Task<bool> UpdateSectionContentAsync(
-        // Guid sectionId,
-        // string newContent)
-        //{
-        //    try
-        //    {
-        //        var section = await _context.Sections
-        //            .FirstOrDefaultAsync(s => s.Id == sectionId);
-
-        //        if (section == null)
-        //            return false;
-
-        //        // validate json
-        //        JObject.Parse(newContent);
-
-        //        // extract ONLY blocks
-        //        var blocks = ExtractBlocksFromSfdt(newContent);
-
-        //        // save lightweight structure
-        //        var sectionJson = new JObject
-        //        {
-        //            ["b"] = JArray.FromObject(blocks)
-        //        };
-
-        //        section.Content = new JObject
-        //        {
-        //            ["b"] = JArray.FromObject(blocks)
-        //        }.ToString(Formatting.None);
-        //        section.Version += 1;
-
-        //        section.Timestamp =
-        //            DateTimeOffset.UtcNow
-        //                .ToUnixTimeMilliseconds();
-
-        //        await _context.SaveChangesAsync();
-
-        //        return true;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex,
-        //            "Error updating section content");
-
-        //        return false;
-        //    }
-        //}
-
 
         public async Task<bool> UpdateSectionContentAsync(
-    Guid sectionId,
-    string newContent)
+            Guid sectionId,
+            string newContent)
         {
             try
             {
@@ -229,8 +182,6 @@ namespace text_editor_server.Services
                 var safeSectionJson = new JObject
                 {
                     ["b"] = new JArray(blocks),
-
-                   
                     ["imgs"] = root["imgs"]
                     //["cf"] = root["cf"],
                     //["sty"] = root["sty"]
@@ -240,6 +191,10 @@ namespace text_editor_server.Services
 
                 section.Version += 1;
                 section.Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+                // cap nhật document status
+                Document document = _context.Documents.FirstOrDefault(d => d.Id == section.DocumentId);
+                document.hasChanges = true;
 
                 await _context.SaveChangesAsync();
 

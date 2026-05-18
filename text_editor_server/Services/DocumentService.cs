@@ -90,7 +90,7 @@ namespace text_editor_server.Services
                 if (document == null)
                     return false;
 
-                document.isActive = !isActive;   
+                document.isActive = isActive;   
                 await _context.SaveChangesAsync();
 
                 return true;
@@ -339,7 +339,7 @@ namespace text_editor_server.Services
                 Document document = await _context.Documents
                     .FirstOrDefaultAsync(d => d.Id == documentId);
         
-                if (document == null ||document.isActive == true  ) {
+                if (document == null || document.isActive ) {
 
                     return ServiceResult<DocumentSnapshot>.Fail("Document is active, you must block user edit ");
                 } 

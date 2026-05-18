@@ -106,16 +106,6 @@ namespace text_editor_server.Controllers
         }
 
 
-        [HttpGet("{documentId:guid}/content")]
-        public async Task<IActionResult>
-        GetDocumentContent(Guid documentId)
-        {
-            //var result =
-            //    await _documentService
-            //        .GetDocumentContentAsync(documentId);
-
-            return Ok("Xóa r m");
-        }
 
         [HttpGet("{documentId:guid}/detail")]
         public async Task<IActionResult>

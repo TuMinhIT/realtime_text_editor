@@ -22,104 +22,103 @@ namespace text_editor_server.Services
 
         }
 
-
-    public async Task<ServiceResult<ProofFileRes>> UploadProofFileAsync(
-        IFormFile file,
-        string? title,
-        Guid currentUserId)
-        {
-            try
+        public async Task<ServiceResult<ProofFileRes>> UploadProofFileAsync(
+            IFormFile file,
+            string? title,
+            Guid currentUserId)
             {
-                if (file == null || file.Length == 0)
-                    return ServiceResult<ProofFileRes>.Fail("File không hợp lệ");
-
-                byte[] fileBytes;
-
-                using (var memoryStream = new MemoryStream())
+                try
                 {
-                    await file.CopyToAsync(memoryStream);
-                    fileBytes = memoryStream.ToArray();
+                    if (file == null || file.Length == 0)
+                        return ServiceResult<ProofFileRes>.Fail("File không hợp lệ");
+
+                    byte[] fileBytes;
+
+                    using (var memoryStream = new MemoryStream())
+                    {
+                        await file.CopyToAsync(memoryStream);
+                        fileBytes = memoryStream.ToArray();
+                    }
+
+                    // Mã hóa file
+                    var encryptedData = EncryptFile(fileBytes);
+
+                    var entity = new ProofFile
+                    {
+                        Id = Guid.NewGuid(),
+                        FileName = file.FileName,
+                        StoredFileName = $"{Guid.NewGuid()}_{file.FileName}",
+                        FileSize = file.Length,
+                        ContentType = file.ContentType,
+                        Data = encryptedData,
+                        CreatedAt = DateTime.UtcNow,
+                        IsGlobal = false
+                    };
+
+                    _context.ProofFiles.Add(entity);
+                    await _context.SaveChangesAsync();
+
+                    return ServiceResult<ProofFileRes>.Ok(new ProofFileRes
+                    {
+                        Id = entity.Id,
+                        FileName = entity.FileName,
+                        StoredFileName = entity.StoredFileName,
+                        FileSize = entity.FileSize,
+                        ContentType = entity.ContentType,
+                        CreatedAt = entity.CreatedAt
+                    });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to upload proof file");
+                    return ServiceResult<ProofFileRes>.Fail("Đã xảy ra lỗi khi tải tệp: " + ex.Message);
+                }
+            }
+
+            private byte[] EncryptFile(byte[] data)
+            {
+                var key = Encoding.UTF8.GetBytes("12345678901234561234567890123456"); // 32 bytes
+                var iv = Encoding.UTF8.GetBytes("1234567890123456"); // 16 bytes
+
+                using var aes = Aes.Create();
+
+                aes.Key = key;
+                aes.IV = iv;
+
+                using var encryptor = aes.CreateEncryptor();
+                using var ms = new MemoryStream();
+
+                using (var cryptoStream = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
+                {
+                    cryptoStream.Write(data, 0, data.Length);
                 }
 
-                // Mã hóa file
-                var encryptedData = EncryptFile(fileBytes);
+                return ms.ToArray();
 
-                var entity = new ProofFile
-                {
-                    Id = Guid.NewGuid(),
-                    FileName = file.FileName,
-                    StoredFileName = $"{Guid.NewGuid()}_{file.FileName}",
-                    FileSize = file.Length,
-                    ContentType = file.ContentType,
-                    Data = encryptedData,
-                    CreatedAt = DateTime.UtcNow,
-                    IsGlobal = false
-                };
-
-                _context.ProofFiles.Add(entity);
-                await _context.SaveChangesAsync();
-
-                return ServiceResult<ProofFileRes>.Ok(new ProofFileRes
-                {
-                    Id = entity.Id,
-                    FileName = entity.FileName,
-                    StoredFileName = entity.StoredFileName,
-                    FileSize = entity.FileSize,
-                    ContentType = entity.ContentType,
-                    CreatedAt = entity.CreatedAt
-                });
             }
-            catch (Exception ex)
+
+
+            private byte[] DecryptFile(byte[] encryptedData)
             {
-                _logger.LogError(ex, "Failed to upload proof file");
-                return ServiceResult<ProofFileRes>.Fail("Đã xảy ra lỗi khi tải tệp: " + ex.Message);
-            }
-        }
+                var key = Encoding.UTF8.GetBytes("12345678901234561234567890123456"); // 32 bytes
+                var iv = Encoding.UTF8.GetBytes("1234567890123456"); // 16 bytes
 
-        private byte[] EncryptFile(byte[] data)
-        {
-            var key = Encoding.UTF8.GetBytes("12345678901234561234567890123456"); // 32 bytes
-            var iv = Encoding.UTF8.GetBytes("1234567890123456"); // 16 bytes
+                using var aes = Aes.Create();
 
-            using var aes = Aes.Create();
+                aes.Key = key;
+                aes.IV = iv;
 
-            aes.Key = key;
-            aes.IV = iv;
+                using var decryptor = aes.CreateDecryptor();
+                using var ms = new MemoryStream(encryptedData);
 
-            using var encryptor = aes.CreateEncryptor();
-            using var ms = new MemoryStream();
+                using var cryptoStream = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
+                using var resultStream = new MemoryStream();
 
-            using (var cryptoStream = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
-            {
-                cryptoStream.Write(data, 0, data.Length);
+                cryptoStream.CopyTo(resultStream);
+
+                return resultStream.ToArray();
             }
 
-            return ms.ToArray();
 
         }
-
-
-        private byte[] DecryptFile(byte[] encryptedData)
-        {
-            var key = Encoding.UTF8.GetBytes("12345678901234561234567890123456");
-            var iv = Encoding.UTF8.GetBytes("1234567890123456");
-
-            using var aes = Aes.Create();
-
-            aes.Key = key;
-            aes.IV = iv;
-
-            using var decryptor = aes.CreateDecryptor();
-            using var ms = new MemoryStream(encryptedData);
-
-            using var cryptoStream = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
-            using var resultStream = new MemoryStream();
-
-            cryptoStream.CopyTo(resultStream);
-
-            return resultStream.ToArray();
-        }
-
-
-    }
 }

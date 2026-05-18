@@ -10,11 +10,11 @@ import SectionUserEdit from "./pages/SectionUserEdit";
 //test realtime:
 import { useEffect } from "react";
 //Test chức năng realtime với SignalR
-// import { testSignalR } from "./testSignalR"; 
+// import { testSignalR } from "./testSignalR";
 
 //Gọi service realtime:
-import { signalRService} from "./services/signalRService";
-
+import { signalRService } from "./services/signalRService";
+import DocOverview from "./pages/DocOverview";
 
 function ProtectedRoute({ children }) {
   if (!sessionService.isAuthenticated()) {
@@ -58,7 +58,6 @@ function GuestRoute({ children }) {
 }
 
 function App() {
-
   // //Test chức năng realtime với SignalR
   // useEffect(() => {
   //   signalRService.connect();
@@ -67,9 +66,7 @@ function App() {
   //       signalRService.disconnect();
   //   };
 
-
   // }, []);
-
 
   return (
     <Routes>
@@ -83,14 +80,21 @@ function App() {
         }
       />
 
-      {/* User document routes (accessible by normal users) */}
-
       {/* User Routes - dành cho user bình thường */}
       <Route
         path={"/"}
         element={
           <UserRoute>
             <HomePage />
+          </UserRoute>
+        }
+      />
+
+      <Route
+        path={"/overview/:documentId"}
+        element={
+          <UserRoute>
+            <DocOverview />
           </UserRoute>
         }
       />

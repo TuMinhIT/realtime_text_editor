@@ -328,14 +328,14 @@ const DocumentEditor = () => {
                 {document.isActive ? (
                   <>
                     <div className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-red-400 px-4 py-2 text-sm font-medium text-white transition hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-60">
-                      User chỉnh
+                      User chỉnh sửa
                       <TbLockOpen size={16} />
                     </div>
                   </>
                 ) : (
                   <>
                     <div className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-green-500 px-4 py-2 text-sm font-medium text-white transition hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-60">
-                      Admin chỉnh
+                      Admin chỉnh sửa
                       <BiLockAlt size={16} />
                     </div>
                   </>
@@ -343,16 +343,18 @@ const DocumentEditor = () => {
               </button>
             )}
 
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={isSaving}
-              className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isSaving ? <span>Luu...</span> : null}
-              <Save size={16} />
-              {!isSaving ? <span>Save</span> : null}
-            </button>
+            {document && !document.isActive && (
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={isSaving}
+                className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isSaving ? <span>Luu...</span> : null}
+                <Save size={16} />
+                {!isSaving ? <span>Save</span> : null}
+              </button>
+            )}
 
             <button
               type="button"

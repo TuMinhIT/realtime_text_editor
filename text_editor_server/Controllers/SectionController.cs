@@ -13,7 +13,6 @@ namespace text_editor_server.Controllers
     {
         private readonly SectionService _sectionService;
         private readonly DocumentService _documentService;
-
         private readonly SectionParser _sectionParse;
 
         public SectionController(SectionService sectionService, DocumentService documentService, SectionParser sectionParse)
@@ -148,8 +147,6 @@ namespace text_editor_server.Controllers
                 return NotFound("Section not found or update failed");
 
 
-            //////Cập nhật document:
-            //await _documentService.RebuildFromSectionAsync(sectionId);
             return Ok(new
             {
                 message = "Section updated successfully"
