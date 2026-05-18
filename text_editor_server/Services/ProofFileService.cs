@@ -180,5 +180,30 @@ namespace text_editor_server.Services
 
             return resultStream.ToArray();
         }
+
+
+        public async Task<ServiceResult<List< ProofFileRes>>> GetAllAsync()
+        {
+
+            var files = await _context.ProofFiles
+                .AsNoTracking().Select(f => new ProofFileRes
+                {
+                    Id = f.Id,
+                    FileName = f.FileName,
+                    StoredFileName = f.StoredFileName,
+                    FileUrl = f.StoredFileName,
+                    FileSize = f.FileSize,
+                    ContentType = f.ContentType,
+                    IsGlobal = f.IsGlobal,    
+                    CreatedAt = f.CreatedAt
+                 })
+                    .ToListAsync();
+
+
+            return ServiceResult<List<ProofFileRes>>.Ok(files);
+            
+            
+        }
+
     }
 }

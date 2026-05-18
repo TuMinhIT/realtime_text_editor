@@ -73,5 +73,27 @@ namespace text_editor_server.Controllers
 
             return Ok(new { success = true });
         }
+
+        
+        [HttpGet("getFiles")]
+        //[Authorize]
+        public async Task<IActionResult> GetAllFile()
+        {
+            //var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            //if (string.IsNullOrWhiteSpace(userIdClaim) || !Guid.TryParse(userIdClaim, out var currentUserId))
+            //{
+            //    return Unauthorized("Invalid token payload");
+            //}
+
+            var result = await _proofFileService.GetAllAsync();
+
+            if (result == null)
+            {
+                return BadRequest(new { message = "Can't get all file" });
+            }
+
+            return Ok(result);
+        }
     }
 }

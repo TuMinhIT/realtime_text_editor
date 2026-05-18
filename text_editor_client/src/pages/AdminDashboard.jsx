@@ -17,13 +17,14 @@ import { http } from "../services/http";
 import { sessionService } from "../services/sessionService";
 import { documentService } from "../services/documentService";
 import { mapUploadResponseToRecentDocument } from "../utils/documentMappers";
-import { CgSpinner } from "react-icons/cg";
+import { CgAdd, CgSpinner } from "react-icons/cg";
 import { ClipLoader } from "react-spinners";
 import { toast } from "react-toastify";
 import { SiAuthelia } from "react-icons/si";
 
 //import realtime:
 import { signalRService } from "../services/signalRService";
+import ProofFileSection from "../components/SectionAuth/ProofFileSection";
 
 const formatDate = (value) => {
   if (!value) {
@@ -184,7 +185,7 @@ const AdminDashBoard = () => {
     });
   };
 
-  const handleLogout =() => {
+  const handleLogout = () => {
     //Kết thúc signalR khi đăng xuất:
     signalRService.disconnect();
 
@@ -235,54 +236,33 @@ const AdminDashBoard = () => {
       </header>
 
       <div className="mx-auto w-full max-w-[1200px] px-4 py-6 md:px-6">
-        <section className="rounded-3xl bg-white p-5 md:p-6">
-          <p className="text-sm font-medium text-slate-500">
-            Start a new document
-          </p>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <button
-              type="button"
-              onClick={handleCreateBlank}
-              className="flex h-40 flex-col items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white transition hover:border-[#1a73e8] hover:shadow-sm"
-            >
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#e8f0fe] text-[#1a73e8]">
-                <Plus size={22} />
-              </div>
-              <p className="text-sm font-medium">Proof document</p>
-            </button>
-            {isUploading ? (
-              <ClipLoader color="red" />
-            ) : (
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="flex h-40 flex-col items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white transition hover:border-[#1a73e8] hover:shadow-sm"
-                disabled={isUploading}
-              >
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#e8f0fe] text-[#1a73e8]">
-                  <Upload size={20} />
-                </div>
-                <p className="text-sm font-medium">Upload .docx</p>
-              </button>
-            )}
-          </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".docx"
-            className="hidden"
-            onChange={handleFileChange}
-          />
-        </section>
+        <section className="mt-4 rounded-2xl bg-white p-3 md:p-6">
+          <div className="flex flex-row items-center justify-between">
+            <div className="flex items-center flex-row gap-2.5">
+              <span className="flex text-lg font-medium text-slate-900">
+                Recent documents
+              </span>
 
-        <section className="mt-6 rounded-3xl bg-white p-5 md:p-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-medium text-slate-900">
-              Recent documents
-            </h2>
-            <span className="text-sm text-slate-500">
-              {filteredDocuments.length} tai lieu
-            </span>
+              <span className=" flex text-sm text-slate-500">
+                {filteredDocuments.length} tai lieu
+              </span>
+            </div>
+            <div className="flex ">
+              {isUploading ? (
+                <ClipLoader color="red" />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex flex-col items-center justify-center gap-3 rounded-2xl  bg-white transition hover:border-[#1a73e8] hover:shadow-sm"
+                  disabled={isUploading}
+                >
+                  <div className="flex p-2  items-center justify-center rounded-xl bg-[#e8f0fe] text-[#1a73e8]">
+                    <CgAdd size={25} />
+                  </div>
+                </button>
+              )}
+            </div>
           </div>
 
           {errorMessage ? (
@@ -395,6 +375,8 @@ const AdminDashBoard = () => {
             </table>
           </div>
         </section>
+
+        <ProofFileSection />
       </div>
     </main>
   );
