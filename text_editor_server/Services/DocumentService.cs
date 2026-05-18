@@ -375,7 +375,7 @@ namespace text_editor_server.Services
         private async Task<string> MergeAllSectionsAsync(Guid documentId)
         {
             var snapshot = await _context.DocumentSnapshots
-                .AsNoTracking()
+
                 .FirstOrDefaultAsync(x => x.DocumentId == documentId);
 
             if (snapshot == null ||
@@ -498,8 +498,17 @@ namespace text_editor_server.Services
             // =====================
             originalSfdt["imgs"] = mergedImgs;
 
-            return originalSfdt.ToString(
+            //Thêm merge
+            var mergedSfdt = originalSfdt.ToString(
                 Formatting.None);
+            //Final Merger SFDT:
+            snapshot.JsonContent = mergedSfdt;
+            snapshot.Timestamp = DateTime.UtcNow;
+            snapshot.Version += 1;
+
+            await _context.SaveChangesAsync();
+
+            return mergedSfdt;
         }
     }
 }
