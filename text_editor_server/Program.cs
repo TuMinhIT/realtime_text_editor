@@ -98,8 +98,8 @@ namespace text_editor_server
                             var path =
                                 context.HttpContext.Request.Path;
 
-                            Console.WriteLine($"PATH: {path}");
-                            Console.WriteLine($"TOKEN EXISTS: {!string.IsNullOrEmpty(accessToken)}");
+                            //Console.WriteLine($"PATH: {path}");
+                            //Console.WriteLine($"TOKEN EXISTS: {!string.IsNullOrEmpty(accessToken)}");
 
                             if (
                                 !string.IsNullOrEmpty(accessToken)
