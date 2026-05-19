@@ -21,9 +21,8 @@ namespace text_editor_server.Services
         }
 
         public async Task<ServiceResult<ProofFileRes>> UploadProofFileAsync(
-            IFormFile file,
-            string? title,
-            Guid currentUserId)
+            IFormFile file,      
+            Guid currentUserId, bool isGlobal)
         {
             try
             {
@@ -50,7 +49,7 @@ namespace text_editor_server.Services
                     ContentType = file.ContentType,
                     Data = encryptedData,
                     CreatedAt = DateTime.UtcNow,
-                    IsGlobal = false
+                    IsGlobal = isGlobal
                 };
 
                 _context.ProofFiles.Add(entity);
@@ -63,7 +62,8 @@ namespace text_editor_server.Services
                     StoredFileName = entity.StoredFileName,
                     FileSize = entity.FileSize,
                     ContentType = entity.ContentType,
-                    CreatedAt = entity.CreatedAt
+                    CreatedAt = entity.CreatedAt,
+                    IsGlobal = entity.IsGlobal,
                 });
             }
             catch (Exception ex)
@@ -186,7 +186,11 @@ namespace text_editor_server.Services
         {
 
             var files = await _context.ProofFiles
-                .AsNoTracking().Select(f => new ProofFileRes
+                .AsNoTracking()
+                .Where(f => f.IsGlobal) // Chỉ lấy các file có IsGlobal = true
+                .Select(f =>
+                 
+                new ProofFileRes
                 {
                     Id = f.Id,
                     FileName = f.FileName,

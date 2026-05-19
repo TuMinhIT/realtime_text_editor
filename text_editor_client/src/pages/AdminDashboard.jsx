@@ -262,6 +262,12 @@ const AdminDashBoard = () => {
                   </div>
                 </button>
               )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                onChange={handleFileChange}
+                className="hidden"
+              />
             </div>
           </div>
 

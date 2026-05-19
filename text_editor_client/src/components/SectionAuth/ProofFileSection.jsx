@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Clock3,
+  Copy,
   DeleteIcon,
   Download,
   DownloadCloud,
@@ -40,7 +41,7 @@ const ProofFileSection = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [keyword, setKeyword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-
+  const base = import.meta.env.VITE_API_URL || "";
   const loadFiles = async () => {
     setIsLoading(true);
     setErrorMessage("");
@@ -79,13 +80,11 @@ const ProofFileSection = () => {
     setIsUploading(true);
     setErrorMessage("");
     try {
-      const res = await fileService.uploadFile(file);
+      const res = await fileService.uploadFile(file, true);
       toast.success("Upload thành công.");
-      // reload files
       await loadFiles();
     } catch (err) {
-      console.error(err);
-      setErrorMessage(err?.message || "Upload thất bại.");
+      // console.error(err);
       toast.error("Upload thất bại");
     } finally {
       setIsUploading(false);
@@ -115,10 +114,19 @@ const ProofFileSection = () => {
 
   const getDownloadUrl = (doc) => {
     if (!doc) return "";
-    if (doc.fileUrl?.startsWith("http")) return doc.fileUrl;
-    const base = import.meta.env.VITE_API_URL || "";
-    // backend likely exposes download at /prooffile/download/{storedFileName}
-    return `${base}/prooffile/download/${encodeURIComponent(doc.fileUrl || doc.storedFileName)}`;
+    return `${base}/prooffile/file/${doc.id}`;
+  };
+
+  const handleCopy = async (doc) => {
+    try {
+      const url = getDownloadUrl(doc);
+      if (!url) return;
+      await navigator.clipboard.writeText(url);
+      toast.success("Copied link to clipboard.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Copy failed.");
+    }
   };
 
   return (
@@ -168,13 +176,12 @@ const ProofFileSection = () => {
           <thead>
             <tr className="text-left text-xs uppercase tracking-wide text-slate-500">
               <th className="border-b border-slate-200 px-4 py-3 font-medium">
-                File name
+                File
               </th>
 
               <th className="border-b border-slate-200 px-4 py-3 font-medium">
                 Size
               </th>
-
               <th className="border-b border-slate-200 px-4 py-3 font-medium">
                 Created
               </th>
@@ -210,19 +217,36 @@ const ProofFileSection = () => {
                         </p>
                       </div>
                     </div>
+
+                    <div className="flex items-center gap-3">
+                      <a
+                        href={getDownloadUrl(doc)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-[#1a73e8] hover:underline break-all"
+                      >
+                        link: ....file/{doc.id}
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => handleCopy(doc)}
+                        className="inline-flex items-center gap-2 rounded px-2 py-1 border border-slate-300 text-sm font-medium transition hover:bg-slate-100"
+                      >
+                        <Copy size={14} />
+                        Copy
+                      </button>
+                    </div>
                   </td>
 
                   <td className="border-b border-slate-100 px-4 py-4">
                     {formatFileSize(doc.fileSize)}
                   </td>
-
                   <td className="border-b border-slate-100 px-4 py-4">
                     <span className="inline-flex items-center gap-2">
                       <Clock3 size={14} />
                       {formatDate(doc.createdAt)}
                     </span>
                   </td>
-
                   <td className="border-b border-slate-100 px-4 py-4">
                     <button
                       type="button"

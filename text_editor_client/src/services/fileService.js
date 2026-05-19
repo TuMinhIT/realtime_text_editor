@@ -3,19 +3,17 @@ import { http } from "./http";
 const resource = "/prooffile";
 
 export const fileService = {
-  async uploadFile(file, title) {
+  async uploadFile(file, isGlobal) {
     try {
+      console.log(isGlobal);
+      if (!file) throw new Error("No file provided");
       const formData = new FormData();
       formData.append("file", file);
 
-      if (title?.trim()) {
-        formData.append("title", title.trim());
-      }
+      formData.append("isGlobal", true);
 
       const res = await http.post(`${resource}/upload`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
       return res.data;

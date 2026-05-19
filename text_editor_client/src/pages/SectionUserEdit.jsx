@@ -521,7 +521,7 @@ const SectionAuthority = () => {
                   className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100 md:hidden"
                   aria-label="Close sidebar"
                 >
-                  <X size={18} />
+                  <Menu size={18} />
                 </button>
               </div>
               <p className="mt-1 text-xs text-slate-500">
