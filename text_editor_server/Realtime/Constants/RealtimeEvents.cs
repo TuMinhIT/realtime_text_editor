@@ -11,5 +11,13 @@
         public const string
             SectionLockUpdated =
                 nameof(SectionLockUpdated);
+
+
+        //Thêm sự kiện con trỏ chuột:
+        public const string CursorUpdated = "CursorUpdated";
+
+
+        //Cập nhật nội dung section:
+        public  const string SectionContentUpdated = "SectionContentUpdated";
     }
 }

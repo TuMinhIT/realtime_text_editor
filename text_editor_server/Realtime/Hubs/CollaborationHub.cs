@@ -23,6 +23,8 @@ namespace text_editor_server.Realtime.Hubs
             IPresenceService
                 _presenceService;
 
+
+
         public CollaborationHub(
             IRealtimeStateManager stateManager,
             IPresenceService presenceService)
@@ -532,6 +534,93 @@ namespace text_editor_server.Realtime.Hubs
                 "===================================");
 
             Console.WriteLine("");
+        }
+
+        //Cursor position:
+        // CURSOR POSITION
+
+        public async Task
+            UpdateCursor(
+                Guid sectionId,
+                CursorDto cursor)
+        {
+            var connection =
+                _stateManager
+                    .GetConnection(
+                        Context.ConnectionId);
+
+            if (connection == null)
+            {
+                return;
+            }
+
+            // chỉ gửi cho user khác
+            await Clients
+                .OthersInGroup(
+                    RealtimeGroups
+                        .Section(sectionId))
+                .SendAsync(
+                    RealtimeEvents
+                        .CursorUpdated,
+                    new
+                    {
+                        sectionId,
+
+                        userId =
+                            connection.UserId,
+
+                        username =
+                            connection.FullName,
+
+                        x = cursor.X,
+                        y = cursor.Y
+                    });
+        }
+
+        // CONTENT UPDATE   
+        public async Task
+     NotifySectionUpdated(
+         Guid sectionId)
+        {
+            var connection =
+                _stateManager
+                    .GetConnection(
+                        Context.ConnectionId);
+
+            if (connection == null)
+            {
+                return;
+            }
+
+            // validate current section
+            if (connection
+                    .CurrentSectionId
+                != sectionId)
+            {
+                return;
+            }
+
+            await Clients
+                .OthersInGroup(
+                    RealtimeGroups
+                        .Section(
+                            sectionId))
+                .SendAsync(
+                    RealtimeEvents
+                        .SectionContentUpdated,
+                    new
+                    {
+                        sectionId,
+
+                        updatedByUserId =
+                            connection.UserId,
+
+                        updatedByUsername =
+                            connection.FullName,
+
+                        updatedAt =
+                            DateTime.UtcNow
+                    });
         }
     }
 }

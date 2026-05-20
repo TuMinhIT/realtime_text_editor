@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -25,7 +25,18 @@ import DocEdit from "../components/SectionUser/DocEdit";
 
 //Thêm realtime service:
 import { signalRService } from "../services/signalRService";
+
+//Tách hooks realtime - để dùng chung cho nhiều component khác nhau:
+import useSignalRListeners from "../hooks/realtime/useSignalRListeners";
+import useSectionJoin from "../hooks/realtime/useSectionJoin";
 import ProofFileTab from "../components/SectionUser/ProofFileTab";
+import useRealtimePresence from "../hooks/realtime/useRealtimePresence";
+import useRealtimeLock from "../hooks/realtime/useRealtimeLock";
+import useRealtimeCursor from "../hooks/realtime/useRealtimeCursor";
+import useRealtimeSectionUpdate from "../hooks/realtime/useRealtimeSectionUpdate";
+
+
+
 
 const SERVICE_URL = import.meta.env.VITE_API_URL + "/document";
 
@@ -80,7 +91,12 @@ const SectionAuthority = () => {
   const { documentId } = useParams();
   const navigate = useNavigate();
   const editorRef = useRef(null);
-  const [isInitialized, setIsInitialized] = useState(false);
+
+  // autosave:
+  const autoSaveTimeoutRef = useRef(null);
+  const isSavingRef = useRef(false);
+
+
 
   const [sections, setSections] = useState([]);
   const [documentTitle, setDocumentTitle] = useState(
@@ -96,11 +112,14 @@ const SectionAuthority = () => {
   const [openAside, setOpenAside] = useState(true);
 
   //Phục vụ realtime: lắng nghe sự kiện update từ server để tự động reload nội dung section khi có thay đổi từ người khác
-  const [presence, setPresence] = useState(null);
-  const [lockState, setLockState] = useState(null);
-  const [hasLockRequested, setHasLockRequested] = useState(false);
+  const [presence, onPresence] = useRealtimePresence();
+
 
   const [tab, setTab] = useState("section");
+  
+const selectedSectionRef = useRef(null);
+  const isDirtyRef = useRef(false);
+  
   const openPreview = (sfdt) => {
     const editor = editorRef.current?.documentEditor;
     if (!editor || !sfdt) {
@@ -207,6 +226,10 @@ const SectionAuthority = () => {
     });
     setIsInitialized(true);
   }, [sections]);
+  //Realtime lock:
+  const {
+    lockState,
+    hasLockRequested,
 
   //Tự động realtime khi mới vào document:
   useEffect(() => {
@@ -348,13 +371,14 @@ const SectionAuthority = () => {
     };
   }, [selectedSection?.id]);
 
+  // Dirty:
+
   useEffect(() => {
-    if (!isInitialized) return;
     if (!selectedSection || !documentId) return;
 
-    loadPreview();
+    loadPreview(selectedSection);
     loadUserAssignments();
-  }, [selectedSection, documentId, isInitialized]);
+  }, [selectedSection, documentId]);
 
   useEffect(() => {
     if (!previewSfdt || !selectedSection) return;
@@ -373,6 +397,10 @@ const SectionAuthority = () => {
 
   const [isSaving, setIsSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+
+  useEffect(() => {
+    isDirtyRef.current = isDirty;
+  }, [isDirty]);
 
   const handleSave = async () => {
     const editor = editorRef.current?.documentEditor;
@@ -394,12 +422,19 @@ const SectionAuthority = () => {
 
       // Release lock sau khi lưu xong để người khác có thể edit tiếp
       await signalRService.releaseEditSession(selectedSection.id);
+<<<<<<< HEAD
+=======
+
+      setHasLockRequested(false);
+
+>>>>>>> 05bdcf80de4e08702d82ea14437b18df0f564499
 
       setHasLockRequested(false);
       // Reload sections để cập nhật dữ liệu trong selectedSection
       await loadSections();
       //await loadDocument();
 
+      setOriginalPreview(serialized);
       setIsDirty(false);
       toast.success("Lưu section thành công.");
     } catch (err) {
@@ -408,6 +443,76 @@ const SectionAuthority = () => {
       setIsSaving(false);
     }
   };
+
+
+  //Cleanup timeout khi unmount:
+  useEffect(() => {
+  return () => {
+    if (
+      autoSaveTimeoutRef.current
+    ) {
+      clearTimeout(
+        autoSaveTimeoutRef.current,
+      );
+    }
+  };
+}, []);
+  //Tạo hàm save realtime:
+ const saveRealtime = async (
+  sectionId,
+) => {
+  const editor =
+    editorRef.current
+      ?.documentEditor;
+
+  if (
+    !editor ||
+    !sectionId ||
+    assignment?.permission != 1
+  ) {
+    return;
+  }
+
+  if (isSavingRef.current) {
+    return;
+  }
+
+  try {
+    isSavingRef.current = true;
+
+    const serialized =
+      normalizeJson(
+        editor.serialize(),
+      );
+
+    await sectionService.updateSectionContent(
+      sectionId,
+      serialized,
+    );
+
+    // Sau khi lưu thành công, cập nhật lại preview và reset dirty
+    await signalRService.notifySectionUpdated(
+  sectionId,
+);
+
+    setOriginalPreview(
+      serialized,
+    );
+
+    setIsDirty(false);
+
+    console.log(
+      "[Realtime] autosaved",
+    );
+  } catch (err) {
+    console.error(
+      "Realtime save failed",
+      err,
+    );
+  } finally {
+    isSavingRef.current = false;
+  }
+};
 
   const handleContentChange = () => {
     const editor = editorRef.current?.documentEditor;
@@ -428,13 +533,99 @@ const SectionAuthority = () => {
       }
     }
 
-    const currentSerialized = normalizeJson(editor.serialize());
-    setIsDirty(currentSerialized !== normalizeJson(originalPreview));
+    // gửi cursor realtime
+ try {
+    const selection =
+      editor.selection;
+
+    if (selection?.start) {
+      // caret element thật trong Syncfusion
+      const caret =
+        document.querySelector(
+          ".e-de-blink-cursor",
+        );
+
+      if (caret) {
+        const rect =
+          caret.getBoundingClientRect();
+
+        signalRService.updateCursor(
+          selectedSection.id,
+          {
+            x:
+              rect.left +
+              window.scrollX,
+
+            y:
+              rect.top +
+              window.scrollY,
+          },
+        );
+      }
+    }
+  } catch (err) {
+    console.error(
+      "Send cursor error",
+      err,
+    );
+  }
+
+    const currentSerialized =
+  normalizeJson(editor.serialize());
+
+const dirty =
+  currentSerialized !==
+  normalizeJson(originalPreview);
+
+setIsDirty(dirty);
+
+/* =========
+   AUTO SAVE (debounce 1.5s)
+========= */
+
+if (
+  assignment?.permission == 1 &&
+  dirty
+) {
+  // clear timer cũ
+  if (
+    autoSaveTimeoutRef.current
+  ) {
+    clearTimeout(
+      autoSaveTimeoutRef.current,
+    );
+  }
+
+  const currentSectionId =
+  selectedSection.id;
+
+  autoSaveTimeoutRef.current =
+    setTimeout(() => {
+      saveRealtime(
+        currentSectionId,
+      );
+    }, 1000);
+}
   };
 
   const handleSelectSection = async (section) => {
     try {
       // click lại section cũ
+      if (
+  isDirty &&
+  selectedSection?.id
+) {
+  await saveRealtime(
+    selectedSection.id,
+  );
+}
+      if (
+      autoSaveTimeoutRef.current
+    ) {
+      clearTimeout(
+        autoSaveTimeoutRef.current,
+      );
+    }
       if (selectedSection?.id === section.id) {
         return;
       }
@@ -460,6 +651,8 @@ const SectionAuthority = () => {
       setHasLockRequested(false);
 
       setLockState(null);
+      //setremotecursor về rỗng khi chuyển section để tránh hiện cursor của section cũ sang section mới
+      clearRemoteCursors();
 
       /* =========
        UPDATE UI
@@ -745,18 +938,23 @@ const SectionAuthority = () => {
                     </div>
                   )}
 
-                  {/* ========= SAVE ========= */}
-                  {assignment?.permission == 1 ? (
-                    <button
-                      onClick={handleSave}
-                      disabled={isSaving || !isDirty}
-                      className="inline-flex items-center gap-2 rounded-full bg-green-600 px-3 py-1 text-sm font-medium text-white transition disabled:opacity-50"
-                    >
-                      {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
-                    </button>
-                  ) : (
-                    <div className="text-sm text-slate-500">Chỉ xem</div>
-                  )}
+                  <div
+  className={`
+  rounded-full
+  px-3
+  py-1
+  text-sm
+  ${
+    isDirty
+      ? "bg-amber-100 text-amber-700"
+      : "bg-green-100 text-green-700"
+  }
+`}
+>
+  {isDirty
+    ? "Đang đồng bộ..."
+    : "Đã lưu"}
+</div>
                 </div>
               </div>
             </div>
@@ -773,6 +971,8 @@ const SectionAuthority = () => {
             handleSave={handleSave}
             originalPreview={originalPreview}
             canEdit={assignment?.permission == 1}
+            remoteCursors={remoteCursors} // Truyền remote cursors vào component DocEdit để hiển thị
+
           />
         </section>
       </div>
