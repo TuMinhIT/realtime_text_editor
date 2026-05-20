@@ -422,12 +422,6 @@ const selectedSectionRef = useRef(null);
 
       // Release lock sau khi lưu xong để người khác có thể edit tiếp
       await signalRService.releaseEditSession(selectedSection.id);
-<<<<<<< HEAD
-=======
-
-      setHasLockRequested(false);
-
->>>>>>> 05bdcf80de4e08702d82ea14437b18df0f564499
 
       setHasLockRequested(false);
       // Reload sections để cập nhật dữ liệu trong selectedSection
