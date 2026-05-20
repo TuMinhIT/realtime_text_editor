@@ -868,7 +868,7 @@ if (
                       );
                     })}
                   </div>
-
+                    {/* ========= ASSIGNMENT & LOCK STATE ========= */}
                   {/* ========= LOCK UI ========= */}
                   {lockState?.isLocked && (
                     <div
@@ -928,7 +928,7 @@ if (
               </div>
             </div>
           )}
-
+          
           <DocEdit
             editorRef={editorRef}
             selectedSection={selectedSection}
@@ -945,7 +945,7 @@ if (
           />
         </section>
       </div>
-    </main>
+    </main> 
   );
 };
 
