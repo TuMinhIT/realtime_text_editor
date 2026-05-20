@@ -190,32 +190,23 @@ const SectionAuthority = () => {
     loadData();
   }, [documentId]);
 
-
-
   // Section măc định khi thực hiện hành động
   useEffect(() => {
     if (!sections.length) return;
 
     setSelectedSection((prev) => {
       // Giữ section đã chọn nếu vẫn tồn tại trong list mới
-       if (prev?.id) {
-      const matched = sections.find(
-        (x) => x.id === prev.id,
-      );
-      if (matched) {
-        return matched;
+      if (prev?.id) {
+        const matched = sections.find((x) => x.id === prev.id);
+        if (matched) {
+          return matched;
+        }
       }
-    }
-    // Ngược lại chọn section đầu tiên
-    return (
-      sections.find((s) => s.level === 2) ||
-      sections[0]
-    );
-  });
+      // Ngược lại chọn section đầu tiên
+      return sections.find((s) => s.level === 2) || sections[0];
+    });
     setIsInitialized(true);
   }, [sections]);
-
-
 
   //Tự động realtime khi mới vào document:
   useEffect(() => {
@@ -265,68 +256,55 @@ const SectionAuthority = () => {
     };
   }, []);
 
-
   // Hàm dựng preview section:
-const loadPreview = async () => {
-  if (!selectedSection?.id) return;
+  const loadPreview = async () => {
+    if (!selectedSection?.id) return;
 
-  setIsPreviewLoading(true);
-  setErrorMessage("");
+    setIsPreviewLoading(true);
+    setErrorMessage("");
 
-  try {
-    const sectionContent = normalizeJson(
-      selectedSection.content ||
-        selectedSection.jsonContent,
-    );
-
-    if (!sectionContent) {
-      throw new Error(
-        "Thiếu dữ liệu section để dựng preview.",
+    try {
+      const sectionContent = normalizeJson(
+        selectedSection.content || selectedSection.jsonContent,
       );
-    }
 
-    const preview =
-      await sectionService.previewSection(
+      if (!sectionContent) {
+        throw new Error("Thiếu dữ liệu section để dựng preview.");
+      }
+
+      const preview = await sectionService.previewSection(
         selectedSection.id,
         sectionContent,
         documentId,
       );
 
-    const sfdt = normalizeJson(
-      preview?.sfdtContent,
-    );
+      const sfdt = normalizeJson(preview?.sfdtContent);
 
-    if (!sfdt) {
-      throw new Error(
-        "Backend không trả về SFDT preview hợp lệ.",
+      if (!sfdt) {
+        throw new Error("Backend không trả về SFDT preview hợp lệ.");
+      }
+
+      // Preview hiện tại
+      setPreviewSfdt(sfdt);
+
+      // Gốc để compare dirty
+      setOriginalPreview(sfdt);
+
+      // reset dirty khi load section mới
+      setIsDirty(false);
+    } catch (error) {
+      console.error("Load preview error:", error);
+
+      // fallback về bản cũ
+      setPreviewSfdt(originalPreview);
+
+      setErrorMessage(
+        error?.message || "Không thể dựng preview section từ backend.",
       );
+    } finally {
+      setIsPreviewLoading(false);
     }
-
-    // Preview hiện tại
-    setPreviewSfdt(sfdt);
-
-    // Gốc để compare dirty
-    setOriginalPreview(sfdt);
-
-    // reset dirty khi load section mới
-    setIsDirty(false);
-  } catch (error) {
-    console.error(
-      "Load preview error:",
-      error,
-    );
-
-    // fallback về bản cũ
-    setPreviewSfdt(originalPreview);
-
-    setErrorMessage(
-      error?.message ||
-        "Không thể dựng preview section từ backend.",
-    );
-  } finally {
-    setIsPreviewLoading(false);
-  }
-};
+  };
 
   useEffect(() => {
     if (!lockState || !selectedSection?.id) {
@@ -368,7 +346,7 @@ const loadPreview = async () => {
         signalRService.leaveCurrentSection();
       }
     };
-  }, [ selectedSection?.id]);
+  }, [selectedSection?.id]);
 
   useEffect(() => {
     if (!isInitialized) return;
@@ -414,16 +392,10 @@ const loadPreview = async () => {
       // // Lưu nội dung section qua endpoint document/section content
       await sectionService.updateSectionContent(selectedSection.id, serialized);
 
-
       // Release lock sau khi lưu xong để người khác có thể edit tiếp
-      await signalRService.releaseEditSession(
-  
-      selectedSection.id,
-      );
+      await signalRService.releaseEditSession(selectedSection.id);
 
-setHasLockRequested(false);
-
-
+      setHasLockRequested(false);
       // Reload sections để cập nhật dữ liệu trong selectedSection
       await loadSections();
       //await loadDocument();
