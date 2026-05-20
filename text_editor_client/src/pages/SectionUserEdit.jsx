@@ -209,125 +209,97 @@ const selectedSectionRef = useRef(null);
     loadData();
   }, [documentId]);
 
-  // Section măc định khi thực hiện hành động
   useEffect(() => {
     if (!sections.length) return;
 
     setSelectedSection((prev) => {
-      // Giữ section đã chọn nếu vẫn tồn tại trong list mới
       if (prev?.id) {
-        const matched = sections.find((x) => x.id === prev.id);
-        if (matched) {
-          return matched;
-        }
+        const exists = sections.find((s) => s.id === prev.id);
+        if (exists) return exists;
       }
-      // Ngược lại chọn section đầu tiên
+
       return sections.find((s) => s.level === 2) || sections[0];
     });
-    setIsInitialized(true);
   }, [sections]);
   //Realtime lock:
   const {
     lockState,
     hasLockRequested,
 
-  //Tự động realtime khi mới vào document:
-  useEffect(() => {
-    if (!selectedSection?.id) {
-      return;
-    }
+    setLockState,
+    setHasLockRequested,
 
-    const joinRealtime = async () => {
-      try {
-        await signalRService.joinSection(selectedSection.id);
+    onLock,
+  } = useRealtimeLock();
 
-        console.log("[Realtime] auto joined:", selectedSection.id);
-      } catch (err) {
-        console.error("[Realtime] auto join error", err);
-      }
-    };
+  // Realtime: join selected section and register listeners via hooks
+  useSectionJoin(selectedSection?.id);
 
-    joinRealtime();
+  // Hàm dựng preview section - load section mới:
+const loadPreview = async (section) => {
+  if (!section?.id) return;
 
-    return () => {
-      signalRService.leaveCurrentSection();
-    };
-  }, [selectedSection?.id]);
+  setIsPreviewLoading(true);
+  setErrorMessage("");
 
-  //Listen realtime event: (Để hiện số người đang xem)
-  useEffect(() => {
-    const setupRealtime = async () => {
-      await signalRService.onPresenceUpdated((data) => {
-        console.log("PRESENCE", data);
+  try {
+    const sectionContent = normalizeJson(
+      section.content ||
+        section.jsonContent,
+    );
 
-        setPresence(data);
-      });
+    
+    
 
-      await signalRService.onLockUpdated((data) => {
-        console.log("LOCK", data);
-
-        setLockState(data);
-      });
-    };
-
-    setupRealtime();
-
-    return () => {
-      signalRService.offPresenceUpdated();
-
-      signalRService.offLockUpdated();
-    };
-  }, []);
-
-  // Hàm dựng preview section:
-  const loadPreview = async () => {
-    if (!selectedSection?.id) return;
-
-    setIsPreviewLoading(true);
-    setErrorMessage("");
-
-    try {
-      const sectionContent = normalizeJson(
-        selectedSection.content || selectedSection.jsonContent,
-      );
-
-      if (!sectionContent) {
-        throw new Error("Thiếu dữ liệu section để dựng preview.");
-      }
-
-      const preview = await sectionService.previewSection(
-        selectedSection.id,
+    const preview =
+      await sectionService.previewSection(
+        section.id,
         sectionContent,
         documentId,
       );
 
-      const sfdt = normalizeJson(preview?.sfdtContent);
+    const sfdt = normalizeJson(
+      preview?.sfdtContent,
+    );
 
-      if (!sfdt) {
-        throw new Error("Backend không trả về SFDT preview hợp lệ.");
-      }
+    
+    // Preview hiện tại
+    setPreviewSfdt(sfdt);
 
-      // Preview hiện tại
-      setPreviewSfdt(sfdt);
+    // Gốc để compare dirty
+    setOriginalPreview(sfdt);
 
-      // Gốc để compare dirty
-      setOriginalPreview(sfdt);
+    // reset dirty khi load section mới
+    setIsDirty(false);
+  } catch (error) {
+    console.error(
+      "Load preview error:",
+      error,
+    );
 
-      // reset dirty khi load section mới
-      setIsDirty(false);
-    } catch (error) {
-      console.error("Load preview error:", error);
+    // Nếu load preview thất bại thì không dùng dữ liệu cũ của section khác
+    setPreviewSfdt("");
+    setOriginalPreview("");
+    setErrorMessage(
+      error?.message ||
+        "Không thể dựng preview section từ backend.",
+    );
+  } finally {
+    setIsPreviewLoading(false);
+  }
+};
+  const { remoteCursors, onCursor, clearRemoteCursors,} = useRealtimeCursor();
 
-      // fallback về bản cũ
-      setPreviewSfdt(originalPreview);
+  const {
+    onSectionUpdated,
+  } = useRealtimeSectionUpdate({documentId, selectedSectionRef, isDirtyRef, setSections, setSelectedSection, loadPreview, });
 
-      setErrorMessage(
-        error?.message || "Không thể dựng preview section từ backend.",
-      );
-    } finally {
-      setIsPreviewLoading(false);
-    }
-  };
+  useSignalRListeners({ onPresence, onLock, onCursor, onSectionUpdated });
+
+  
+  useEffect(() => {
+    selectedSectionRef.current = selectedSection;
+  }, [selectedSection]);
 
   useEffect(() => {
     if (!lockState || !selectedSection?.id) {
@@ -369,7 +341,7 @@ const selectedSectionRef = useRef(null);
         signalRService.leaveCurrentSection();
       }
     };
-  }, [selectedSection?.id]);
+  }, [ selectedSection?.id]);
 
   // Dirty:
 
@@ -420,10 +392,13 @@ const selectedSectionRef = useRef(null);
       // // Lưu nội dung section qua endpoint document/section content
       await sectionService.updateSectionContent(selectedSection.id, serialized);
 
+
       // Release lock sau khi lưu xong để người khác có thể edit tiếp
       await signalRService.releaseEditSession(selectedSection.id);
 
       setHasLockRequested(false);
+
+
       // Reload sections để cập nhật dữ liệu trong selectedSection
       await loadSections();
       //await loadDocument();
