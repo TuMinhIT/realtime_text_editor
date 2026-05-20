@@ -8,6 +8,11 @@ let presenceCallback = null;
 let lockCallback = null;
 let currentSectionId = null;
 
+let sectionUpdatedCallback = null;
+
+//hiện state callback:
+let cursorCallback = null;
+
 /* =========================
    CORE CONNECTION
 ========================= */
@@ -51,10 +56,24 @@ async function ensureConnection() {
       if (presenceCallback) {
         connection.on("SectionPresenceUpdated", presenceCallback);
       }
+      // Rebind cursor update callback after reconnecting
+      if (cursorCallback) {
+        connection.on("CursorUpdated", cursorCallback);
+      }
 
       if (lockCallback) {
         connection.on("SectionLockUpdated", lockCallback);
       }
+
+      //section update:
+      if (
+      sectionUpdatedCallback
+    ) {
+      connection.on(
+        "SectionContentUpdated",
+        sectionUpdatedCallback,
+      );
+    }
     });
 
     connection.onclose((err) => {
@@ -102,6 +121,12 @@ export const signalRService = {
       presenceCallback = null;
       lockCallback = null;
       currentSectionId = null;
+
+      //sectioncontent:
+
+      sectionUpdatedCallback =
+        null;
+
 
       return true;
     } catch (err) {
@@ -216,4 +241,111 @@ export const signalRService = {
   getConnection() {
     return connection;
   },
+
+  // Đăng ký callback cho sự kiện cập nhật con trỏ
+  async updateCursor(
+  sectionId,
+  cursor,
+) {
+  try {
+    const conn =
+      await ensureConnection();
+
+    await conn.invoke(
+      "UpdateCursor",
+      sectionId,
+      cursor,
+    );
+
+    return true;
+  } catch (err) {
+    console.error(
+      "[SignalR] updateCursor error",
+      err,
+    );
+  }
+},
+
+  //Thêm hàm đăng ký callback cho sự kiện cập nhật con trỏ
+  async onCursorUpdated(callback) {
+    const conn = await ensureConnection();
+
+    cursorCallback = callback;
+
+    conn.off("CursorUpdated");
+    conn.on("CursorUpdated", callback);
+  },
+
+  offCursorUpdated() {
+    if (connection && cursorCallback) {
+      connection.off(
+        "CursorUpdated",
+        cursorCallback,
+      );
+
+      cursorCallback = null;
+    }
+  },
+
+  
+async notifySectionUpdated(sectionId) {
+  try {
+    const conn =
+      await ensureConnection();
+
+    await conn.invoke(
+      "NotifySectionUpdated",
+      sectionId,
+    );
+
+    return true;
+  } catch (err) {
+    console.error(
+      "[SignalR] notifySectionUpdated error",
+      err,
+    );
+  }
+},
+//Listenr section update:
+async onSectionUpdated(
+  callback,
+) {
+  const conn =
+    await ensureConnection();
+
+  sectionUpdatedCallback =
+    callback;
+
+  conn.off(
+    "SectionContentUpdated",
+  );
+
+  conn.on(
+    "SectionContentUpdated",
+    callback,
+  );
+},
+
+offSectionUpdated() {
+  if (
+    connection &&
+    sectionUpdatedCallback
+  ) {
+    connection.off(
+      "SectionContentUpdated",
+      sectionUpdatedCallback,
+    );
+
+    sectionUpdatedCallback =
+      null;
+  }
+}
+
+
+
+
+
+
+
+
 };
