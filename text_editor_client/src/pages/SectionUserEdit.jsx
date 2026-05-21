@@ -35,9 +35,6 @@ import useRealtimeLock from "../hooks/realtime/useRealtimeLock";
 import useRealtimeCursor from "../hooks/realtime/useRealtimeCursor";
 import useRealtimeSectionUpdate from "../hooks/realtime/useRealtimeSectionUpdate";
 
-
-
-
 const SERVICE_URL = import.meta.env.VITE_API_URL + "/document";
 
 const normalizeJson = (value) => {
@@ -96,8 +93,6 @@ const SectionAuthority = () => {
   const autoSaveTimeoutRef = useRef(null);
   const isSavingRef = useRef(false);
 
-
-
   const [sections, setSections] = useState([]);
   const [documentTitle, setDocumentTitle] = useState(
     location.state?.documentTitle || "Tài liệu",
@@ -114,12 +109,11 @@ const SectionAuthority = () => {
   //Phục vụ realtime: lắng nghe sự kiện update từ server để tự động reload nội dung section khi có thay đổi từ người khác
   const [presence, onPresence] = useRealtimePresence();
 
-
   const [tab, setTab] = useState("section");
-  
-const selectedSectionRef = useRef(null);
+
+  const selectedSectionRef = useRef(null);
   const isDirtyRef = useRef(false);
-  
+
   const openPreview = (sfdt) => {
     const editor = editorRef.current?.documentEditor;
     if (!editor || !sfdt) {
@@ -236,67 +230,59 @@ const selectedSectionRef = useRef(null);
   useSectionJoin(selectedSection?.id);
 
   // Hàm dựng preview section - load section mới:
-const loadPreview = async (section) => {
-  if (!section?.id) return;
+  const loadPreview = async (section) => {
+    if (!section?.id) return;
 
-  setIsPreviewLoading(true);
-  setErrorMessage("");
+    setIsPreviewLoading(true);
+    setErrorMessage("");
 
-  try {
-    const sectionContent = normalizeJson(
-      section.content ||
-        section.jsonContent,
-    );
+    try {
+      const sectionContent = normalizeJson(
+        section.content || section.jsonContent,
+      );
 
-    
-    
-
-    const preview =
-      await sectionService.previewSection(
+      const preview = await sectionService.previewSection(
         section.id,
         sectionContent,
         documentId,
       );
 
-    const sfdt = normalizeJson(
-      preview?.sfdtContent,
-    );
+      const sfdt = normalizeJson(preview?.sfdtContent);
 
-    
-    // Preview hiện tại
-    setPreviewSfdt(sfdt);
+      // Preview hiện tại
+      setPreviewSfdt(sfdt);
 
-    // Gốc để compare dirty
-    setOriginalPreview(sfdt);
+      // Gốc để compare dirty
+      setOriginalPreview(sfdt);
 
-    // reset dirty khi load section mới
-    setIsDirty(false);
-  } catch (error) {
-    console.error(
-      "Load preview error:",
-      error,
-    );
+      // reset dirty khi load section mới
+      setIsDirty(false);
+    } catch (error) {
+      console.error("Load preview error:", error);
 
-    // Nếu load preview thất bại thì không dùng dữ liệu cũ của section khác
-    setPreviewSfdt("");
-    setOriginalPreview("");
-    setErrorMessage(
-      error?.message ||
-        "Không thể dựng preview section từ backend.",
-    );
-  } finally {
-    setIsPreviewLoading(false);
-  }
-};
-  const { remoteCursors, onCursor, clearRemoteCursors,} = useRealtimeCursor();
+      // Nếu load preview thất bại thì không dùng dữ liệu cũ của section khác
+      setPreviewSfdt("");
+      setOriginalPreview("");
+      setErrorMessage(
+        error?.message || "Không thể dựng preview section từ backend.",
+      );
+    } finally {
+      setIsPreviewLoading(false);
+    }
+  };
+  const { remoteCursors, onCursor, clearRemoteCursors } = useRealtimeCursor();
 
-  const {
-    onSectionUpdated,
-  } = useRealtimeSectionUpdate({documentId, selectedSectionRef, isDirtyRef, setSections, setSelectedSection, loadPreview, });
+  const { onSectionUpdated } = useRealtimeSectionUpdate({
+    documentId,
+    selectedSectionRef,
+    isDirtyRef,
+    setSections,
+    setSelectedSection,
+    loadPreview,
+  });
 
   useSignalRListeners({ onPresence, onLock, onCursor, onSectionUpdated });
 
-  
   useEffect(() => {
     selectedSectionRef.current = selectedSection;
   }, [selectedSection]);
@@ -341,7 +327,7 @@ const loadPreview = async (section) => {
         signalRService.leaveCurrentSection();
       }
     };
-  }, [ selectedSection?.id]);
+  }, [selectedSection?.id]);
 
   // Dirty:
 
@@ -392,12 +378,10 @@ const loadPreview = async (section) => {
       // // Lưu nội dung section qua endpoint document/section content
       await sectionService.updateSectionContent(selectedSection.id, serialized);
 
-
       // Release lock sau khi lưu xong để người khác có thể edit tiếp
       await signalRService.releaseEditSession(selectedSection.id);
 
       setHasLockRequested(false);
-
 
       // Reload sections để cập nhật dữ liệu trong selectedSection
       await loadSections();
@@ -413,75 +397,47 @@ const loadPreview = async (section) => {
     }
   };
 
-
   //Cleanup timeout khi unmount:
   useEffect(() => {
-  return () => {
-    if (
-      autoSaveTimeoutRef.current
-    ) {
-      clearTimeout(
-        autoSaveTimeoutRef.current,
-      );
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, []);
+  //Tạo hàm save realtime:
+  const saveRealtime = async (sectionId) => {
+    const editor = editorRef.current?.documentEditor;
+
+    if (!editor || !sectionId || assignment?.permission != 1) {
+      return;
+    }
+
+    if (isSavingRef.current) {
+      return;
+    }
+
+    try {
+      isSavingRef.current = true;
+
+      const serialized = normalizeJson(editor.serialize());
+
+      await sectionService.updateSectionContent(sectionId, serialized);
+
+      // Sau khi lưu thành công, cập nhật lại preview và reset dirty
+      await signalRService.notifySectionUpdated(sectionId);
+
+      setOriginalPreview(serialized);
+
+      setIsDirty(false);
+
+      console.log("[Realtime] autosaved");
+    } catch (err) {
+      console.error("Realtime save failed", err);
+    } finally {
+      isSavingRef.current = false;
     }
   };
-}, []);
-  //Tạo hàm save realtime:
- const saveRealtime = async (
-  sectionId,
-) => {
-  const editor =
-    editorRef.current
-      ?.documentEditor;
-
-  if (
-    !editor ||
-    !sectionId ||
-    assignment?.permission != 1
-  ) {
-    return;
-  }
-
-  if (isSavingRef.current) {
-    return;
-  }
-
-  try {
-    isSavingRef.current = true;
-
-    const serialized =
-      normalizeJson(
-        editor.serialize(),
-      );
-
-    await sectionService.updateSectionContent(
-      sectionId,
-      serialized,
-    );
-
-    // Sau khi lưu thành công, cập nhật lại preview và reset dirty
-    await signalRService.notifySectionUpdated(
-  sectionId,
-);
-
-    setOriginalPreview(
-      serialized,
-    );
-
-    setIsDirty(false);
-
-    console.log(
-      "[Realtime] autosaved",
-    );
-  } catch (err) {
-    console.error(
-      "Realtime save failed",
-      err,
-    );
-  } finally {
-    isSavingRef.current = false;
-  }
-};
 
   const handleContentChange = () => {
     const editor = editorRef.current?.documentEditor;
@@ -503,98 +459,60 @@ const loadPreview = async (section) => {
     }
 
     // gửi cursor realtime
- try {
-    const selection =
-      editor.selection;
+    try {
+      const selection = editor.selection;
 
-    if (selection?.start) {
-      // caret element thật trong Syncfusion
-      const caret =
-        document.querySelector(
-          ".e-de-blink-cursor",
-        );
+      if (selection?.start) {
+        // caret element thật trong Syncfusion
+        const caret = document.querySelector(".e-de-blink-cursor");
 
-      if (caret) {
-        const rect =
-          caret.getBoundingClientRect();
+        if (caret) {
+          const rect = caret.getBoundingClientRect();
 
-        signalRService.updateCursor(
-          selectedSection.id,
-          {
-            x:
-              rect.left +
-              window.scrollX,
+          signalRService.updateCursor(selectedSection.id, {
+            x: rect.left + window.scrollX,
 
-            y:
-              rect.top +
-              window.scrollY,
-          },
-        );
+            y: rect.top + window.scrollY,
+          });
+        }
       }
+    } catch (err) {
+      console.error("Send cursor error", err);
     }
-  } catch (err) {
-    console.error(
-      "Send cursor error",
-      err,
-    );
-  }
 
-    const currentSerialized =
-  normalizeJson(editor.serialize());
+    const currentSerialized = normalizeJson(editor.serialize());
 
-const dirty =
-  currentSerialized !==
-  normalizeJson(originalPreview);
+    const dirty = currentSerialized !== normalizeJson(originalPreview);
 
-setIsDirty(dirty);
+    setIsDirty(dirty);
 
-/* =========
+    /* =========
    AUTO SAVE (debounce 1.5s)
 ========= */
 
-if (
-  assignment?.permission == 1 &&
-  dirty
-) {
-  // clear timer cũ
-  if (
-    autoSaveTimeoutRef.current
-  ) {
-    clearTimeout(
-      autoSaveTimeoutRef.current,
-    );
-  }
+    if (assignment?.permission == 1 && dirty) {
+      // clear timer cũ
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
 
-  const currentSectionId =
-  selectedSection.id;
+      const currentSectionId = selectedSection.id;
 
-  autoSaveTimeoutRef.current =
-    setTimeout(() => {
-      saveRealtime(
-        currentSectionId,
-      );
-    }, 1000);
-}
+      autoSaveTimeoutRef.current = setTimeout(() => {
+        saveRealtime(currentSectionId);
+      }, 1000);
+    }
   };
 
   const handleSelectSection = async (section) => {
     try {
       // click lại section cũ
-      if (
-  isDirty &&
-  selectedSection?.id
-) {
-  await saveRealtime(
-    selectedSection.id,
-  );
-}
-      if (
-      autoSaveTimeoutRef.current
-    ) {
-      clearTimeout(
-        autoSaveTimeoutRef.current,
-      );
-    }
+      if (isDirty && selectedSection?.id) {
+        await saveRealtime(selectedSection.id);
+      }
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
       if (selectedSection?.id === section.id) {
         return;
       }
@@ -800,7 +718,7 @@ if (
               </div>
             ) : (
               <div className="p-3">
-                <ProofFileTab />
+                <ProofFileTab documentId={documentId} />
               </div>
             )}
           </aside>
@@ -868,7 +786,7 @@ if (
                       );
                     })}
                   </div>
-                    {/* ========= ASSIGNMENT & LOCK STATE ========= */}
+                  {/* ========= ASSIGNMENT & LOCK STATE ========= */}
                   {/* ========= LOCK UI ========= */}
                   {lockState?.isLocked && (
                     <div
@@ -908,27 +826,21 @@ if (
                   )}
 
                   <div
-  className={`
+                    className={`
   rounded-full
   px-3
   py-1
   text-sm
-  ${
-    isDirty
-      ? "bg-amber-100 text-amber-700"
-      : "bg-green-100 text-green-700"
-  }
+  ${isDirty ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700"}
 `}
->
-  {isDirty
-    ? "Đang đồng bộ..."
-    : "Đã lưu"}
-</div>
+                  >
+                    {isDirty ? "Đang đồng bộ..." : "Đã lưu"}
+                  </div>
                 </div>
               </div>
             </div>
           )}
-          
+
           <DocEdit
             editorRef={editorRef}
             selectedSection={selectedSection}
@@ -941,11 +853,10 @@ if (
             originalPreview={originalPreview}
             canEdit={assignment?.permission == 1}
             remoteCursors={remoteCursors} // Truyền remote cursors vào component DocEdit để hiển thị
-
           />
         </section>
       </div>
-    </main> 
+    </main>
   );
 };
 

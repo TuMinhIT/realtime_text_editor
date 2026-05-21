@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using text_editor_server.DTOs.res;
+using text_editor_server.Entities;
 using text_editor_server.Services;
 
 namespace text_editor_server.Controllers
@@ -21,7 +23,7 @@ namespace text_editor_server.Controllers
         [RequestSizeLimit(104_857_600)] // 100MB
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> Upload(IFormFile file,
-    [FromForm] bool isGlobal)
+           [FromForm] bool isGlobal)
         {
             var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -41,8 +43,50 @@ namespace text_editor_server.Controllers
 
             return Ok(result.Data); 
         }
-        
-        
+
+
+        [Authorize]
+        [HttpPost("uploadByUser")]
+        [RequestSizeLimit(104_857_600)] // 100MB
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UploadByUser(IFormFile file, [FromForm] Guid documentId)
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrWhiteSpace(userIdClaim) ||
+                !Guid.TryParse(userIdClaim, out var currentUserId))
+            {
+                return Unauthorized("Invalid token payload");
+            }
+
+            var result = await _proofFileService
+                .UploadProofFileAsync(file, currentUserId, false);
+
+            if (!result.Success)
+            {
+                return BadRequest(new { message = result.Message });
+            }
+
+            var proofFileRes = result.Data;
+
+            var r = await _proofFileService
+                .CreateDocumentFileAsync(currentUserId, documentId, proofFileRes.Id);
+
+            if (!r.Success)
+            {
+                return BadRequest(new { message = r.Message });
+            }
+          
+           DocumentFile f = r.Data;
+
+            return Ok(new
+            {
+                proofFile = proofFileRes,
+                documentFile = f.Id
+            });
+        }
+
+
         [HttpGet("file/{id:guid}/")]
         public async Task<IActionResult> Download(Guid id)
         {
@@ -62,7 +106,7 @@ namespace text_editor_server.Controllers
         }
 
         [HttpDelete("{id:guid}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         public async Task<IActionResult> Delete(Guid id)
         {
             var result = await _proofFileService
@@ -97,5 +141,27 @@ namespace text_editor_server.Controllers
 
             return Ok(result);
         }
+
+        [HttpGet("getInternalFiles/{documentId:guid}")]
+        [Authorize]
+        public async Task<IActionResult> GetAllInternalFiles( Guid documentId)
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrWhiteSpace(userIdClaim) || !Guid.TryParse(userIdClaim, out var currentUserId))
+            {
+                return Unauthorized("Invalid token payload");
+            }
+
+            var result = await _proofFileService.GetAllInternalAsync(documentId);
+
+            if (result == null)
+            {
+                return BadRequest(new { message = "Can't get all file" });
+            }
+
+            return Ok(result);
+        }
+
     }
 }

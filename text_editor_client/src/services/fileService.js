@@ -22,9 +22,34 @@ export const fileService = {
     }
   },
 
+  async uploadByUser(file, id) {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("documentId", id);
+
+      const res = await http.post(`${resource}/uploadByUser`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      return res.data;
+    } catch (err) {
+      throw toError(err);
+    }
+  },
+
   async getAllFiles() {
     try {
       const res = await http.get(`${resource}/getFiles`);
+      return res.data;
+    } catch (err) {
+      throw toError(err);
+    }
+  },
+
+  async getAllInternalFiles(id) {
+    try {
+      const res = await http.get(`${resource}/getInternalFiles/${id}`);
       return res.data;
     } catch (err) {
       throw toError(err);

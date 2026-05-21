@@ -19,7 +19,6 @@ import { CgAdd, CgSpinner } from "react-icons/cg";
 import { ClipLoader } from "react-spinners";
 import { toast } from "react-toastify";
 import { SiAuthelia } from "react-icons/si";
-import InternalFileComponent from "./InternalFileComponent";
 
 const formatDate = (value) => {
   if (!value) {
@@ -33,7 +32,7 @@ const formatDate = (value) => {
   });
 };
 
-const ProofFileTab = ({ documentId }) => {
+const InternalFileComponent = ({ documentId }) => {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
   const [files, setFiles] = useState([]);
@@ -42,10 +41,11 @@ const ProofFileTab = ({ documentId }) => {
   const [keyword, setKeyword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const base = import.meta.env.VITE_API_URL || "";
+
   const loadFiles = async () => {
     setIsLoading(true);
     setErrorMessage("");
-    const result = await fileService.getAllFiles();
+    const result = await fileService.getAllInternalFiles(documentId);
     if (result) {
       setFiles(result.data);
     }
@@ -88,17 +88,69 @@ const ProofFileTab = ({ documentId }) => {
     }
   };
 
+  const handleUpload = async (file) => {
+    if (!file) return;
+    setIsUploading(true);
+    setErrorMessage("");
+    try {
+      const res = await fileService.uploadByUser(file, documentId);
+      toast.success("Upload thành công.");
+      await loadFiles();
+    } catch (err) {
+      toast.error("Upload thất bại");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    const isConfirmed = window.confirm("Bạn có chắc muốn xóa file này?");
+    if (!isConfirmed) return;
+    try {
+      await fileService.deleteFile(id);
+      toast.success("Đã xóa file.");
+      await loadFiles();
+    } catch (err) {
+      console.error(err);
+      setErrorMessage(err?.message || "Xóa thất bại.");
+      toast.error("Xóa thất bại");
+    }
+  };
+
   return (
-    <section className=" rounded-xl bg-white ">
-      <div className="flex flex-row items-center justify-between">
+    <>
+      <div className="flex flex-row items-center justify-between mt-5">
         <div className="flex items-center flex-row gap-2.5">
           <span className="flex text-lg font-medium text-slate-900">
-            Global file
+            Internal file
           </span>
 
           <span className=" flex text-sm text-slate-500">
             {files && files.length} files
           </span>
+
+          <div className="flex ">
+            {isUploading ? (
+              <ClipLoader color="red" />
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex flex-col items-center justify-center gap-3 rounded-2xl  bg-white transition hover:border-[#1a73e8] hover:shadow-sm"
+                disabled={isUploading}
+              >
+                <div className="flex p-2  items-center justify-center rounded-xl bg-[#e8f0fe] text-[#1a73e8]">
+                  <CgAdd size={18} />
+                </div>
+              </button>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+          </div>
         </div>
       </div>
 
@@ -116,8 +168,17 @@ const ProofFileTab = ({ documentId }) => {
           files.map((doc) => (
             <div
               key={doc.id}
-              className="text-sm text-slate-700 hover:bg-[#f8fafc]"
+              className="text-sm text-slate-700 hover:bg-[#f8fafc] group relative"
             >
+              <button
+                type="button"
+                onClick={() => handleDelete(doc.id)}
+                title="Xóa"
+                className="absolute right-2 top-2 hidden items-center justify-center rounded p-1 text-red-600 bg-white border border-slate-200 group-hover:flex hover:bg-red-50"
+              >
+                <DeleteIcon size={16} />
+              </button>
+
               <div className="border-b border-slate-100 px-2 py-2">
                 <div className="flex items-center gap-3">
                   <div className="flex h-5 w-5 items-center justify-center rounded-lg bg-[#e8f0fe] text-[#1a73e8]">
@@ -160,11 +221,8 @@ const ProofFileTab = ({ documentId }) => {
           </div>
         )}
       </div>
-
-      {/* // internal file */}
-      <InternalFileComponent documentId={documentId} />
-    </section>
+    </>
   );
 };
 
-export default ProofFileTab;
+export default InternalFileComponent;

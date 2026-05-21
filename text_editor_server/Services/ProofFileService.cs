@@ -73,6 +73,62 @@ namespace text_editor_server.Services
             }
         }
 
+
+        public async Task<ServiceResult<DocumentFile>> CreateDocumentFileAsync(
+            Guid userId,
+            Guid documentId, Guid fileId)
+        {
+            try
+            {
+                var documentExists = await _context.Documents
+                    .AsNoTracking()
+                    .AnyAsync(x => x.Id == documentId);
+
+                if (!documentExists)
+                {
+                    return ServiceResult<DocumentFile>.Fail("Document not found");
+                }
+
+                var fileExists = await _context.ProofFiles
+                    .AsNoTracking()
+                    .AnyAsync(x => x.Id == fileId);
+
+                if (!fileExists)
+                {
+                    return ServiceResult<DocumentFile>.Fail("File not found");
+                }
+
+                var existed = await _context.DocumentFiles
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.DocumentId == documentId && x.FileId == fileId);
+
+                if (existed != null)
+                {
+                    return ServiceResult<DocumentFile>.Fail("File already attached");
+                }
+
+                var documentFile = new DocumentFile
+                {
+                    Id = Guid.NewGuid(),
+                    DocumentId = documentId,
+                    FileId = fileId,
+                    AttachedBy = userId,
+                    AttachedAt = DateTime.UtcNow
+                };
+
+                    _context.DocumentFiles.Add(documentFile);
+                await _context.SaveChangesAsync();
+
+                return ServiceResult<DocumentFile>.Ok(documentFile);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to create document file");
+                return ServiceResult<DocumentFile>.Fail("Đã xảy ra lỗi khi tải tệp: " + ex.Message);
+            }
+        }
+
+
         public async Task<ServiceResult<ProofFileDownloadRes>> DownloadProofFileAsync(Guid fileId)
         {
             try
@@ -180,6 +236,32 @@ namespace text_editor_server.Services
 
             return resultStream.ToArray();
         }
+
+        public async Task<ServiceResult<List<ProofFileRes>>> GetAllInternalAsync(Guid documentId)
+        {
+
+
+            var files = await _context.DocumentFiles
+            .AsNoTracking()
+            .Where(d => d.DocumentId == documentId)
+            .Select(d => new ProofFileRes
+            {
+                Id = d.File.Id,
+                FileName = d.File.FileName,
+                StoredFileName = d.File.StoredFileName,
+                FileUrl = d.File.StoredFileName,
+                FileSize = d.File.FileSize,
+                ContentType = d.File.ContentType,
+                IsGlobal = d.File.IsGlobal,
+                CreatedAt = d.File.CreatedAt
+            })
+            .ToListAsync();
+
+            return ServiceResult<List<ProofFileRes>>.Ok(files);
+
+
+        }
+
 
 
         public async Task<ServiceResult<List< ProofFileRes>>> GetAllAsync()
