@@ -1,7 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
 using System.Security.Claims;
 using text_editor_server.Services;
+
+using Newtonsoft.Json.Linq;
+using System.Text.Json;
 
 namespace text_editor_server.Controllers
 {
@@ -10,10 +14,12 @@ namespace text_editor_server.Controllers
     public class ProofFileController : ControllerBase
     {
         private readonly ProofFileService _proofFileService;
+        private readonly HyperlinkEngine _engine;
 
-        public ProofFileController(ProofFileService proofFileService)
+        public ProofFileController(ProofFileService proofFileService, HyperlinkEngine engine)
         {
             _proofFileService = proofFileService;
+            _engine = engine;
         }
 
         [Authorize]
@@ -28,9 +34,9 @@ namespace text_editor_server.Controllers
             if (string.IsNullOrWhiteSpace(userIdClaim) ||
                 !Guid.TryParse(userIdClaim, out var currentUserId))
             {
-                return Unauthorized ("Invalid token payload");
+                return Unauthorized("Invalid token payload");
             }
-       
+
             var result = await _proofFileService
                 .UploadProofFileAsync(file, currentUserId, isGlobal);
 
@@ -39,10 +45,10 @@ namespace text_editor_server.Controllers
                 return BadRequest(new { message = result.Message });
             }
 
-            return Ok(result.Data); 
+            return Ok(result.Data);
         }
-        
-        
+
+
         [HttpGet("file/{id:guid}/")]
         public async Task<IActionResult> Download(Guid id)
         {
@@ -76,7 +82,7 @@ namespace text_editor_server.Controllers
             return Ok(new { success = true });
         }
 
-        
+
         [HttpGet("getFiles")]
         [Authorize]
         public async Task<IActionResult> GetAllFileGlobal()
@@ -96,6 +102,33 @@ namespace text_editor_server.Controllers
             }
 
             return Ok(result);
+        }
+
+
+
+        //[HttpPost("hyperlink-index")]
+        //public IActionResult GetHyperlinkIndex([FromBody] JsonElement sfdt)
+        //{
+
+
+        //    var result = _proofFileService
+        //        .BuildHyperlinkIndexFromSfdtJson(sfdt);
+
+        //    return Ok(result);
+        //}
+
+        [HttpPost("hyperlink-index-build")]
+        public IActionResult Build([FromBody] JsonElement sfdt)
+        {
+            var engine = new HyperlinkEngine();
+
+            var updated = engine.BuildAndRewrite(sfdt, "1.1");
+
+            return Ok(new
+            {
+                sfdt = updated,
+                hyperlinks = "generated inside engine"
+            });
         }
     }
 }

@@ -1,10 +1,11 @@
 ﻿using DocumentFormat.OpenXml.Bibliography;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 using text_editor_server.Data;
 using text_editor_server.DTOs.res;
 using text_editor_server.Entities;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace text_editor_server.Services
 {
@@ -209,5 +210,66 @@ namespace text_editor_server.Services
             
         }
 
+
+        //public List<HyperlinkIndexedRes> BuildHyperlinkIndexFromSfdtJson(JsonElement sfdt)
+        //{
+        //    var result = new List<HyperlinkIndexedRes>();
+
+        //    if (!sfdt.TryGetProperty("b", out var sections))
+        //        return result;
+
+        //    int sectionCounter = 0;
+
+        //    foreach (var section in sections.EnumerateArray())
+        //    {
+        //        sectionCounter++;
+
+        //        if (!section.TryGetProperty("i", out var inlineNodes))
+        //            continue;
+
+        //        int linkCounter = 0;
+
+        //        foreach (var node in inlineNodes.EnumerateArray())
+        //        {
+        //            if (!node.TryGetProperty("tlp", out var tlp))
+        //                continue;
+
+        //            var text = tlp.GetString();
+        //            var url = ExtractHyperlink(text);
+
+        //            if (string.IsNullOrEmpty(url))
+        //                continue;
+
+        //            linkCounter++;
+
+        //            result.Add(new HyperlinkIndexedRes
+        //            {
+        //                Code = $"1.{sectionCounter}.{linkCounter}",
+        //                Url = url
+        //            });
+        //        }
+        //    }
+
+        //    return result;
+        //}
+        //private string? ExtractHyperlink(string text)
+        //{
+        //    const string prefix = "HYPERLINK \"";
+
+        //    if (string.IsNullOrEmpty(text))
+        //        return null;
+
+        //    var start = text.IndexOf(prefix, StringComparison.OrdinalIgnoreCase);
+        //    if (start == -1)
+        //        return null;
+
+        //    start += prefix.Length;
+
+        //    var end = text.IndexOf("\"", start);
+        //    if (end == -1)
+        //        return null;
+
+        //    return text.Substring(start, end - start);
+        //}
     }
 }
