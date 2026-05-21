@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Text.Json;
 using text_editor_server.Data;
 using text_editor_server.DTOs.res;
 using text_editor_server.Entities;
@@ -11,11 +12,13 @@ namespace text_editor_server.Services
     {
         private readonly AppDbContext _context;
         private readonly ILogger<SectionService> _logger;
+        private readonly HyperlinkEngine _hyperlinkEngine;
 
-        public SectionService(AppDbContext context, ILogger<SectionService> logger)
+        public SectionService(AppDbContext context, ILogger<SectionService> logger, HyperlinkEngine hyperlinkEngine)
         {
             _context = context;
             _logger = logger;
+            _hyperlinkEngine = hyperlinkEngine;
         }
 
         public async Task<ServiceResult<List<BlockPermissionRes>>> GetBlockUsersAsync(Guid sectionId)
@@ -161,8 +164,8 @@ namespace text_editor_server.Services
 
 
         public async Task<bool> UpdateSectionContentAsync(
-            Guid sectionId,
-            string newContent)
+          Guid sectionId,
+          string newContent)
         {
             try
             {
@@ -172,7 +175,7 @@ namespace text_editor_server.Services
                 if (section == null)
                     return false;
 
-                // parse SFDT
+                // ================= PARSE SFDT =================
                 var root = JObject.Parse(newContent);
 
                 // extract blocks
@@ -183,26 +186,76 @@ namespace text_editor_server.Services
                 {
                     ["b"] = new JArray(blocks),
                     ["imgs"] = root["imgs"]
-                    //["cf"] = root["cf"],
-                    //["sty"] = root["sty"]
                 };
 
-                section.Content = safeSectionJson.ToString(Formatting.None);
+                // ================= RUN HYPERLINK ENGINE =================
+                var json = safeSectionJson.ToString(Formatting.None);
 
+                using var doc = JsonDocument.Parse(json);
+
+                var rewriteResult = _hyperlinkEngine.BuildAndRewrite(
+                    doc.RootElement,
+                    section.Title // ví dụ: 1.1
+                );
+
+                // ================= SAVE REWRITTEN SFDT =================
+                section.Content = rewriteResult.Sfdt.GetRawText();
+
+                // ================= REMOVE OLD LINKS =================
+                var oldLinks = await _context.SectionHyperlinks
+                    .Where(h => h.SectionId == sectionId)
+                    .ToListAsync();
+
+                if (oldLinks.Any())
+                {
+                    _context.SectionHyperlinks.RemoveRange(oldLinks);
+                }
+
+                // ================= INSERT NEW LINKS =================
+                foreach (var item in rewriteResult.Hyperlinks)
+                {
+                    Guid? proofFileId =
+                        ExtractProofFileId(item.Url);
+
+                    var hyperlink = new SectionHyperlink
+                    {
+                        Id = Guid.NewGuid(),
+                        SectionId = sectionId,
+                        Code = item.Code,
+                        Url = item.Url,
+                        ProofFileId = proofFileId,
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    _context.SectionHyperlinks.Add(hyperlink);
+                }
+
+                // ================= UPDATE SECTION =================
                 section.Version += 1;
-                section.Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-                // cap nhật document status
-                Document document = _context.Documents.FirstOrDefault(d => d.Id == section.DocumentId);
-                document.hasChanges = true;
+                section.Timestamp =
+                    DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
+                // ================= UPDATE DOCUMENT =================
+                var document = await _context.Documents
+                    .FirstOrDefaultAsync(d => d.Id == section.DocumentId);
+
+                if (document != null)
+                {
+                    document.hasChanges = true;
+                }
+
+                // ================= SAVE =================
                 await _context.SaveChangesAsync();
 
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating section content");
+                _logger.LogError(
+                    ex,
+                    "Error updating section content");
+
                 return false;
             }
         }
@@ -255,5 +308,28 @@ namespace text_editor_server.Services
             return result;
         }
 
+        private Guid? ExtractProofFileId(string url)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+                return null;
+
+            const string marker = "/api/prooffile/file/";
+
+            var index = url.IndexOf(
+                marker,
+                StringComparison.OrdinalIgnoreCase);
+
+            if (index == -1)
+                return null;
+
+            var guidPart = url[(index + marker.Length)..];
+
+            if (Guid.TryParse(guidPart, out var guid))
+            {
+                return guid;
+            }
+
+            return null;
+        }
     }
 }

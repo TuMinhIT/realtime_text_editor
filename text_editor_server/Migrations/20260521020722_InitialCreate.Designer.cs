@@ -12,8 +12,8 @@ using text_editor_server.Data;
 namespace text_editor_server.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260520073133_initdata")]
-    partial class initdata
+    [Migration("20260521020722_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -239,6 +239,39 @@ namespace text_editor_server.Migrations
                     b.ToTable("Sections");
                 });
 
+            modelBuilder.Entity("text_editor_server.Entities.SectionHyperlink", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ProofFileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("SectionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProofFileId");
+
+                    b.HasIndex("SectionId");
+
+                    b.ToTable("SectionHyperlinks");
+                });
+
             modelBuilder.Entity("text_editor_server.Entities.SectionPermission", b =>
                 {
                     b.Property<Guid>("Id")
@@ -362,6 +395,24 @@ namespace text_editor_server.Migrations
                         .HasForeignKey("ParentSectionId");
 
                     b.Navigation("ParentSection");
+                });
+
+            modelBuilder.Entity("text_editor_server.Entities.SectionHyperlink", b =>
+                {
+                    b.HasOne("text_editor_server.Entities.ProofFile", "ProofFile")
+                        .WithMany()
+                        .HasForeignKey("ProofFileId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("text_editor_server.Entities.Section", "Section")
+                        .WithMany()
+                        .HasForeignKey("SectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ProofFile");
+
+                    b.Navigation("Section");
                 });
 
             modelBuilder.Entity("text_editor_server.Entities.SectionPermission", b =>

@@ -176,6 +176,34 @@ namespace text_editor_server.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "SectionHyperlinks",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    SectionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Url = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ProofFileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SectionHyperlinks", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SectionHyperlinks_ProofFiles_ProofFileId",
+                        column: x => x.ProofFileId,
+                        principalTable: "ProofFiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_SectionHyperlinks_Sections_SectionId",
+                        column: x => x.SectionId,
+                        principalTable: "Sections",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "SectionPermissions",
                 columns: table => new
                 {
@@ -234,6 +262,16 @@ namespace text_editor_server.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_SectionHyperlinks_ProofFileId",
+                table: "SectionHyperlinks",
+                column: "ProofFileId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SectionHyperlinks_SectionId",
+                table: "SectionHyperlinks",
+                column: "SectionId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_SectionPermissions_SectionId_UserId",
                 table: "SectionPermissions",
                 columns: new[] { "SectionId", "UserId" });
@@ -265,6 +303,9 @@ namespace text_editor_server.Migrations
 
             migrationBuilder.DropTable(
                 name: "RefreshTokens");
+
+            migrationBuilder.DropTable(
+                name: "SectionHyperlinks");
 
             migrationBuilder.DropTable(
                 name: "SectionPermissions");

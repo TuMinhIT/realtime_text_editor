@@ -5,12 +5,13 @@ namespace text_editor_server.Services
 {
     public class HyperlinkEngine
     {
-        public object BuildAndRewrite(JsonElement sfdt, string sectionCode)
+        // This method processes the SFDT JSON, identifies hyperlinks, replaces their display text with unique codes, and collects the original URLs in a list.
+        public HyperLinkRewriteResult BuildAndRewrite(JsonElement sfdt, string sectionCode)
         {
             var result = new List<HyperlinkIndexedRes>();
 
             if (!sfdt.TryGetProperty("b", out var sections))
-                return new { sfdt, hyperlinks = result };
+                return new HyperLinkRewriteResult { Sfdt = sfdt, Hyperlinks = result };
 
             var updatedSections = new List<JsonElement>();
 
@@ -111,10 +112,10 @@ namespace text_editor_server.Services
 
             var updatedSfdt = UpdateSfdt(sfdt, updatedSections);
 
-            return new
+            return new HyperLinkRewriteResult
             {
-                sfdt = updatedSfdt,
-                hyperlinks = result
+                Sfdt  = updatedSfdt,
+                Hyperlinks = result
             };
         }
 

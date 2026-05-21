@@ -14,8 +14,11 @@ namespace text_editor_server.Data
         public DbSet<DocumentSnapshot> DocumentSnapshots { get; set; }
         public DbSet<ProofFile> ProofFiles { get; set; }
         public DbSet<DocumentFile> DocumentFiles { get; set; }
-   
-        
+
+        //Thêm file minh chứng
+        public DbSet<SectionHyperlink> SectionHyperlinks { get; set; }
+
+
         public AppDbContext(DbContextOptions<AppDbContext> options)
             : base(options) { }
 
@@ -96,6 +99,32 @@ namespace text_editor_server.Data
                 .HasOne(x => x.File)
                 .WithMany(x => x.DocumentFiles)
                 .HasForeignKey(x => x.FileId);
+
+
+            //Thiết lập quan hệ giữa SectionHyperlink và ProofFile và Section
+
+            modelBuilder.Entity<SectionHyperlink>(entity =>
+            {
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.Code)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(x => x.Url)
+                    .IsRequired();
+
+                entity.HasOne(x => x.Section)
+                    .WithMany()
+                    .HasForeignKey(x => x.SectionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(x => x.ProofFile)
+                    .WithMany()
+                    .HasForeignKey(x => x.ProofFileId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
         }
     }
 }
