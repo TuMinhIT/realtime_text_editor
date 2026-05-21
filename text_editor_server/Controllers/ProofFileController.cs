@@ -1,9 +1,13 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
 using System.Security.Claims;
 using text_editor_server.DTOs.res;
 using text_editor_server.Entities;
 using text_editor_server.Services;
+
+using Newtonsoft.Json.Linq;
+using System.Text.Json;
 
 namespace text_editor_server.Controllers
 {
@@ -12,10 +16,12 @@ namespace text_editor_server.Controllers
     public class ProofFileController : ControllerBase
     {
         private readonly ProofFileService _proofFileService;
+        private readonly HyperlinkEngine _engine;
 
-        public ProofFileController(ProofFileService proofFileService)
+        public ProofFileController(ProofFileService proofFileService, HyperlinkEngine engine)
         {
             _proofFileService = proofFileService;
+            _engine = engine;
         }
 
         [Authorize]
@@ -30,9 +36,9 @@ namespace text_editor_server.Controllers
             if (string.IsNullOrWhiteSpace(userIdClaim) ||
                 !Guid.TryParse(userIdClaim, out var currentUserId))
             {
-                return Unauthorized ("Invalid token payload");
+                return Unauthorized("Invalid token payload");
             }
-       
+
             var result = await _proofFileService
                 .UploadProofFileAsync(file, currentUserId, isGlobal);
 
@@ -41,7 +47,7 @@ namespace text_editor_server.Controllers
                 return BadRequest(new { message = result.Message });
             }
 
-            return Ok(result.Data); 
+            return Ok(result.Data);
         }
 
 
@@ -120,7 +126,7 @@ namespace text_editor_server.Controllers
             return Ok(new { success = true });
         }
 
-        
+
         [HttpGet("getFiles")]
         [Authorize]
         public async Task<IActionResult> GetAllFileGlobal()

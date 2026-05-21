@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.ComponentModel.Design;
-
+using Newtonsoft.Json.Linq;
 //using System.Diagnostics.Eventing.Reader;
 using System.Text;
 using text_editor_server.Data;
@@ -34,14 +34,14 @@ namespace text_editor_server
             
             builder.Services.AddDbContext<AppDbContext>(options =>
                 options.UseSqlServer(connectionString));
-
+          
             // Add services
             builder.Services.AddScoped< AuthService>();
             builder.Services.AddScoped<DocumentService>();
             //builder.Services.AddScoped<SyncfusionService>();
             builder.Services.AddScoped<SectionService>();
             builder.Services.AddScoped<ProofFileService>();
-
+            builder.Services.AddScoped<HyperlinkEngine>();
 
             builder.Services.AddHttpContextAccessor();
    
