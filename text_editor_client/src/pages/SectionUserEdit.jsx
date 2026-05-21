@@ -278,7 +278,7 @@ const SectionAuthority = () => {
     isDirtyRef,
     setSections,
     setSelectedSection,
-    loadPreview,
+   // loadPreview,
   });
 
   useSignalRListeners({ onPresence, onLock, onCursor, onSectionUpdated });
@@ -424,6 +424,16 @@ const SectionAuthority = () => {
 
       await sectionService.updateSectionContent(sectionId, serialized);
 
+
+      //reload latest section data:
+       const freshSections =
+      await sectionService.getAllSectionsByDocument(
+        documentId
+      );
+
+    setSections(freshSections);
+
+
       // Sau khi lưu thành công, cập nhật lại preview và reset dirty
       await signalRService.notifySectionUpdated(sectionId);
 
@@ -500,7 +510,7 @@ const SectionAuthority = () => {
 
       autoSaveTimeoutRef.current = setTimeout(() => {
         saveRealtime(currentSectionId);
-      }, 1000);
+      }, 5000);
     }
   };
 
@@ -514,6 +524,7 @@ const SectionAuthority = () => {
         clearTimeout(autoSaveTimeoutRef.current);
       }
       if (selectedSection?.id === section.id) {
+        
         return;
       }
 
