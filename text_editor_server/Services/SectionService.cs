@@ -2,9 +2,12 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using text_editor_server.Data;
 using text_editor_server.DTOs.res;
 using text_editor_server.Entities;
+
+using System.Text.RegularExpressions;
 
 namespace text_editor_server.Services
 {
@@ -191,9 +194,19 @@ namespace text_editor_server.Services
 
                 using var doc = JsonDocument.Parse(json);
 
+                //Cắt section title ở đây 1.1 
+
+                //Chỉ lấy phần số ở đầu title 
+                var titleCut = Regex.Match(
+                    section.Title ?? "",
+                    @"^\d+(\.\d+)*"
+                ).Value;
+
                 var rewriteResult = _hyperlinkEngine.BuildAndRewrite(
                     doc.RootElement,
-                    section.Title // ví dụ: 1.1
+                    string.IsNullOrWhiteSpace(titleCut)
+                    ? "section"
+                    : titleCut
                 );
 
                 // ================= SAVE REWRITTEN SFDT =================
