@@ -1,27 +1,38 @@
 ﻿using System.Text.Json;
+using System.Text.RegularExpressions;
 using text_editor_server.DTOs.res;
+using text_editor_server.Entities;
 
 namespace text_editor_server.Services
 {
     public class HyperlinkEngine
     {
-        // This method processes the SFDT JSON, identifies hyperlinks, replaces their display text with unique codes, and collects the original URLs in a list.
-        public HyperLinkRewriteResult BuildAndRewrite(JsonElement sfdt, string sectionCode)
+        public HyperLinkRewriteResult BuildAndRewrite(
+     JsonElement sfdt,
+     string sectionCode,
+     List<SectionHyperlink> existingLinks)
         {
             var result = new List<HyperlinkIndexedRes>();
 
-            if (!sfdt.TryGetProperty("b", out var sections))
-                return new HyperLinkRewriteResult { Sfdt = sfdt, Hyperlinks = result };
-
-            var updatedSections = new List<JsonElement>();
-
-            int linkCounter = 0;
-
-            foreach (var section in sections.EnumerateArray())
+            if (!sfdt.TryGetProperty("b", out var blocks))
             {
-                if (!section.TryGetProperty("i", out var inlineNodes))
+                return new HyperLinkRewriteResult
                 {
-                    updatedSections.Add(section);
+                    Sfdt = sfdt,
+                    Hyperlinks = result
+                };
+            }
+
+            var updatedBlocks = new List<JsonElement>();
+
+            int linkCounter =
+                GetMaxCounter(existingLinks, sectionCode);
+
+            foreach (var block in blocks.EnumerateArray())
+            {
+                if (!block.TryGetProperty("i", out var inlineNodes))
+                {
+                    updatedBlocks.Add(block);
                     continue;
                 }
 
@@ -32,35 +43,43 @@ namespace text_editor_server.Services
 
                 foreach (var node in inlineNodes.EnumerateArray())
                 {
-                    // clone node
                     var currentNode = node;
 
                     // ================= START FIELD =================
+
                     if (node.TryGetProperty("ft", out var ftStart)
                         && ftStart.GetInt32() == 0)
                     {
                         insideHyperlink = true;
+
                         updatedNodes.Add(currentNode);
                         continue;
                     }
 
                     // ================= FIELD INSTRUCTION =================
-                    if (insideHyperlink
-                        && node.TryGetProperty("tlp", out var instructionTlp))
-                    {
-                        var instructionText = instructionTlp.GetString();
 
-                        if (!string.IsNullOrEmpty(instructionText)
-                            && instructionText.Contains("HYPERLINK"))
+                    if (insideHyperlink
+                        && node.TryGetProperty("tlp", out var instructionProp))
+                    {
+                        var instructionText =
+                            instructionProp.GetString();
+
+                        if (!string.IsNullOrWhiteSpace(instructionText)
+                            && instructionText.TrimStart()
+                                .StartsWith(
+                                    "HYPERLINK",
+                                    StringComparison.OrdinalIgnoreCase))
                         {
-                            currentUrl = ExtractHyperlink(instructionText);
+                            currentUrl =
+                                ExtractHyperlink(instructionText);
 
                             updatedNodes.Add(currentNode);
                             continue;
                         }
                     }
 
-                    // ================= SEPARATOR =================
+                    // ================= FIELD SEPARATOR =================
+
                     if (insideHyperlink
                         && node.TryGetProperty("ft", out var ftSeparator)
                         && ftSeparator.GetInt32() == 2)
@@ -70,21 +89,50 @@ namespace text_editor_server.Services
                     }
 
                     // ================= DISPLAY TEXT =================
-                    if (insideHyperlink
-                        && node.TryGetProperty("tlp", out var displayTlp)
-                        && !string.IsNullOrEmpty(currentUrl))
-                    {
-                        linkCounter++;
 
-                        var code = $"[{sectionCode}-{linkCounter:D2}]";
+                    if (insideHyperlink
+                        && node.TryGetProperty("tlp", out var displayProp)
+                        && !string.IsNullOrWhiteSpace(currentUrl))
+                    {
+                        Guid? proofFileId =
+                            ExtractProofFileId(currentUrl);
+
+                        string finalCode;
+
+                        var existed = existingLinks
+                            .FirstOrDefault(x =>
+                                proofFileId != null
+                                && x.ProofFileId == proofFileId);
+
+                        if (existed != null)
+                        {
+                            finalCode = existed.Code;
+                        }
+                        else
+                        {
+                            linkCounter++;
+
+                            finalCode =
+                                $"{sectionCode}-{linkCounter:D2}";
+
+                            existingLinks.Add(new SectionHyperlink
+                            {
+                                ProofFileId = proofFileId,
+                                Url = currentUrl,
+                                Code = finalCode
+                            });
+                        }
 
                         result.Add(new HyperlinkIndexedRes
                         {
-                            Code = $"{sectionCode}-{linkCounter:D2}",
+                            Code = finalCode,
                             Url = currentUrl
                         });
 
-                        currentNode = UpdateNodeText(node, code);
+                        // CHỈ replace DISPLAY TEXT
+                        currentNode = UpdateNodeText(
+                            node,
+                            $"[{finalCode}]");
 
                         updatedNodes.Add(currentNode);
 
@@ -92,6 +140,7 @@ namespace text_editor_server.Services
                     }
 
                     // ================= END FIELD =================
+
                     if (insideHyperlink
                         && node.TryGetProperty("ft", out var ftEnd)
                         && ftEnd.GetInt32() == 1)
@@ -103,21 +152,71 @@ namespace text_editor_server.Services
                         continue;
                     }
 
-                    // default
                     updatedNodes.Add(currentNode);
                 }
 
-                updatedSections.Add(UpdateSection(section, updatedNodes));
+                updatedBlocks.Add(
+                    UpdateBlock(block, updatedNodes));
             }
 
-            var updatedSfdt = UpdateSfdt(sfdt, updatedSections);
+            var updatedSfdt =
+                UpdateSfdt(sfdt, updatedBlocks);
 
             return new HyperLinkRewriteResult
             {
-                Sfdt  = updatedSfdt,
+                Sfdt = updatedSfdt,
                 Hyperlinks = result
             };
         }
+
+        // ================= EXTRACT PROOF FILE ID =================
+
+        private Guid? ExtractProofFileId(string url)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+                return null;
+
+            var match = Regex.Match(
+                url,
+                @"([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})");
+
+            if (!match.Success)
+                return null;
+
+            return Guid.TryParse(
+                match.Value,
+                out var id)
+                ? id
+                : null;
+        }
+
+        // ================= GET MAX COUNTER =================
+
+        private int GetMaxCounter(
+            List<SectionHyperlink> links,
+            string sectionCode)
+        {
+            var nums = links
+                .Where(x =>
+                    !string.IsNullOrWhiteSpace(x.Code)
+                    && x.Code.StartsWith(sectionCode + "-"))
+                .Select(x =>
+                {
+                    var parts = x.Code.Split('-');
+
+                    if (parts.Length < 2)
+                        return 0;
+
+                    return int.TryParse(parts[1], out var n)
+                        ? n
+                        : 0;
+                });
+
+            return nums.Any()
+                ? nums.Max()
+                : 0;
+        }
+
 
         // ================= EXTRACT URL =================
         private string ExtractHyperlink(string text)
@@ -139,11 +238,17 @@ namespace text_editor_server.Services
             return text.Substring(start, end - start);
         }
 
+
         // ================= UPDATE NODE =================
-        private JsonElement UpdateNodeText(JsonElement node, string newText)
+
+        private JsonElement UpdateNodeText(
+            JsonElement node,
+            string newText)
         {
-            var dict = JsonSerializer.Deserialize<Dictionary<string, object>>(
-                node.GetRawText());
+            var dict =
+                JsonSerializer.Deserialize<
+                    Dictionary<string, object>>(
+                        node.GetRawText());
 
             dict["tlp"] = newText;
 
@@ -151,13 +256,16 @@ namespace text_editor_server.Services
                 JsonSerializer.Serialize(dict));
         }
 
-        // ================= UPDATE SECTION =================
-        private JsonElement UpdateSection(
-            JsonElement section,
+        // ================= UPDATE BLOCK =================
+
+        private JsonElement UpdateBlock(
+            JsonElement block,
             List<JsonElement> nodes)
         {
-            var dict = JsonSerializer.Deserialize<Dictionary<string, object>>(
-                section.GetRawText());
+            var dict =
+                JsonSerializer.Deserialize<
+                    Dictionary<string, object>>(
+                        block.GetRawText());
 
             dict["i"] = nodes;
 
@@ -166,14 +274,17 @@ namespace text_editor_server.Services
         }
 
         // ================= UPDATE SFDT =================
+
         private JsonElement UpdateSfdt(
             JsonElement sfdt,
-            List<JsonElement> sections)
+            List<JsonElement> blocks)
         {
-            var dict = JsonSerializer.Deserialize<Dictionary<string, object>>(
-                sfdt.GetRawText());
+            var dict =
+                JsonSerializer.Deserialize<
+                    Dictionary<string, object>>(
+                        sfdt.GetRawText());
 
-            dict["b"] = sections;
+            dict["b"] = blocks;
 
             return JsonSerializer.Deserialize<JsonElement>(
                 JsonSerializer.Serialize(dict));

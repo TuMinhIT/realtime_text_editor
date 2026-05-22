@@ -192,6 +192,12 @@ namespace text_editor_server.Services
                 };
 
                 // ================= RUN HYPERLINK ENGINE =================
+                var existingLinks = await _context.SectionHyperlinks
+                    .Include(x => x.Section)
+                    .Where(x =>
+                        x.Section.DocumentId == section.DocumentId)
+                    .ToListAsync();
+
                 var json = safeSectionJson.ToString(Formatting.None);
 
                 using var doc = JsonDocument.Parse(json);
@@ -208,7 +214,8 @@ namespace text_editor_server.Services
                     doc.RootElement,
                     string.IsNullOrWhiteSpace(titleCut)
                     ? "section"
-                    : titleCut
+                    : titleCut,
+                    existingLinks
                 );
 
                 // ================= SAVE REWRITTEN SFDT =================
@@ -225,7 +232,9 @@ namespace text_editor_server.Services
                 }
 
                 // ================= INSERT NEW LINKS =================
-                foreach (var item in rewriteResult.Hyperlinks)
+                foreach (var item in rewriteResult.Hyperlinks
+                 .GroupBy(x => x.Url)
+                 .Select(g => g.First()))
                 {
                     Guid? proofFileId =
                         ExtractProofFileId(item.Url);
