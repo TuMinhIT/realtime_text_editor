@@ -163,9 +163,6 @@ namespace text_editor_server.Services
             return permission;
         }
 
-
-
-
         public async Task<bool> UpdateSectionContentAsync(
           Guid sectionId,
           string newContent)
@@ -190,6 +187,7 @@ namespace text_editor_server.Services
                     ["b"] = new JArray(blocks),
                     ["imgs"] = root["imgs"]
                 };
+
 
                 // ================= RUN HYPERLINK ENGINE =================
                 var existingLinks = await _context.SectionHyperlinks

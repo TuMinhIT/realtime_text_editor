@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.ComponentModel.Design;
 using Newtonsoft.Json.Linq;
+
 //using System.Diagnostics.Eventing.Reader;
 using System.Text;
 using text_editor_server.Data;
@@ -16,7 +17,6 @@ using text_editor_server.Realtime.Hubs;
 using text_editor_server.Realtime.Interfaces;
 using text_editor_server.Realtime.Services;
 using text_editor_server.Realtime.Managers;
-
 
 
 namespace text_editor_server
@@ -38,7 +38,6 @@ namespace text_editor_server
             // Add services
             builder.Services.AddScoped< AuthService>();
             builder.Services.AddScoped<DocumentService>();
-            //builder.Services.AddScoped<SyncfusionService>();
             builder.Services.AddScoped<SectionService>();
             builder.Services.AddScoped<ProofFileService>();
             builder.Services.AddScoped<HyperlinkEngine>();
@@ -64,8 +63,6 @@ namespace text_editor_server
             builder.Services.AddSignalR();
             builder.Services.AddSingleton<IRealtimeStateManager, RealtimeStateManager>();
             builder.Services.AddScoped<IPresenceService, PresenceService>();
-
-
 
 
 
@@ -162,10 +159,6 @@ namespace text_editor_server
 
             // Đăng kí SectionParser - Tách lấy các heading của document để tạo section
             builder.Services.AddScoped<SectionParser>();
-
-           // builder.Services.AddSingleton<SectionParsingBackgroundService>();
-
-            //builder.Services.AddHostedService<SectionParsingBackgroundService>();
 
             var app = builder.Build();
       
@@ -268,13 +261,10 @@ namespace text_editor_server
             app.MapControllers();
 
             // Map SignalR hub
-            app.MapHub<CollaborationHub>(
-    "/hubs/collaboration");
-
-
+            app.MapHub<CollaborationHub>( "/hubs/collaboration");
 
             // Health check
-            app.MapGet("/health", () => Results.Ok("Server is running"));
+            app.MapGet("/", () => Results.Ok("Server is running"));
 
             app.Run();
         }
