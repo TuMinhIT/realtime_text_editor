@@ -139,14 +139,10 @@ namespace text_editor_server.Controllers
         {
             if (req == null || string.IsNullOrEmpty(req.Content))
                 return BadRequest("Invalid request");
-
             var result = await _sectionService
                 .UpdateSectionContentAsync(sectionId, req.Content);
-
             if (!result)
                 return NotFound("Section not found or update failed");
-
-
             return Ok(new
             {
                 message = "Section updated successfully"
