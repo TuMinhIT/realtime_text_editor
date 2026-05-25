@@ -15,6 +15,12 @@
         // link thật
         public string Url { get; set; } = string.Empty;
 
+
+        //Owner section hyperlink:
+        public Guid OwnerSectionId { get; set; } //Mục tiêu để xác định file minh chứng thuộc về section nào.
+        public Section OwnerSection { get; set; }
+
+
         // file minh chứng nếu có
         public Guid? ProofFileId { get; set; }
 

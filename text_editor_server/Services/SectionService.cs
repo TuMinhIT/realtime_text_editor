@@ -210,6 +210,7 @@ namespace text_editor_server.Services
 
                 var rewriteResult = _hyperlinkEngine.BuildAndRewrite(
                     doc.RootElement,
+                    sectionId,
                     string.IsNullOrWhiteSpace(titleCut)
                     ? "section"
                     : titleCut,
@@ -220,16 +221,141 @@ namespace text_editor_server.Services
                 section.Content = rewriteResult.Sfdt.GetRawText();
 
                 // ================= REMOVE OLD LINKS =================
+                //var oldLinks = await _context.SectionHyperlinks
+                //    .Where(h => h.SectionId == sectionId)
+                //    .ToListAsync();
+
+                //if (oldLinks.Any())
+                //{
+                //    _context.SectionHyperlinks.RemoveRange(oldLinks);
+                //}
+
+                //Remove old link:
                 var oldLinks = await _context.SectionHyperlinks
                     .Where(h => h.SectionId == sectionId)
                     .ToListAsync();
 
-                if (oldLinks.Any())
-                {
-                    _context.SectionHyperlinks.RemoveRange(oldLinks);
-                }
+                //foreach (var oldlink in oldLinks)
+                //{
+                //    if(oldlink.OwnerSectionId != sectionId)
+                //    {
+                //        continue;
+                //    }
 
-                // ================= INSERT NEW LINKS =================
+                //    //Tìm section khác dùng proof này:
+                //    var successors = await _context.SectionHyperlinks
+
+                //        .Where(h => h.ProofFileId == oldlink.ProofFileId && h.SectionId != sectionId)
+                //        .OrderBy(x => x.CreatedAt)
+                //        .ToListAsync();
+
+                //    if (successors.Any())
+                //    {
+                //        var newOwnerId = successors.First().SectionId;
+
+                //        //Update toàn bộ record:
+                //        foreach (var successor in successors)
+                //        {
+                //            successor.OwnerSectionId = newOwnerId;
+                //        }
+                //    }
+                //}
+
+                foreach (var oldlink in oldLinks)
+                {
+                    // section hiện tại không phải owner
+                    if (oldlink.OwnerSectionId != sectionId)
+                        continue;
+
+                    // tìm section kế thừa
+                    var successors =
+                        await _context.SectionHyperlinks
+                        .Include(x => x.Section)
+                        .Where(x =>
+                            x.ProofFileId ==
+                                oldlink.ProofFileId
+                            && x.SectionId != sectionId)
+                        .OrderBy(x => x.CreatedAt)
+                        .ToListAsync();
+
+                    if (!successors.Any())
+                        continue;
+
+                    // owner mới
+                    var newOwner =
+                        successors.First();
+
+                    var newOwnerId =
+                        newOwner.SectionId;
+
+                    // lấy section code mới
+                    var newOwnerSectionCode = Regex.Match(
+     newOwner.Section?.Title ?? "",
+     @"^\d+(\.\d+)*"
+ ).Value;
+
+                    newOwnerSectionCode =
+                        string.IsNullOrWhiteSpace(
+                            newOwnerSectionCode)
+                        ? "section"
+                        : newOwnerSectionCode;
+
+                    // tìm số lớn nhất
+                    var maxCounter =
+                        existingLinks
+                        .Where(x =>
+                            x.SectionId ==
+                                newOwnerId
+                            && !string.IsNullOrWhiteSpace(
+                                x.Code)
+                            && x.Code.StartsWith(
+                                newOwnerSectionCode + "-"))
+                        .Select(x =>
+                        {
+                            var parts =
+                                x.Code.Split('-');
+
+                            if (parts.Length < 2)
+                                return 0;
+
+                            return int.TryParse(
+                                parts[1],
+                                out var n)
+                                ? n
+                                : 0;
+                        })
+                        .DefaultIfEmpty(0)
+                        .Max();
+
+                    // generate code mới
+                    var newCode =
+                        $"{newOwnerSectionCode}-{(maxCounter + 1):D2}";
+
+                    var oldCode =
+                        oldlink.Code;
+
+                    // update tất cả section
+                    // dùng cùng proof
+                    foreach (var successor in successors)
+                    {
+                        successor.OwnerSectionId =
+                            newOwnerId;
+
+                        successor.Code =
+                            newCode;
+
+                        // rewrite sfdt
+                        await RewriteSectionHyperlinkCodeAsync(
+                            successor.SectionId,
+                            oldCode,
+                            newCode
+                        );
+                    }
+                }
+                _context.SectionHyperlinks.RemoveRange(oldLinks);
+
+               
+                // INSERT NEW LINKS
                 foreach (var item in rewriteResult.Hyperlinks
                  .GroupBy(x => x.Url)
                  .Select(g => g.First()))
@@ -237,10 +363,20 @@ namespace text_editor_server.Services
                     Guid? proofFileId =
                         ExtractProofFileId(item.Url);
 
+                    //var existed = existingLinks.FirstOrDefault(x =>
+                    //    x.ProofFileId == proofFileId);
+                    var existed = existingLinks
+    .FirstOrDefault(x =>
+        x.ProofFileId ==
+            proofFileId
+        && x.SectionId != sectionId);
                     var hyperlink = new SectionHyperlink
                     {
                         Id = Guid.NewGuid(),
                         SectionId = sectionId,
+
+                        //Owner:
+                        OwnerSectionId = existed?.OwnerSectionId ?? sectionId,
                         Code = item.Code,
                         Url = item.Url,
                         ProofFileId = proofFileId,
@@ -249,7 +385,9 @@ namespace text_editor_server.Services
 
                     _context.SectionHyperlinks.Add(hyperlink);
                 }
-
+             //   await ReSequenceSectionHyperlinksAsync(
+             //    sectionId
+             //);
                 // ================= UPDATE SECTION =================
                 section.Version += 1;
 
@@ -264,6 +402,9 @@ namespace text_editor_server.Services
                 {
                     document.hasChanges = true;
                 }
+
+
+              
 
                 // ================= SAVE =================
                 await _context.SaveChangesAsync();
@@ -351,5 +492,108 @@ namespace text_editor_server.Services
 
             return null;
         }
+
+        //helper:
+        private async Task RewriteSectionHyperlinkCodeAsync(
+    Guid sectionId,
+    string oldCode,
+    string newCode)
+        {
+            var section = await _context.Sections
+                .FirstOrDefaultAsync(x => x.Id == sectionId);
+
+            if (section == null
+                || string.IsNullOrWhiteSpace(section.Content))
+                return;
+
+            // replace display text cũ
+            section.Content = section.Content.Replace(
+                $"[{oldCode}]",
+                $"[{newCode}]");
+
+            section.Version += 1;
+
+            section.Timestamp =
+                DateTimeOffset.UtcNow
+                .ToUnixTimeMilliseconds();
+        }
+
+
+    //    private async Task ReSequenceSectionHyperlinksAsync(
+    //Guid sectionId)
+    //    {
+    //        var section = await _context.Sections
+    //            .FirstOrDefaultAsync(x =>
+    //                x.Id == sectionId);
+
+    //        if (section == null)
+    //            return;
+
+    //        var sectionCode = Regex.Match(
+    //            section.Title ?? "",
+    //            @"^\d+(\.\d+)*"
+    //        ).Value;
+
+    //        sectionCode =
+    //            string.IsNullOrWhiteSpace(sectionCode)
+    //            ? "section"
+    //            : sectionCode;
+
+    //        // chỉ lấy link owner của section này
+    //        var hyperlinks =
+    //            await _context.SectionHyperlinks
+    //            .Where(x =>
+    //                x.OwnerSectionId == sectionId)
+    //            .OrderBy(x => x.CreatedAt)
+    //            .ToListAsync();
+
+    //        int counter = 1;
+
+    //        foreach (var link in hyperlinks)
+    //        {
+    //            var oldCode = link.Code;
+
+    //            var newCode =
+    //                $"{sectionCode}-{counter:D2}";
+
+    //            // không đổi thì skip
+    //            if (oldCode == newCode)
+    //            {
+    //                counter++;
+    //                continue;
+    //            }
+
+    //            link.Code = newCode;
+
+    //            // update tất cả section
+    //            // dùng cùng proof
+    //            var allSharedLinks =
+    //                await _context.SectionHyperlinks
+    //                .Where(x =>
+    //                    x.ProofFileId ==
+    //                    link.ProofFileId)
+    //                .ToListAsync();
+
+    //            foreach (var sharedLink
+    //                in allSharedLinks)
+    //            {
+    //                sharedLink.Code =
+    //                    newCode;
+
+    //                await RewriteSectionHyperlinkCodeAsync(
+    //                    sharedLink.SectionId,
+    //                    oldCode,
+    //                    newCode
+    //                );
+    //            }
+
+    //            counter++;
+    //        }
+    //    }
+
+
+
+
+
     }
 }

@@ -9,6 +9,7 @@ namespace text_editor_server.Services
     {
         public HyperLinkRewriteResult BuildAndRewrite(
      JsonElement sfdt,
+     Guid currentSectionId,
      string sectionCode,
      List<SectionHyperlink> existingLinks)
         {
@@ -106,7 +107,21 @@ namespace text_editor_server.Services
 
                         if (existed != null)
                         {
+                           // Đã tồn tại hyperlink cho proof file này, dùng lại code cũ
                             finalCode = existed.Code;
+                            //cache reuse:
+                            existingLinks.Add(new SectionHyperlink
+                            {
+
+                                SectionId = currentSectionId,
+                                //Kế thừa owner cũ:
+                                OwnerSectionId = existed.OwnerSectionId,
+
+                               
+                                ProofFileId = proofFileId,
+                                Url = currentUrl,
+                                Code = finalCode
+                            });
                         }
                         else
                         {
@@ -117,6 +132,13 @@ namespace text_editor_server.Services
 
                             existingLinks.Add(new SectionHyperlink
                             {
+                                //Tự làm owner:
+                                SectionId = currentSectionId,
+
+
+                                //Set owner cho section hiện tại với link chưa từng được section nào sử dụng trong tài liệu
+
+                                OwnerSectionId = currentSectionId,
                                 ProofFileId = proofFileId,
                                 Url = currentUrl,
                                 Code = finalCode

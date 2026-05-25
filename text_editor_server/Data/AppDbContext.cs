@@ -113,12 +113,18 @@ namespace text_editor_server.Data
 
                 entity.Property(x => x.Url)
                     .IsRequired();
-
+                //Section chứa link
                 entity.HasOne(x => x.Section)
                     .WithMany()
                     .HasForeignKey(x => x.SectionId)
                     .OnDelete(DeleteBehavior.Cascade);
+                // Owner section hyperlink
+                entity.HasOne(x => x.OwnerSection)
+                    .WithMany()
+                    .HasForeignKey(x => x.OwnerSectionId)
+                    .OnDelete(DeleteBehavior.Restrict);
 
+                //Kiểm tra file minh chứng:
                 entity.HasOne(x => x.ProofFile)
                     .WithMany()
                     .HasForeignKey(x => x.ProofFileId)
