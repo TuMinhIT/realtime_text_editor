@@ -12,7 +12,7 @@ using text_editor_server.Data;
 namespace text_editor_server.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260525035819_InitialCreate")]
+    [Migration("20260526033541_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />

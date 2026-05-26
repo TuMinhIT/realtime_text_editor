@@ -287,36 +287,69 @@ const SectionAuthority = () => {
     selectedSectionRef.current = selectedSection;
   }, [selectedSection]);
 
+  // useEffect(() => {
+  //   if (!lockState || !selectedSection?.id) {
+  //     return;
+  //   }
+
+  //   if (lockState.sectionId !== selectedSection.id) {
+  //     return;
+  //   }
+
+  //   const currentUser = sessionService.getCurrentUser();
+
+  //   const isLockedByMe = lockState.lockedByUserId === currentUser?.id;
+
+  //   // mình giữ lock -> edit
+  //   if (isLockedByMe) {
+  //     applyReadOnlyMode(false);
+
+  //     return;
+  //   }
+
+  //   // người khác giữ lock
+  //   if (lockState.isLocked) {
+  //     applyReadOnlyMode(true);
+
+  //     toast.info(
+  //       `${lockState.lockedByUsername}
+  //      đang chỉnh sửa`,
+  //     );
+  //   }
+  // }, [lockState, selectedSection?.id]);
+
+
   useEffect(() => {
-    if (!lockState || !selectedSection?.id) {
-      return;
-    }
+  if (!lockState || !selectedSection?.id) {
+    applyReadOnlyMode(false);
+    return;
+  }
 
-    if (lockState.sectionId !== selectedSection.id) {
-      return;
-    }
+  if (lockState.sectionId !== selectedSection.id) {
+    applyReadOnlyMode(false);
+    return;
+  }
 
-    const currentUser = sessionService.getCurrentUser();
+  const currentUser = sessionService.getCurrentUser();
 
-    const isLockedByMe = lockState.lockedByUserId === currentUser?.id;
+  const isLockedByMe =
+    lockState.lockedByUserId === currentUser?.id;
 
-    // mình giữ lock -> edit
-    if (isLockedByMe) {
-      applyReadOnlyMode(false);
+  // người khác đang edit
+  if (lockState.isLocked && !isLockedByMe) {
+    applyReadOnlyMode(true);
 
-      return;
-    }
+    toast.info(
+      `${lockState.lockedByUsername} đang chỉnh sửa`,
+    );
 
-    // người khác giữ lock
-    if (lockState.isLocked) {
-      applyReadOnlyMode(true);
+    return;
+  }
 
-      toast.info(
-        `${lockState.lockedByUsername}
-       đang chỉnh sửa`,
-      );
-    }
-  }, [lockState, selectedSection?.id]);
+  // còn lại cho edit
+  applyReadOnlyMode(false);
+
+}, [lockState, selectedSection?.id]);
 
   //Clean up khi rời khỏi section hoặc document:
   useEffect(() => {
@@ -329,6 +362,19 @@ const SectionAuthority = () => {
     };
   }, [selectedSection?.id]);
 
+
+  //Helper user có quyền edit hay không:
+const canCurrentUserEdit = () => {
+  const currentUser = sessionService.getCurrentUser();
+
+  return (
+    assignment?.permission === 1 &&
+    (
+      !lockState?.isLocked || // chưa ai lock
+      lockState?.lockedByUserId === currentUser?.id // mình giữ lock
+    )
+  );
+};
   // Dirty:
 
   useEffect(() => {
@@ -342,15 +388,14 @@ const SectionAuthority = () => {
     if (!previewSfdt || !selectedSection) return;
 
     openPreview(previewSfdt);
-    const canEdit = assignment?.permission == 1;
-    applyReadOnlyMode(!canEdit);
+    // const canEdit = assignment?.permission == 1;
+    applyReadOnlyMode(!canCurrentUserEdit());
   }, [previewSfdt, selectedSection?.id, assignment?.permission]);
 
   const handleCreated = () => {
     openPreview(previewSfdt);
     // Mở khóa edit khi editor có quyền được chỉnh sửa
-    const canEdit = assignment?.permission == 1;
-    applyReadOnlyMode(!canEdit);
+    applyReadOnlyMode(!canCurrentUserEdit());
   };
 
   const [isSaving, setIsSaving] = useState(false);
@@ -362,7 +407,7 @@ const SectionAuthority = () => {
 
   const handleSave = async () => {
     const editor = editorRef.current?.documentEditor;
-    if (!editor || !selectedSection) {
+    if (!editor || !selectedSection || !canCurrentUserEdit()) {
       return;
     }
 
@@ -409,7 +454,7 @@ const SectionAuthority = () => {
   const saveRealtime = async (sectionId) => {
     const editor = editorRef.current?.documentEditor;
 
-    if (!editor || !sectionId || assignment?.permission != 1) {
+    if (!editor || !sectionId || assignment?.permission != 1 || !canCurrentUserEdit()) {
       return;
     }
 
@@ -450,6 +495,9 @@ const SectionAuthority = () => {
   };
 
   const handleContentChange = () => {
+
+    //Kiểm tra user có quyền edit hay không:
+
     const editor = editorRef.current?.documentEditor;
     if (!editor || !selectedSection) {
       return;
