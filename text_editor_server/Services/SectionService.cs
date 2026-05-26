@@ -231,75 +231,61 @@ namespace text_editor_server.Services
                     .Where(h => h.SectionId == sectionId)
                     .ToListAsync();
 
-                foreach (var oldlink in oldLinks)
+                // Transfer owner:
+                foreach (var oldLink in oldLinks)
                 {
-                    // section hiện tại không phải owner
-                    if (oldlink.OwnerSectionId != sectionId)
+                    // chỉ xử lý proof mà section hiện tại đang owner
+                    if (oldLink.OwnerSectionId != sectionId)
                         continue;
 
-                    // tìm section kế thừa
-                    var successors =
+                    var proofFileId =
+                        oldLink.ProofFileId;
+
+                    if (proofFileId == null)
+                        continue;
+
+                    // tất cả section khác đang dùng proof này
+                    var candidates =
                         await _context.SectionHyperlinks
                         .Include(x => x.Section)
                         .Where(x =>
-                            x.ProofFileId ==
-                                oldlink.ProofFileId
+                            x.ProofFileId == proofFileId
                             && x.SectionId != sectionId)
-                        .OrderBy(x => x.CreatedAt)
                         .ToListAsync();
 
-                    if (!successors.Any())
+                    // không ai dùng nữa => proof bị xoá hẳn
+                    if (!candidates.Any())
                         continue;
 
-                    // owner mới
-                    var newOwner =
-                        successors.First();
+                    // owner cũ
+                    var currentOwnerOrder =
+                        section.OrderIndex;
+
+                    // owner mới = section gần owner cũ nhất
+                    var newOwner = candidates
+                        .OrderBy(x =>
+                            Math.Abs(
+                                x.Section.OrderIndex
+                                - currentOwnerOrder))
+                        // nếu bằng khoảng cách
+                        // ưu tiên section phía trước
+                        .ThenBy(x =>
+                            x.Section.OrderIndex)
+                        .First();
 
                     var newOwnerId =
                         newOwner.SectionId;
+
+                    // owner cũ phải resequence
+                    affectedOwnerIds.Add(sectionId);
+
+                    // owner mới phải resequence
                     affectedOwnerIds.Add(newOwnerId);
 
-                    // lấy section code mới
-                    var newOwnerSectionCode = Regex.Match(
-     newOwner.Section?.Title ?? "",
-     @"^\d+(\.\d+)*"
- ).Value;
-
-                    newOwnerSectionCode =
-                        string.IsNullOrWhiteSpace(
-                            newOwnerSectionCode)
-                        ? "section"
-                        : newOwnerSectionCode;
-
-                    // tìm số lớn nhất
-                    var maxCounter =
-                        existingLinks
-                        .Where(x =>
-                            x.SectionId ==
-                                newOwnerId
-                            && !string.IsNullOrWhiteSpace(
-                                x.Code)
-                            && x.Code.StartsWith(
-                                newOwnerSectionCode + "-"))
-                        .Select(x =>
-                        {
-                            var parts =
-                                x.Code.Split('-');
-
-                            if (parts.Length < 2)
-                                return 0;
-
-                            return int.TryParse(
-                                parts[1],
-                                out var n)
-                                ? n
-                                : 0;
-                        })
-                        .DefaultIfEmpty(0)
-                        .Max();
-                    foreach (var successor in successors)
+                    // update owner cho toàn bộ proof
+                    foreach (var candidate in candidates)
                     {
-                        successor.OwnerSectionId =
+                        candidate.OwnerSectionId =
                             newOwnerId;
                     }
                 }
@@ -339,11 +325,12 @@ namespace text_editor_server.Services
                 }
                 await _context.SaveChangesAsync();
                 var currentLinks =
-                    await _context.SectionHyperlinks
-                    .Where(x =>
-                        x.Section.DocumentId ==
-                        section.DocumentId)
-                    .ToListAsync();
+                   await _context.SectionHyperlinks
+                   .Include(x => x.Section)
+                   .Where(x =>
+                       x.Section.DocumentId ==
+                       section.DocumentId)
+                   .ToListAsync();
 
 
                 // chỉ owner của section hiện tại mới được resequence
@@ -509,9 +496,107 @@ namespace text_editor_server.Services
                 DateTimeOffset.UtcNow
                 .ToUnixTimeMilliseconds();
         }
+        //   private async Task ReSequenceSectionHyperlinksAsync(
+        //Guid sectionId,
+        //List<SectionHyperlink> currentLinks)
+        //   {
+        //       var section = await _context.Sections
+        //           .FirstOrDefaultAsync(x =>
+        //               x.Id == sectionId);
+
+        //       if (section == null)
+        //           return;
+
+        //       var sectionCode = Regex.Match(
+        //           section.Title ?? "",
+        //           @"^\d+(\.\d+)*"
+        //       ).Value;
+
+        //       sectionCode =
+        //           string.IsNullOrWhiteSpace(sectionCode)
+        //           ? "section"
+        //           : sectionCode;
+
+        //       // unique proof theo owner
+        //       var hyperlinks = currentLinks
+        //         .Where(x =>
+        //             x.OwnerSectionId == sectionId
+        //             && x.ProofFileId != null)
+        //         .GroupBy(x => x.ProofFileId)
+        //         .Select(g => g
+        //             .OrderBy(x => x.CreatedAt)
+        //             .First())
+        //         .OrderBy(x => x.CreatedAt)
+        //         .ToList();
+        //       var mapping =
+        //  new List<(string OldCode, string TempCode, string NewCode)>();
+
+        //       int counter = 1;
+
+        //       // tạo mapping
+        //       foreach (var link in hyperlinks)
+        //       {
+        //           var oldCode = link.Code;
+        //           var newCode =
+        //               $"{sectionCode}-{counter:D2}";
+
+        //           var tempCode =
+        //               $"TMP-{Guid.NewGuid():N}";
+
+        //           mapping.Add((
+        //               oldCode,
+        //               tempCode,
+        //               newCode));
+
+        //           counter++;
+        //       }
+
+        //       // ================= PHASE 2 =================
+        //       // old -> temp
+        //       foreach (var item in mapping)
+        //       {
+        //           var sharedLinks = currentLinks
+        //               .Where(x =>
+        //                   x.Code == item.OldCode)
+        //               .ToList();
+
+        //           foreach (var link in sharedLinks)
+        //           {
+        //               link.Code = item.TempCode;
+
+        //               await RewriteSectionHyperlinkCodeAsync(
+        //                   link.SectionId,
+        //                   item.OldCode,
+        //                   item.TempCode
+        //               );
+        //           }
+        //       }
+
+        //       // ================= PHASE 3 =================
+        //       // temp -> final
+        //       foreach (var item in mapping)
+        //       {
+        //           var sharedLinks = currentLinks
+        //               .Where(x =>
+        //                   x.Code == item.TempCode)
+        //               .ToList();
+
+        //           foreach (var link in sharedLinks)
+        //           {
+        //               link.Code = item.NewCode;
+
+        //               await RewriteSectionHyperlinkCodeAsync(
+        //                   link.SectionId,
+        //                   item.TempCode,
+        //                   item.NewCode
+        //               );
+        //           }
+        //       }
+        //   }
+
         private async Task ReSequenceSectionHyperlinksAsync(
-     Guid sectionId,
-     List<SectionHyperlink> currentLinks)
+    Guid sectionId,
+    List<SectionHyperlink> currentLinks)
         {
             var section = await _context.Sections
                 .FirstOrDefaultAsync(x =>
@@ -536,48 +621,93 @@ namespace text_editor_server.Services
                     x.OwnerSectionId == sectionId
                     && x.ProofFileId != null)
                 .GroupBy(x => x.ProofFileId)
-                .Select(g => g
-                    .OrderBy(x => x.CreatedAt)
-                    .First())
-                .OrderBy(x => x.CreatedAt)
+                .Select(g => g.First())
+                .OrderBy(x =>
+                    x.Section.OrderIndex)
+                .ThenBy(x =>
+                    x.CreatedAt)
                 .ToList();
+
+            var mapping =
+                new List<(
+                    Guid? ProofFileId,
+                    string OldCode,
+                    string TempCode,
+                    string NewCode)>();
 
             int counter = 1;
 
+            // build mapping
             foreach (var link in hyperlinks)
             {
-                var oldCode = link.Code;
+                var oldCode =
+                    link.Code;
 
                 var newCode =
                     $"{sectionCode}-{counter:D2}";
 
-                if (oldCode == newCode)
-                {
-                    counter++;
-                    continue;
-                }
+                var tempCode =
+                    $"TMP-{Guid.NewGuid():N}";
 
-                // tất cả nơi dùng proof này
-                var allSharedLinks =
+                mapping.Add((
+                    link.ProofFileId,
+                    oldCode,
+                    tempCode,
+                    newCode));
+
+                counter++;
+            }
+
+            // =================
+            // phase 1:
+            // old -> temp
+            // =================
+            foreach (var item in mapping)
+            {
+                var sharedLinks =
                     currentLinks
                     .Where(x =>
                         x.ProofFileId ==
-                        link.ProofFileId)
+                        item.ProofFileId)
                     .ToList();
 
-                foreach (var sharedLink in allSharedLinks)
+                foreach (var link in sharedLinks)
                 {
-                    sharedLink.Code =
-                        newCode;
+                    link.Code =
+                        item.TempCode;
 
                     await RewriteSectionHyperlinkCodeAsync(
-                        sharedLink.SectionId,
-                        oldCode,
-                        newCode
+                        link.SectionId,
+                        item.OldCode,
+                        item.TempCode
                     );
                 }
+            }
 
-                counter++;
+            // =================
+            // phase 2:
+            // temp -> final
+            // =================
+            foreach (var item in mapping)
+            {
+                var sharedLinks =
+                    currentLinks
+                    .Where(x =>
+                        x.ProofFileId ==
+                        item.ProofFileId)
+                    .ToList();
+
+                foreach (var link in sharedLinks)
+                {
+                    link.Code =
+                        item.NewCode;
+
+                    await RewriteSectionHyperlinkCodeAsync(
+                        link.SectionId,
+                        item.TempCode,
+                        item.NewCode
+                    );
+                }
             }
         }
 

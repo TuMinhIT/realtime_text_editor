@@ -510,7 +510,7 @@ const SectionAuthority = () => {
 
       autoSaveTimeoutRef.current = setTimeout(() => {
         saveRealtime(currentSectionId);
-      }, 5000);
+      }, 1000);
     }
   };
 

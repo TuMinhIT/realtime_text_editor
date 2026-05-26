@@ -107,7 +107,7 @@ namespace text_editor_server.Services
 
                         if (existed != null)
                         {
-                           // Đã tồn tại hyperlink cho proof file này, dùng lại code cũ
+                            // Đã tồn tại hyperlink cho proof file này, dùng lại code cũ
                             finalCode = existed.Code;
                             //cache reuse:
                             existingLinks.Add(new SectionHyperlink
@@ -117,7 +117,7 @@ namespace text_editor_server.Services
                                 //Kế thừa owner cũ:
                                 OwnerSectionId = existed.OwnerSectionId,
 
-                               
+
                                 ProofFileId = proofFileId,
                                 Url = currentUrl,
                                 Code = finalCode
