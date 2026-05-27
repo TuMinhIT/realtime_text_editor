@@ -278,7 +278,7 @@ const SectionAuthority = () => {
     isDirtyRef,
     setSections,
     setSelectedSection,
-   // loadPreview,
+    // loadPreview,
   });
 
   useSignalRListeners({ onPresence, onLock, onCursor, onSectionUpdated });
@@ -287,69 +287,33 @@ const SectionAuthority = () => {
     selectedSectionRef.current = selectedSection;
   }, [selectedSection]);
 
-  // useEffect(() => {
-  //   if (!lockState || !selectedSection?.id) {
-  //     return;
-  //   }
-
-  //   if (lockState.sectionId !== selectedSection.id) {
-  //     return;
-  //   }
-
-  //   const currentUser = sessionService.getCurrentUser();
-
-  //   const isLockedByMe = lockState.lockedByUserId === currentUser?.id;
-
-  //   // mình giữ lock -> edit
-  //   if (isLockedByMe) {
-  //     applyReadOnlyMode(false);
-
-  //     return;
-  //   }
-
-  //   // người khác giữ lock
-  //   if (lockState.isLocked) {
-  //     applyReadOnlyMode(true);
-
-  //     toast.info(
-  //       `${lockState.lockedByUsername}
-  //      đang chỉnh sửa`,
-  //     );
-  //   }
-  // }, [lockState, selectedSection?.id]);
-
-
   useEffect(() => {
-  if (!lockState || !selectedSection?.id) {
+    if (!lockState || !selectedSection?.id) {
+      applyReadOnlyMode(false);
+      return;
+    }
+
+    if (lockState.sectionId !== selectedSection.id) {
+      applyReadOnlyMode(false);
+      return;
+    }
+
+    const currentUser = sessionService.getCurrentUser();
+
+    const isLockedByMe = lockState.lockedByUserId === currentUser?.id;
+
+    // người khác đang edit
+    if (lockState.isLocked && !isLockedByMe) {
+      applyReadOnlyMode(true);
+
+      toast.info(`${lockState.lockedByUsername} đang chỉnh sửa`);
+
+      return;
+    }
+
+    // còn lại cho edit
     applyReadOnlyMode(false);
-    return;
-  }
-
-  if (lockState.sectionId !== selectedSection.id) {
-    applyReadOnlyMode(false);
-    return;
-  }
-
-  const currentUser = sessionService.getCurrentUser();
-
-  const isLockedByMe =
-    lockState.lockedByUserId === currentUser?.id;
-
-  // người khác đang edit
-  if (lockState.isLocked && !isLockedByMe) {
-    applyReadOnlyMode(true);
-
-    toast.info(
-      `${lockState.lockedByUsername} đang chỉnh sửa`,
-    );
-
-    return;
-  }
-
-  // còn lại cho edit
-  applyReadOnlyMode(false);
-
-}, [lockState, selectedSection?.id]);
+  }, [lockState, selectedSection?.id]);
 
   //Clean up khi rời khỏi section hoặc document:
   useEffect(() => {
@@ -362,19 +326,16 @@ const SectionAuthority = () => {
     };
   }, [selectedSection?.id]);
 
-
   //Helper user có quyền edit hay không:
-const canCurrentUserEdit = () => {
-  const currentUser = sessionService.getCurrentUser();
+  const canCurrentUserEdit = () => {
+    const currentUser = sessionService.getCurrentUser();
 
-  return (
-    assignment?.permission === 1 &&
-    (
-      !lockState?.isLocked || // chưa ai lock
-      lockState?.lockedByUserId === currentUser?.id // mình giữ lock
-    )
-  );
-};
+    return (
+      assignment?.permission === 1 &&
+      (!lockState?.isLocked || // chưa ai lock
+        lockState?.lockedByUserId === currentUser?.id) // mình giữ lock
+    );
+  };
   // Dirty:
 
   useEffect(() => {
@@ -388,14 +349,12 @@ const canCurrentUserEdit = () => {
     if (!previewSfdt || !selectedSection) return;
 
     openPreview(previewSfdt);
-    // const canEdit = assignment?.permission == 1;
     applyReadOnlyMode(!canCurrentUserEdit());
   }, [previewSfdt, selectedSection?.id, assignment?.permission]);
 
   const handleCreated = () => {
-    openPreview(previewSfdt);
-    // Mở khóa edit khi editor có quyền được chỉnh sửa
-    applyReadOnlyMode(!canCurrentUserEdit());
+    // openPreview(previewSfdt);
+    // applyReadOnlyMode(!canCurrentUserEdit());
   };
 
   const [isSaving, setIsSaving] = useState(false);
@@ -454,7 +413,12 @@ const canCurrentUserEdit = () => {
   const saveRealtime = async (sectionId) => {
     const editor = editorRef.current?.documentEditor;
 
-    if (!editor || !sectionId || assignment?.permission != 1 || !canCurrentUserEdit()) {
+    if (
+      !editor ||
+      !sectionId ||
+      assignment?.permission != 1 ||
+      !canCurrentUserEdit()
+    ) {
       return;
     }
 
@@ -468,16 +432,6 @@ const canCurrentUserEdit = () => {
       const serialized = normalizeJson(editor.serialize());
 
       await sectionService.updateSectionContent(sectionId, serialized);
-
-
-      //reload latest section data:
-       const freshSections =
-      await sectionService.getAllSectionsByDocument(
-        documentId
-      );
-
-    setSections(freshSections);
-
 
       // Sau khi lưu thành công, cập nhật lại preview và reset dirty
       await signalRService.notifySectionUpdated(sectionId);
@@ -495,7 +449,6 @@ const canCurrentUserEdit = () => {
   };
 
   const handleContentChange = () => {
-
     //Kiểm tra user có quyền edit hay không:
 
     const editor = editorRef.current?.documentEditor;
@@ -572,7 +525,6 @@ const canCurrentUserEdit = () => {
         clearTimeout(autoSaveTimeoutRef.current);
       }
       if (selectedSection?.id === section.id) {
-        
         return;
       }
 
@@ -611,8 +563,6 @@ const canCurrentUserEdit = () => {
     ========= */
 
       // await signalRService.joinSection(section.id);
-
-      // console.log("Joined section", section.id);
     } catch (err) {
       console.error(err);
 
@@ -784,7 +734,7 @@ const canCurrentUserEdit = () => {
         )}
 
         {/* header Nọi dung */}
-        <section className="flex max-w-7xl m-auto min-w-0 flex-1 flex-col gap-4 overflow-hidden">
+        <section className="flex  max-w-7xl m-auto min-w-0 flex-1 flex-col gap-4 overflow-hidden">
           {selectedSection && (
             <div className="rounded-xl border border-slate-200 bg-white px-4 py-2 shadow-sm">
               <div className="flex  items-center justify-between">

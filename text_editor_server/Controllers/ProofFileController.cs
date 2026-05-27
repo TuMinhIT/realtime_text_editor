@@ -169,5 +169,28 @@ namespace text_editor_server.Controllers
             return Ok(result);
         }
 
+
+        [HttpGet("{documentId:guid}")]
+        [Authorize]
+        public async Task<IActionResult> GetProofFiles(Guid documentId)
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrWhiteSpace(userIdClaim) || !Guid.TryParse(userIdClaim, out var currentUserId))
+            {
+                return Unauthorized("Invalid token payload");
+            }
+
+            var result = await _proofFileService.GetAllInternalAsync(documentId);
+
+            if (result == null)
+            {
+                return BadRequest(new { message = "Can't get all file" });
+            }
+
+            return Ok(result);
+        }
+
+
     }
 }
