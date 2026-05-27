@@ -314,6 +314,33 @@ const SectionAuthority = () => {
     // còn lại cho edit
     applyReadOnlyMode(false);
   }, [lockState, selectedSection?.id]);
+<<<<<<< Updated upstream
+=======
+
+//Hàm hỗ trợ load lại section mới nhất từ server khi có update realtime để tránh trường hợp 2 người cùng edit 1 section mà dữ liệu bị ghi đè do không biết có update mới từ người khác
+const loadSectionFresh = async (sectionId) => {
+  try {
+    const freshSections =
+      await sectionService.getAllSectionsByDocument(documentId);
+
+    const latestSection = freshSections.find(
+      (s) => s.id === sectionId
+    );
+
+    if (!latestSection) {
+      return null;
+    }
+
+    setSections(freshSections);
+
+    return latestSection;
+  } catch (err) {
+    console.error("Load latest section failed", err);
+    return null;
+  }
+};
+  
+>>>>>>> Stashed changes
 
   //Clean up khi rời khỏi section hoặc document:
   useEffect(() => {
@@ -556,7 +583,13 @@ const SectionAuthority = () => {
        UPDATE UI
     ========= */
 
-      setSelectedSection(section);
+     const latestSection = await loadSectionFresh(section.id);
+
+if (!latestSection) {
+  return;
+}
+
+setSelectedSection(latestSection);
 
       /* =========
        JOIN NEW
