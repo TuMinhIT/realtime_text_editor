@@ -278,7 +278,7 @@ const SectionAuthority = () => {
     isDirtyRef,
     setSections,
     setSelectedSection,
-    // loadPreview,
+   // loadPreview,
   });
 
   useSignalRListeners({ onPresence, onLock, onCursor, onSectionUpdated });
@@ -289,12 +289,10 @@ const SectionAuthority = () => {
 
   useEffect(() => {
     if (!lockState || !selectedSection?.id) {
-      applyReadOnlyMode(false);
       return;
     }
 
     if (lockState.sectionId !== selectedSection.id) {
-      applyReadOnlyMode(false);
       return;
     }
 
@@ -302,45 +300,23 @@ const SectionAuthority = () => {
 
     const isLockedByMe = lockState.lockedByUserId === currentUser?.id;
 
-    // người khác đang edit
-    if (lockState.isLocked && !isLockedByMe) {
-      applyReadOnlyMode(true);
-
-      toast.info(`${lockState.lockedByUsername} đang chỉnh sửa`);
+    // mình giữ lock -> edit
+    if (isLockedByMe) {
+      applyReadOnlyMode(false);
 
       return;
     }
 
-    // còn lại cho edit
-    applyReadOnlyMode(false);
-  }, [lockState, selectedSection?.id]);
-<<<<<<< Updated upstream
-=======
+    // người khác giữ lock
+    if (lockState.isLocked) {
+      applyReadOnlyMode(true);
 
-//Hàm hỗ trợ load lại section mới nhất từ server khi có update realtime để tránh trường hợp 2 người cùng edit 1 section mà dữ liệu bị ghi đè do không biết có update mới từ người khác
-const loadSectionFresh = async (sectionId) => {
-  try {
-    const freshSections =
-      await sectionService.getAllSectionsByDocument(documentId);
-
-    const latestSection = freshSections.find(
-      (s) => s.id === sectionId
-    );
-
-    if (!latestSection) {
-      return null;
+      toast.info(
+        `${lockState.lockedByUsername}
+       đang chỉnh sửa`,
+      );
     }
-
-    setSections(freshSections);
-
-    return latestSection;
-  } catch (err) {
-    console.error("Load latest section failed", err);
-    return null;
-  }
-};
-  
->>>>>>> Stashed changes
+  }, [lockState, selectedSection?.id]);
 
   //Clean up khi rời khỏi section hoặc document:
   useEffect(() => {
@@ -353,16 +329,6 @@ const loadSectionFresh = async (sectionId) => {
     };
   }, [selectedSection?.id]);
 
-  //Helper user có quyền edit hay không:
-  const canCurrentUserEdit = () => {
-    const currentUser = sessionService.getCurrentUser();
-
-    return (
-      assignment?.permission === 1 &&
-      (!lockState?.isLocked || // chưa ai lock
-        lockState?.lockedByUserId === currentUser?.id) // mình giữ lock
-    );
-  };
   // Dirty:
 
   useEffect(() => {
@@ -376,12 +342,15 @@ const loadSectionFresh = async (sectionId) => {
     if (!previewSfdt || !selectedSection) return;
 
     openPreview(previewSfdt);
-    applyReadOnlyMode(!canCurrentUserEdit());
+    const canEdit = assignment?.permission == 1;
+    applyReadOnlyMode(!canEdit);
   }, [previewSfdt, selectedSection?.id, assignment?.permission]);
 
   const handleCreated = () => {
-    // openPreview(previewSfdt);
-    // applyReadOnlyMode(!canCurrentUserEdit());
+    openPreview(previewSfdt);
+    // Mở khóa edit khi editor có quyền được chỉnh sửa
+    const canEdit = assignment?.permission == 1;
+    applyReadOnlyMode(!canEdit);
   };
 
   const [isSaving, setIsSaving] = useState(false);
@@ -393,7 +362,7 @@ const loadSectionFresh = async (sectionId) => {
 
   const handleSave = async () => {
     const editor = editorRef.current?.documentEditor;
-    if (!editor || !selectedSection || !canCurrentUserEdit()) {
+    if (!editor || !selectedSection) {
       return;
     }
 
@@ -440,12 +409,7 @@ const loadSectionFresh = async (sectionId) => {
   const saveRealtime = async (sectionId) => {
     const editor = editorRef.current?.documentEditor;
 
-    if (
-      !editor ||
-      !sectionId ||
-      assignment?.permission != 1 ||
-      !canCurrentUserEdit()
-    ) {
+    if (!editor || !sectionId || assignment?.permission != 1) {
       return;
     }
 
@@ -459,6 +423,16 @@ const loadSectionFresh = async (sectionId) => {
       const serialized = normalizeJson(editor.serialize());
 
       await sectionService.updateSectionContent(sectionId, serialized);
+
+
+      //reload latest section data:
+       const freshSections =
+      await sectionService.getAllSectionsByDocument(
+        documentId
+      );
+
+    setSections(freshSections);
+
 
       // Sau khi lưu thành công, cập nhật lại preview và reset dirty
       await signalRService.notifySectionUpdated(sectionId);
@@ -476,8 +450,6 @@ const loadSectionFresh = async (sectionId) => {
   };
 
   const handleContentChange = () => {
-    //Kiểm tra user có quyền edit hay không:
-
     const editor = editorRef.current?.documentEditor;
     if (!editor || !selectedSection) {
       return;
@@ -552,6 +524,7 @@ const loadSectionFresh = async (sectionId) => {
         clearTimeout(autoSaveTimeoutRef.current);
       }
       if (selectedSection?.id === section.id) {
+        
         return;
       }
 
@@ -583,19 +556,15 @@ const loadSectionFresh = async (sectionId) => {
        UPDATE UI
     ========= */
 
-     const latestSection = await loadSectionFresh(section.id);
-
-if (!latestSection) {
-  return;
-}
-
-setSelectedSection(latestSection);
+      setSelectedSection(section);
 
       /* =========
        JOIN NEW
     ========= */
 
       // await signalRService.joinSection(section.id);
+
+      // console.log("Joined section", section.id);
     } catch (err) {
       console.error(err);
 
@@ -767,7 +736,7 @@ setSelectedSection(latestSection);
         )}
 
         {/* header Nọi dung */}
-        <section className="flex  max-w-7xl m-auto min-w-0 flex-1 flex-col gap-4 overflow-hidden">
+        <section className="flex max-w-7xl m-auto min-w-0 flex-1 flex-col gap-4 overflow-hidden">
           {selectedSection && (
             <div className="rounded-xl border border-slate-200 bg-white px-4 py-2 shadow-sm">
               <div className="flex  items-center justify-between">

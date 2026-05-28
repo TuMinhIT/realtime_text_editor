@@ -220,76 +220,13 @@ namespace text_editor_server.Services
                 // ================= SAVE REWRITTEN SFDT =================
                 section.Content = rewriteResult.Sfdt.GetRawText();
 
-
-                var affectedOwnerIds = new HashSet<Guid>();
-
-                // section hiện tại luôn có thể bị resequence
-                affectedOwnerIds.Add(sectionId);
-
                 //Remove old link:
                 var oldLinks = await _context.SectionHyperlinks
                     .Where(h => h.SectionId == sectionId)
                     .ToListAsync();
 
-                // Transfer owner:
-                foreach (var oldLink in oldLinks)
-                {
-                    // chỉ xử lý proof mà section hiện tại đang owner
-                    if (oldLink.OwnerSectionId != sectionId)
-                        continue;
-
-                    var proofFileId =
-                        oldLink.ProofFileId;
-
-                    if (proofFileId == null)
-                        continue;
-
-                    // tất cả section khác đang dùng proof này
-                    var candidates =
-                        await _context.SectionHyperlinks
-                        .Include(x => x.Section)
-                        .Where(x =>
-                            x.ProofFileId == proofFileId
-                            && x.SectionId != sectionId)
-                        .ToListAsync();
-
-                    // không ai dùng nữa => proof bị xoá hẳn
-                    if (!candidates.Any())
-                        continue;
-
-                    // owner cũ
-                    var currentOwnerOrder =
-                        section.OrderIndex;
-
-                    // owner mới = section gần owner cũ nhất
-                    var newOwner = candidates
-                        .OrderBy(x =>
-                            Math.Abs(
-                                x.Section.OrderIndex
-                                - currentOwnerOrder))
-                        // nếu bằng khoảng cách
-                        // ưu tiên section phía trước
-                        .ThenBy(x =>
-                            x.Section.OrderIndex)
-                        .First();
-
-                    var newOwnerId =
-                        newOwner.SectionId;
-
-                    // owner cũ phải resequence
-                    affectedOwnerIds.Add(sectionId);
-
-                    // owner mới phải resequence
-                    affectedOwnerIds.Add(newOwnerId);
-
-                    // update owner cho toàn bộ proof
-                    foreach (var candidate in candidates)
-                    {
-                        candidate.OwnerSectionId =
-                            newOwnerId;
-                    }
-                }
-                _context.SectionHyperlinks.RemoveRange(oldLinks);
+                _context.SectionHyperlinks
+                    .RemoveRange(oldLinks);
 
                 await _context.SaveChangesAsync();
 
@@ -323,7 +260,9 @@ namespace text_editor_server.Services
 
                     _context.SectionHyperlinks.Add(hyperlink);
                 }
+                //await _context.SaveChangesAsync();
                 await _context.SaveChangesAsync();
+
                 var currentLinks =
                    await _context.SectionHyperlinks
                    .Include(x => x.Section)
@@ -331,6 +270,22 @@ namespace text_editor_server.Services
                        x.Section.DocumentId ==
                        section.DocumentId)
                    .ToListAsync();
+
+                var affectedOwnerIds =
+     await RecalculateProofOwnersAsync(
+         currentLinks);
+
+                // section đang edit luôn resequence
+                affectedOwnerIds.Add(sectionId);
+
+                // reload state mới nhất
+                currentLinks =
+                    await _context.SectionHyperlinks
+                    .Include(x => x.Section)
+                    .Where(x =>
+                        x.Section.DocumentId ==
+                        section.DocumentId)
+                    .ToListAsync();
 
 
                 // chỉ owner của section hiện tại mới được resequence
@@ -352,19 +307,7 @@ namespace text_editor_server.Services
             .OrderBy(x => x.CreatedAt)
             .ToList();
 
-                //Nâng cấp cho section liên quan luôn:
-                //var affectedSectionIds = currentLinks
-                //    .Where(x => x.OwnerSectionId != Guid.Empty)
-                //    .Select(x => x.OwnerSectionId)
-                //    .Distinct()
-                //    .ToList();
-                //foreach (var affectedSectionId in affectedSectionIds)
-                //{
-                //    await ReSequenceSectionHyperlinksAsync(
-                //        affectedSectionId,
-                //        currentLinks
-                //    );
-                //}
+           
 
 
                 // ================= UPDATE SECTION =================
@@ -486,9 +429,15 @@ namespace text_editor_server.Services
                 return;
 
             // replace display text cũ
-            section.Content = section.Content.Replace(
-                $"[{oldCode}]",
-                $"[{newCode}]");
+            //section.Content = section.Content.Replace(
+            //    $"[{oldCode}]",
+            //    $"[{newCode}]");
+
+            section.Content = Regex.Replace(
+    section.Content,
+    $@"\[{Regex.Escape(oldCode)}\]",
+    $"[{newCode}]"
+);
 
             section.Version += 1;
 
@@ -519,18 +468,22 @@ namespace text_editor_server.Services
                 : sectionCode;
 
             // unique proof theo owner
-            var hyperlinks = currentLinks
-                .Where(x =>
-                    x.OwnerSectionId == sectionId
-                    && x.ProofFileId != null)
-                .GroupBy(x => x.ProofFileId)
-                .Select(g => g.First())
-                .OrderBy(x =>
-                    x.Section.OrderIndex)
-                .ThenBy(x =>
-                    x.CreatedAt)
-                .ToList();
+            // lấy thứ tự proof đúng theo vị trí trong content
+            var proofOrder =
+                GetProofOrderInSection(
+                    section.Content
+                );
 
+            // build hyperlink theo đúng order xuất hiện
+            var hyperlinks =
+                proofOrder
+                .Distinct()
+                .Select(proofId =>
+                    currentLinks.FirstOrDefault(x =>
+                        x.OwnerSectionId == sectionId
+                        && x.ProofFileId == proofId))
+                .Where(x => x != null)
+                .ToList();
             var mapping =
                 new List<(
                     Guid? ProofFileId,
@@ -612,6 +565,103 @@ namespace text_editor_server.Services
                     );
                 }
             }
+        }
+
+        // helper để recalculate proof owner sau khi update section content:
+        private async Task<HashSet<Guid>>
+RecalculateProofOwnersAsync(
+    List<SectionHyperlink> currentLinks)
+        {
+            var affectedOwnerIds =
+                new HashSet<Guid>();
+
+            // group theo proof
+            var proofGroups = currentLinks
+                .Where(x => x.ProofFileId != null)
+                .GroupBy(x => x.ProofFileId);
+
+            foreach (var group in proofGroups)
+            {
+                // owner mới = section đứng trước nhất
+                var newOwner = group
+                 .OrderBy(x =>
+                     x.Section.OrderIndex)
+                 .ThenBy(x =>
+                     x.CreatedAt)
+                 .First();
+
+                var newOwnerId =
+                    newOwner.SectionId;
+
+                // owner hiện tại của proof
+                var oldOwnerIds = group
+                    .Select(x => x.OwnerSectionId)
+                    .Distinct()
+                    .ToList();
+
+                // owner changed?
+                bool changed =
+                    oldOwnerIds.Any(x =>
+                        x != newOwnerId);
+
+                // owner hiện tại luôn cần resequence
+                affectedOwnerIds.Add(newOwnerId);
+
+                // nếu owner đổi
+                // resequence owner cũ nữa
+                if (changed)
+                {
+                    foreach (var oldOwnerId in oldOwnerIds)
+                    {
+                        affectedOwnerIds.Add(
+                            oldOwnerId);
+                    }
+                }
+                foreach (var link in group)
+                {
+                    link.OwnerSectionId =
+                        newOwnerId;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            return affectedOwnerIds;
+        }
+
+        //Hàm lấy thứ tựL
+        private List<Guid?> GetProofOrderInSection(
+    string sectionContent)
+        {
+            var result = new List<Guid?>();
+
+            if (string.IsNullOrWhiteSpace(sectionContent))
+                return result;
+
+            try
+            {
+                var regex = new Regex(
+                    @"/api/prooffile/file/([0-9a-fA-F\-]{36})",
+                    RegexOptions.IgnoreCase
+                );
+
+                var matches = regex.Matches(sectionContent);
+
+                foreach (Match match in matches)
+                {
+                    if (Guid.TryParse(
+                        match.Groups[1].Value,
+                        out var proofId))
+                    {
+                        result.Add(proofId);
+                    }
+                }
+            }
+            catch
+            {
+            }
+
+            return result;
         }
 
     }
