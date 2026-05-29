@@ -99,7 +99,7 @@ namespace text_editor_server.Controllers
         
             var result = await _sectionParse.BuildPreviewAsync(
                 req.DocumentId,
-                req.SectionContent
+                req.SectionContent  
             );
                 
             if (result == null)

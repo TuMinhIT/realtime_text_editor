@@ -122,9 +122,8 @@ namespace text_editor_server.Services
             var sections = await _context.Sections
                 .AsNoTracking()
                 .Where(s => s.DocumentId == documentId)
-                .OrderBy(s => s.OrderIndex)
+                .OrderBy(s => s.OrderIndex)               
                 .ToListAsync();
-
             return ServiceResult<List<Section>>.Ok(sections);
         }
 
