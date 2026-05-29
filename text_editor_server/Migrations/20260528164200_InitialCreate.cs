@@ -181,9 +181,10 @@ namespace text_editor_server.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     SectionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Url = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    OwnerSectionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    OwnerSectionId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    Position = table.Column<int>(type: "int", nullable: false),
                     ProofFileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },

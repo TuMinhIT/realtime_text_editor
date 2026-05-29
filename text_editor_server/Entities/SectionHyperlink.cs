@@ -10,16 +10,20 @@
         public Section Section { get; set; }
 
         // mã hiển thị: [1.1-01]
-        public string Code { get; set; } = string.Empty;
+        // phase đầu sẽ null
+        public string? Code { get; set; }
 
         // link thật
         public string Url { get; set; } = string.Empty;
 
+        // section owner của proof
+        // chỉ có sau phase recalculate owner
+        public Guid? OwnerSectionId { get; set; }
 
-        //Owner section hyperlink:
-        public Guid OwnerSectionId { get; set; } //Mục tiêu để xác định file minh chứng thuộc về section nào.
-        public Section OwnerSection { get; set; }
+        public Section? OwnerSection { get; set; }
 
+        // vị trí hyperlink trong section
+        public int Position { get; set; }
 
         // file minh chứng nếu có
         public Guid? ProofFileId { get; set; }

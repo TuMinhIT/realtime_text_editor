@@ -1,19 +1,16 @@
 ﻿using System.Text.Json;
 using System.Text.RegularExpressions;
 using text_editor_server.DTOs.res;
-using text_editor_server.Entities;
 
 namespace text_editor_server.Services
 {
     public class HyperlinkEngine
     {
         public HyperLinkRewriteResult BuildAndRewrite(
-     JsonElement sfdt,
-     Guid currentSectionId,
-     string sectionCode,
-     List<SectionHyperlink> existingLinks)
+            JsonElement sfdt)
         {
-            var result = new List<HyperlinkIndexedRes>();
+            var result =
+                new List<HyperlinkIndexedRes>();
 
             if (!sfdt.TryGetProperty("b", out var blocks))
             {
@@ -24,10 +21,10 @@ namespace text_editor_server.Services
                 };
             }
 
-            var updatedBlocks = new List<JsonElement>();
+            var updatedBlocks =
+                new List<JsonElement>();
 
-            int linkCounter =
-                GetMaxCounter(existingLinks, sectionCode);
+            int position = 0;
 
             foreach (var block in blocks.EnumerateArray())
             {
@@ -37,9 +34,13 @@ namespace text_editor_server.Services
                     continue;
                 }
 
-                var updatedNodes = new List<JsonElement>();
+                var updatedNodes =
+                    new List<JsonElement>();
 
                 bool insideHyperlink = false;
+                bool passedSeparator = false;
+                bool hyperlinkCaptured = false;
+
                 string currentUrl = "";
 
                 foreach (var node in inlineNodes.EnumerateArray())
@@ -52,12 +53,15 @@ namespace text_editor_server.Services
                         && ftStart.GetInt32() == 0)
                     {
                         insideHyperlink = true;
+                        passedSeparator = false;
+                        hyperlinkCaptured = false;
+                        currentUrl = "";
 
                         updatedNodes.Add(currentNode);
                         continue;
                     }
 
-                    // ================= FIELD INSTRUCTION =================
+                    // ================= INSTRUCTION =================
 
                     if (insideHyperlink
                         && node.TryGetProperty("tlp", out var instructionProp))
@@ -72,19 +76,22 @@ namespace text_editor_server.Services
                                     StringComparison.OrdinalIgnoreCase))
                         {
                             currentUrl =
-                                ExtractHyperlink(instructionText);
+                                ExtractHyperlink(
+                                    instructionText);
 
                             updatedNodes.Add(currentNode);
                             continue;
                         }
                     }
 
-                    // ================= FIELD SEPARATOR =================
+                    // ================= SEPARATOR =================
 
                     if (insideHyperlink
                         && node.TryGetProperty("ft", out var ftSeparator)
                         && ftSeparator.GetInt32() == 2)
                     {
+                        passedSeparator = true;
+
                         updatedNodes.Add(currentNode);
                         continue;
                     }
@@ -92,72 +99,34 @@ namespace text_editor_server.Services
                     // ================= DISPLAY TEXT =================
 
                     if (insideHyperlink
-                        && node.TryGetProperty("tlp", out var displayProp)
+                        && passedSeparator
+                        && !hyperlinkCaptured
+                        && node.TryGetProperty("tlp", out _)
                         && !string.IsNullOrWhiteSpace(currentUrl))
                     {
-                        Guid? proofFileId =
-                            ExtractProofFileId(currentUrl);
+                        position++;
 
-                        string finalCode;
+                        var proofFileId =
+                            ExtractProofFileId(
+                                currentUrl);
 
-                        var existed = existingLinks
-                            .FirstOrDefault(x =>
-                                proofFileId != null
-                                && x.ProofFileId == proofFileId);
-
-                        if (existed != null)
-                        {
-                            // Đã tồn tại hyperlink cho proof file này, dùng lại code cũ
-                            finalCode = existed.Code;
-                            //cache reuse:
-                            existingLinks.Add(new SectionHyperlink
+                        result.Add(
+                            new HyperlinkIndexedRes
                             {
-
-                                SectionId = currentSectionId,
-                                //Kế thừa owner cũ:
-                                OwnerSectionId = existed.OwnerSectionId,
-
-
-                                ProofFileId = proofFileId,
                                 Url = currentUrl,
-                                Code = finalCode
-                            });
-                        }
-                        else
-                        {
-                            linkCounter++;
-
-                            finalCode =
-                                $"{sectionCode}-{linkCounter:D2}";
-
-                            existingLinks.Add(new SectionHyperlink
-                            {
-                                //Tự làm owner:
-                                SectionId = currentSectionId,
-
-
-                                //Set owner cho section hiện tại với link chưa từng được section nào sử dụng trong tài liệu
-
-                                OwnerSectionId = currentSectionId,
                                 ProofFileId = proofFileId,
-                                Url = currentUrl,
-                                Code = finalCode
+                                Position = position
                             });
-                        }
 
-                        result.Add(new HyperlinkIndexedRes
-                        {
-                            Code = finalCode,
-                            Url = currentUrl
-                        });
+                        hyperlinkCaptured = true;
 
-                        // CHỈ replace DISPLAY TEXT
-                        currentNode = UpdateNodeText(
-                            node,
-                            $"[{finalCode}]");
+                        // placeholder
+                        currentNode =
+                            UpdateNodeText(
+                                node,
+                                "[LINK]");
 
                         updatedNodes.Add(currentNode);
-
                         continue;
                     }
 
@@ -168,6 +137,8 @@ namespace text_editor_server.Services
                         && ftEnd.GetInt32() == 1)
                     {
                         insideHyperlink = false;
+                        passedSeparator = false;
+                        hyperlinkCaptured = false;
                         currentUrl = "";
 
                         updatedNodes.Add(currentNode);
@@ -178,11 +149,15 @@ namespace text_editor_server.Services
                 }
 
                 updatedBlocks.Add(
-                    UpdateBlock(block, updatedNodes));
+                    UpdateBlock(
+                        block,
+                        updatedNodes));
             }
 
             var updatedSfdt =
-                UpdateSfdt(sfdt, updatedBlocks);
+                UpdateSfdt(
+                    sfdt,
+                    updatedBlocks);
 
             return new HyperLinkRewriteResult
             {
@@ -191,9 +166,139 @@ namespace text_editor_server.Services
             };
         }
 
-        // ================= EXTRACT PROOF FILE ID =================
+        public JsonElement RewriteDisplayCodes(
+            JsonElement sfdt,
+            Dictionary<Guid?, string> codeMap)
+        {
+            if (!sfdt.TryGetProperty("b", out var blocks))
+            {
+                return sfdt;
+            }
 
-        private Guid? ExtractProofFileId(string url)
+            var updatedBlocks =
+                new List<JsonElement>();
+
+            foreach (var block in blocks.EnumerateArray())
+            {
+                if (!block.TryGetProperty("i", out var inlineNodes))
+                {
+                    updatedBlocks.Add(block);
+                    continue;
+                }
+
+                var updatedNodes =
+                    new List<JsonElement>();
+
+                bool insideHyperlink = false;
+                bool passedSeparator = false;
+                bool replacedDisplay = false;
+
+                string currentUrl = "";
+
+                foreach (var node in inlineNodes.EnumerateArray())
+                {
+                    var currentNode = node;
+
+                    // START FIELD
+                    if (node.TryGetProperty("ft", out var ftStart)
+                        && ftStart.GetInt32() == 0)
+                    {
+                        insideHyperlink = true;
+                        passedSeparator = false;
+                        replacedDisplay = false;
+                        currentUrl = "";
+
+                        updatedNodes.Add(currentNode);
+                        continue;
+                    }
+
+                    // INSTRUCTION
+                    if (insideHyperlink
+                        && node.TryGetProperty("tlp", out var instructionProp))
+                    {
+                        var instructionText =
+                            instructionProp.GetString();
+
+                        if (!string.IsNullOrWhiteSpace(instructionText)
+                            && instructionText.TrimStart()
+                                .StartsWith(
+                                    "HYPERLINK",
+                                    StringComparison.OrdinalIgnoreCase))
+                        {
+                            currentUrl =
+                                ExtractHyperlink(
+                                    instructionText);
+
+                            updatedNodes.Add(currentNode);
+                            continue;
+                        }
+                    }
+
+                    // SEPARATOR
+                    if (insideHyperlink
+                        && node.TryGetProperty("ft", out var ftSeparator)
+                        && ftSeparator.GetInt32() == 2)
+                    {
+                        passedSeparator = true;
+
+                        updatedNodes.Add(currentNode);
+                        continue;
+                    }
+
+                    // DISPLAY TEXT
+                    if (insideHyperlink
+                        && passedSeparator
+                        && !replacedDisplay
+                        && node.TryGetProperty("tlp", out _)
+                        && !string.IsNullOrWhiteSpace(currentUrl))
+                    {
+                        var proofId = ExtractProofFileId(currentUrl);
+
+                        if (proofId != null
+                            && codeMap.TryGetValue(proofId, out var code))
+                        {
+                            currentNode =
+                                UpdateNodeText(
+                                    node,
+                                    $"[{code}]");
+                        }
+
+                        replacedDisplay = true;
+
+                        updatedNodes.Add(currentNode);
+                        continue;
+                    }
+
+                    // END FIELD
+                    if (insideHyperlink
+                        && node.TryGetProperty("ft", out var ftEnd)
+                        && ftEnd.GetInt32() == 1)
+                    {
+                        insideHyperlink = false;
+                        passedSeparator = false;
+                        replacedDisplay = false;
+                        currentUrl = "";
+
+                        updatedNodes.Add(currentNode);
+                        continue;
+                    }
+
+                    updatedNodes.Add(currentNode);
+                }
+
+                updatedBlocks.Add(
+                    UpdateBlock(
+                        block,
+                        updatedNodes));
+            }
+
+            return UpdateSfdt(
+                sfdt,
+                updatedBlocks);
+        }
+
+        private Guid? ExtractProofFileId(
+            string url)
         {
             if (string.IsNullOrWhiteSpace(url))
                 return null;
@@ -212,56 +317,21 @@ namespace text_editor_server.Services
                 : null;
         }
 
-        // ================= GET MAX COUNTER =================
-
-        private int GetMaxCounter(
-            List<SectionHyperlink> links,
-            string sectionCode)
+        private string ExtractHyperlink(
+            string text)
         {
-            var nums = links
-                .Where(x =>
-                    !string.IsNullOrWhiteSpace(x.Code)
-                    && x.Code.StartsWith(sectionCode + "-"))
-                .Select(x =>
-                {
-                    var parts = x.Code.Split('-');
-
-                    if (parts.Length < 2)
-                        return 0;
-
-                    return int.TryParse(parts[1], out var n)
-                        ? n
-                        : 0;
-                });
-
-            return nums.Any()
-                ? nums.Max()
-                : 0;
-        }
-
-
-        // ================= EXTRACT URL =================
-        private string ExtractHyperlink(string text)
-        {
-            const string prefix = "HYPERLINK \"";
-
-            var start = text.IndexOf(prefix, StringComparison.OrdinalIgnoreCase);
-
-            if (start == -1)
+            if (string.IsNullOrWhiteSpace(text))
                 return "";
 
-            start += prefix.Length;
+            var match = Regex.Match(
+                text,
+                @"HYPERLINK\s+""([^""]+)""",
+                RegexOptions.IgnoreCase);
 
-            var end = text.IndexOf("\"", start);
-
-            if (end == -1)
-                return "";
-
-            return text.Substring(start, end - start);
+            return match.Success
+                ? match.Groups[1].Value
+                : "";
         }
-
-
-        // ================= UPDATE NODE =================
 
         private JsonElement UpdateNodeText(
             JsonElement node,
@@ -270,15 +340,14 @@ namespace text_editor_server.Services
             var dict =
                 JsonSerializer.Deserialize<
                     Dictionary<string, object>>(
-                        node.GetRawText());
+                        node.GetRawText())
+                ?? new();
 
             dict["tlp"] = newText;
 
             return JsonSerializer.Deserialize<JsonElement>(
                 JsonSerializer.Serialize(dict));
         }
-
-        // ================= UPDATE BLOCK =================
 
         private JsonElement UpdateBlock(
             JsonElement block,
@@ -287,15 +356,14 @@ namespace text_editor_server.Services
             var dict =
                 JsonSerializer.Deserialize<
                     Dictionary<string, object>>(
-                        block.GetRawText());
+                        block.GetRawText())
+                ?? new();
 
             dict["i"] = nodes;
 
             return JsonSerializer.Deserialize<JsonElement>(
                 JsonSerializer.Serialize(dict));
         }
-
-        // ================= UPDATE SFDT =================
 
         private JsonElement UpdateSfdt(
             JsonElement sfdt,
@@ -304,7 +372,8 @@ namespace text_editor_server.Services
             var dict =
                 JsonSerializer.Deserialize<
                     Dictionary<string, object>>(
-                        sfdt.GetRawText());
+                        sfdt.GetRawText())
+                ?? new();
 
             dict["b"] = blocks;
 
