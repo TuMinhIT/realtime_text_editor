@@ -12,8 +12,8 @@ using text_editor_server.Data;
 namespace text_editor_server.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260527060908_init")]
-    partial class init
+    [Migration("20260528164200_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -246,15 +246,17 @@ namespace text_editor_server.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Code")
-                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("OwnerSectionId")
+                    b.Property<Guid?>("OwnerSectionId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("int");
 
                     b.Property<Guid?>("ProofFileId")
                         .HasColumnType("uniqueidentifier");
@@ -407,8 +409,7 @@ namespace text_editor_server.Migrations
                     b.HasOne("text_editor_server.Entities.Section", "OwnerSection")
                         .WithMany()
                         .HasForeignKey("OwnerSectionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("text_editor_server.Entities.ProofFile", "ProofFile")
                         .WithMany()
