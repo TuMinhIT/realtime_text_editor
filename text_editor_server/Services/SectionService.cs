@@ -339,30 +339,7 @@ namespace text_editor_server.Services
             return result;
         }
 
-        private Guid? ExtractProofFileId(string url)
-        {
-            if (string.IsNullOrWhiteSpace(url))
-                return null;
-
-            const string marker = "/api/prooffile/file/";
-
-            var index = url.IndexOf(
-                marker,
-                StringComparison.OrdinalIgnoreCase);
-
-            if (index == -1)
-                return null;
-
-            var guidPart = url[(index + marker.Length)..];
-
-            if (Guid.TryParse(guidPart, out var guid))
-            {
-                return guid;
-            }
-
-            return null;
-        }
-
+     
         //HELPER for update:
         private void RecalculateOwners(List<SectionHyperlink> links)
         {
@@ -390,51 +367,7 @@ namespace text_editor_server.Services
                 }
             }
         }
-        //   private void BuildNumbering(
-        //List<SectionHyperlink> links,
-        //Guid documentId)
-        //   {
-        //       var sections =
-        //           _context.Sections
-        //               .Where(x => x.DocumentId == documentId)
-        //               .OrderBy(x => x.OrderIndex)
-        //               .ToList();
-
-        //       foreach (var section in sections)
-        //       {
-        //           var sectionCode =
-        //               Regex.Match(section.Title ?? "", @"^\d+(\.\d+)*").Value;
-
-        //           if (string.IsNullOrWhiteSpace(sectionCode))
-        //               sectionCode = "section";
-
-        //           int counter = 1;
-
-        //           var ownerLinks =
-        //               links
-        //                   .Where(x => x.OwnerSectionId == section.Id)
-        //                   .GroupBy(x => x.ProofFileId)
-        //                   .Select(g => g.First())
-        //                   .OrderBy(x => x.Position)
-        //                   .ToList();
-
-        //           foreach (var link in ownerLinks)
-        //           {
-        //               var code = $"{sectionCode}-{counter:D2}";
-
-        //               var sameProof =
-        //                   links.Where(x => x.ProofFileId == link.ProofFileId);
-
-        //               foreach (var item in sameProof)
-        //               {
-        //                   item.Code = code;
-        //               }
-
-        //               counter++;
-        //           }
-        //       }
-        //   }
-
+        
 
         private void BuildNumbering(
     List<SectionHyperlink> links,

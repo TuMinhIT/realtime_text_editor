@@ -7,7 +7,6 @@ namespace text_editor_server.Realtime.Managers
     public class RealtimeStateManager : IRealtimeStateManager
     {
 
-
         private readonly ConcurrentDictionary<
             string,
             Models.ConnectionInfo> _connections

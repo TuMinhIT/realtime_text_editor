@@ -5,7 +5,6 @@ using System.Security.Claims;
 using text_editor_server.Realtime.Constants;
 using text_editor_server.Realtime.DTOs;
 using text_editor_server.Realtime.Interfaces;
-using text_editor_server.Realtime.Models;
 
 using ConnectionInfo =
     text_editor_server.Realtime.Models.ConnectionInfo;
@@ -44,18 +43,14 @@ namespace text_editor_server.Realtime.Hubs
             OnConnectedAsync()
         {
             Console.WriteLine("");
-            Console.WriteLine(
-                "===================================");
-
+    
             Console.WriteLine(
                 "SIGNALR CONNECTED");
 
             Console.WriteLine(
                 $"ConnectionId: {Context.ConnectionId}");
 
-            Console.WriteLine(
-                "=========== CLAIMS ===========");
-
+  
             foreach (var claim
                 in Context.User!.Claims)
             {
@@ -105,9 +100,6 @@ namespace text_editor_server.Realtime.Hubs
             Console.WriteLine(
                 $"USER ID: {userId}");
 
-            Console.WriteLine(
-                "===================================");
-
             Console.WriteLine("");
 
             await base
@@ -122,9 +114,6 @@ namespace text_editor_server.Realtime.Hubs
             OnDisconnectedAsync(
                 Exception? exception)
         {
-            Console.WriteLine("");
-            Console.WriteLine(
-                "===================================");
 
             Console.WriteLine(
                 "SIGNALR DISCONNECTED");
@@ -209,7 +198,6 @@ namespace text_editor_server.Realtime.Hubs
             Console.WriteLine(
                 "===================================");
 
-            Console.WriteLine("");
 
             await base
                 .OnDisconnectedAsync(
@@ -224,7 +212,7 @@ namespace text_editor_server.Realtime.Hubs
             JoinSection(
                 JoinSectionRequest request)
         {
-            Console.WriteLine("");
+     
             Console.WriteLine(
                 "=========== JOIN SECTION ===========");
 

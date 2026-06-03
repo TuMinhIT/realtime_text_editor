@@ -160,10 +160,9 @@ namespace text_editor_server.Realtime.Services
         }
 
 
-
         private SectionPresenceDto
-     BuildSectionPresence(
-         Guid sectionId)
+         BuildSectionPresence(
+             Guid sectionId)
         {
             var users =
                 _stateManager

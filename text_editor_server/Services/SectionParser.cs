@@ -410,8 +410,6 @@ namespace text_editor_server.Services
             {
                 return null; // hoặc log lỗi
             }
-
-
       
             return BuildSectionPreview(sectionContent, originalSfdt);
         }

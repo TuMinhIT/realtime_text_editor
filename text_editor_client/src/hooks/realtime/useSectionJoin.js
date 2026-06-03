@@ -4,9 +4,7 @@ import { signalRService } from "../../services/signalRService";
 export function useSectionJoin(sectionId) {
   useEffect(() => {
     if (!sectionId) return;
-
     let mounted = true;
-
     const join = async () => {
       try {
         await signalRService.joinSection(sectionId);
@@ -15,7 +13,6 @@ export function useSectionJoin(sectionId) {
         console.error("[useSectionJoin] join error", err);
       }
     };
-
     join();
 
     return () => {

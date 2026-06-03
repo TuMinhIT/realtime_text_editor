@@ -1,17 +1,15 @@
 import * as signalR from "@microsoft/signalr";
 
-const HUB_URL = "https://localhost:8001/hubs/collaboration";
+const resource = "/hubs";
+
+const HUB_URL = import.meta.env.VITE_API_URL + resource;
 
 let connection = null; //websocket connection instance
 let connectionPromise = null; // race condition guard for connection initialization
 let presenceCallback = null;
 let lockCallback = null;
 let currentSectionId = null;
-
 let sectionUpdatedCallback = null;
-
-//hiện state callback:
-let cursorCallback = null;
 
 /* =========================
    CORE CONNECTION
@@ -56,24 +54,15 @@ async function ensureConnection() {
       if (presenceCallback) {
         connection.on("SectionPresenceUpdated", presenceCallback);
       }
-      // Rebind cursor update callback after reconnecting
-      if (cursorCallback) {
-        connection.on("CursorUpdated", cursorCallback);
-      }
 
       if (lockCallback) {
         connection.on("SectionLockUpdated", lockCallback);
       }
 
       //section update:
-      if (
-      sectionUpdatedCallback
-    ) {
-      connection.on(
-        "SectionContentUpdated",
-        sectionUpdatedCallback,
-      );
-    }
+      if (sectionUpdatedCallback) {
+        connection.on("SectionContentUpdated", sectionUpdatedCallback);
+      }
     });
 
     connection.onclose((err) => {
@@ -124,9 +113,7 @@ export const signalRService = {
 
       //sectioncontent:
 
-      sectionUpdatedCallback =
-        null;
-
+      sectionUpdatedCallback = null;
 
       return true;
     } catch (err) {
@@ -184,7 +171,6 @@ export const signalRService = {
   async releaseEditSession(sectionId) {
     try {
       const conn = await ensureConnection();
-
       await conn.invoke("ReleaseEditSession", sectionId);
 
       return true;
@@ -243,109 +229,45 @@ export const signalRService = {
   },
 
   // Đăng ký callback cho sự kiện cập nhật con trỏ
-  async updateCursor(
-  sectionId,
-  cursor,
-) {
-  try {
-    const conn =
-      await ensureConnection();
+  async updateCursor(sectionId, cursor) {
+    try {
+      const conn = await ensureConnection();
 
-    await conn.invoke(
-      "UpdateCursor",
-      sectionId,
-      cursor,
-    );
+      await conn.invoke("UpdateCursor", sectionId, cursor);
 
-    return true;
-  } catch (err) {
-    console.error(
-      "[SignalR] updateCursor error",
-      err,
-    );
-  }
-},
-
-  //Thêm hàm đăng ký callback cho sự kiện cập nhật con trỏ
-  async onCursorUpdated(callback) {
-    const conn = await ensureConnection();
-
-    cursorCallback = callback;
-
-    conn.off("CursorUpdated");
-    conn.on("CursorUpdated", callback);
-  },
-
-  offCursorUpdated() {
-    if (connection && cursorCallback) {
-      connection.off(
-        "CursorUpdated",
-        cursorCallback,
-      );
-
-      cursorCallback = null;
+      return true;
+    } catch (err) {
+      console.error("[SignalR] updateCursor error", err);
     }
   },
 
-  
-async notifySectionUpdated(sectionId) {
-  try {
-    const conn =
-      await ensureConnection();
+  async notifySectionUpdated(sectionId) {
+    try {
+      const conn = await ensureConnection();
 
-    await conn.invoke(
-      "NotifySectionUpdated",
-      sectionId,
-    );
+      await conn.invoke("NotifySectionUpdated", sectionId);
 
-    return true;
-  } catch (err) {
-    console.error(
-      "[SignalR] notifySectionUpdated error",
-      err,
-    );
-  }
-},
-//Listenr section update:
-async onSectionUpdated(
-  callback,
-) {
-  const conn =
-    await ensureConnection();
+      return true;
+    } catch (err) {
+      console.error("[SignalR] notifySectionUpdated error", err);
+    }
+  },
+  //Listenr section update:
+  async onSectionUpdated(callback) {
+    const conn = await ensureConnection();
 
-  sectionUpdatedCallback =
-    callback;
+    sectionUpdatedCallback = callback;
 
-  conn.off(
-    "SectionContentUpdated",
-  );
+    conn.off("SectionContentUpdated");
 
-  conn.on(
-    "SectionContentUpdated",
-    callback,
-  );
-},
+    conn.on("SectionContentUpdated", callback);
+  },
 
-offSectionUpdated() {
-  if (
-    connection &&
-    sectionUpdatedCallback
-  ) {
-    connection.off(
-      "SectionContentUpdated",
-      sectionUpdatedCallback,
-    );
+  offSectionUpdated() {
+    if (connection && sectionUpdatedCallback) {
+      connection.off("SectionContentUpdated", sectionUpdatedCallback);
 
-    sectionUpdatedCallback =
-      null;
-  }
-}
-
-
-
-
-
-
-
-
+      sectionUpdatedCallback = null;
+    }
+  },
 };

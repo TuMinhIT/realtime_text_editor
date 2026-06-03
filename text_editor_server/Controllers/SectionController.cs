@@ -126,7 +126,7 @@ namespace text_editor_server.Controllers
         {
             var assignment = await _sectionService.GetUserPermissonAsync(userId,sectionId);
             if (assignment != null)
-            return Ok(assignment);
+                return Ok(assignment);
             return Ok(null);
         }
 

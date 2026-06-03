@@ -1,11 +1,10 @@
 import axios from "axios";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "https://localhost:8001/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 90000,
+  timeout: 10000,
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
@@ -29,14 +28,14 @@ axiosInstance.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     //Nếu lỗi 401 và chưa retry:
-    if(error.response?.status === 401 && !originalRequest._retry) {
+    if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       // Gọi API refresh token ở đây
       try {
         const res = await axios.post(
           "https://localhost:8001/api/auth/refresh-token",
           {},
-          { withCredentials: true }
+          { withCredentials: true },
         );
         const newAccessToken = res.data.accessToken;
         //Lưu token mới và retry request cũ:
@@ -46,8 +45,7 @@ axiosInstance.interceptors.response.use(
 
         //Gọi lại request ban đầu:
         return axiosInstance(originalRequest);
-
-      }catch (refreshError) {
+      } catch (refreshError) {
         //Nếu refresh token cũng lỗi (ví dụ hết hạn), xóa token và redirect login:
         localStorage.removeItem("accessToken");
         window.location.href = "/login";
@@ -55,10 +53,9 @@ axiosInstance.interceptors.response.use(
       }
     }
     return Promise.reject(error);
-  }
+  },
 );
 
-    
 // axiosInstance.interceptors.response.use(
 //   (response) => response,
 //   async (error) => {

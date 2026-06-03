@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { signalRService } from "../../services/signalRService";
 
 // Hook to register SignalR event listeners and clean them up on unmount
-export function useSignalRListeners({ onPresence, onLock, onCursor, onSectionUpdated }) {
+export function useSignalRListeners({ onPresence, onLock, onSectionUpdated }) {
   useEffect(() => {
     let mounted = true;
 
@@ -10,8 +10,8 @@ export function useSignalRListeners({ onPresence, onLock, onCursor, onSectionUpd
       try {
         if (onPresence) await signalRService.onPresenceUpdated(onPresence);
         if (onLock) await signalRService.onLockUpdated(onLock);
-        if (onCursor) await signalRService.onCursorUpdated(onCursor);
-        if (onSectionUpdated) await signalRService.onSectionUpdated(onSectionUpdated);
+        if (onSectionUpdated)
+          await signalRService.onSectionUpdated(onSectionUpdated);
       } catch (err) {
         console.error("[useSignalRListeners] setup error", err);
       }
@@ -23,11 +23,10 @@ export function useSignalRListeners({ onPresence, onLock, onCursor, onSectionUpd
       if (!mounted) return;
       if (onPresence) signalRService.offPresenceUpdated();
       if (onLock) signalRService.offLockUpdated();
-      if (onCursor) signalRService.offCursorUpdated();
       if (onSectionUpdated) signalRService.offSectionUpdated();
       mounted = false;
     };
-  }, [onPresence, onLock, onCursor, onSectionUpdated]);
+  }, [onPresence, onLock, onSectionUpdated]);
 }
 
 export default useSignalRListeners;

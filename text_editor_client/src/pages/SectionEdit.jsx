@@ -30,9 +30,6 @@ import { signalRService } from "../services/signalRService";
 import useSignalRListeners from "../hooks/realtime/useSignalRListeners";
 import useSectionJoin from "../hooks/realtime/useSectionJoin";
 import ProofFileTab from "../components/SectionUser/ProofFileTab";
-import useRealtimePresence from "../hooks/realtime/useRealtimePresence";
-import useRealtimeLock from "../hooks/realtime/useRealtimeLock";
-import useRealtimeCursor from "../hooks/realtime/useRealtimeCursor";
 import useRealtimeSectionUpdate from "../hooks/realtime/useRealtimeSectionUpdate";
 
 const SERVICE_URL = import.meta.env.VITE_API_URL + "/document";
@@ -86,12 +83,10 @@ const getInitials = (name) => {
 const SectionEdit = ({ documentId, section, assignments }) => {
   const navigate = useNavigate();
   const editorRef = useRef(null);
-  const [sections, setSections] = useState([]);
 
   // autosave:
   const autoSaveTimeoutRef = useRef(null);
   const isSavingRef = useRef(false);
-
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [selectedSection, setSelectedSection] = useState(null);
@@ -100,9 +95,18 @@ const SectionEdit = ({ documentId, section, assignments }) => {
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [assignment, setAssignment] = useState(null);
 
-  const [presence, onPresence] = useRealtimePresence();
   const selectedSectionRef = useRef(null);
   const isDirtyRef = useRef(false);
+  const [presence, onPresence] = useState(true);
+
+  const [hasLockRequested, setHasLockRequested] = useState(true);
+  const [lockState, setLockState] = useState(null);
+
+  // const { onSectionUpdated } = useRealtimeSectionUpdate({
+  //   documentId,
+  //   selectedSectionRef,
+  //   isDirtyRef,
+  // });
 
   const openPreview = (sfdt) => {
     const editor = editorRef.current?.documentEditor;
@@ -110,23 +114,20 @@ const SectionEdit = ({ documentId, section, assignments }) => {
       return;
     }
     editor.open(sfdt);
+    editor.isReadOnly = false;
   };
 
   const applyReadOnlyMode = (flag) => {
-    const editor = editorRef.current?.documentEditor;
-    if (!editor) {
-      return;
-    }
-
-    try {
-      editor.isReadOnly = flag;
-    } catch {
-      // Ignore if this Syncfusion build does not expose the flag yet.
-    }
+    // const editor = editorRef.current?.documentEditor;
+    // if (!editor) {
+    //   return;
+    // }
+    // try {
+    //   editor.isReadOnly = flag;
+    // } catch {
+    //   // Ignore if this Syncfusion build does not expose the flag yet.
+    // }
   };
-
-  const [isSaving, setIsSaving] = useState(false);
-  const [isDirty, setIsDirty] = useState(false);
 
   // Initialize when props change: set selected section, assignment and load preview
   useEffect(() => {
@@ -141,7 +142,6 @@ const SectionEdit = ({ documentId, section, assignments }) => {
       setIsLoading(true);
       setSelectedSection(section);
       setAssignment(assignments);
-
       try {
         await loadPreview(section);
       } catch (err) {
@@ -158,23 +158,23 @@ const SectionEdit = ({ documentId, section, assignments }) => {
     };
   }, [section, assignments, documentId]);
 
-  //Realtime lock:
-  const {
-    lockState,
-    hasLockRequested,
-    setLockState,
-    setHasLockRequested,
-    onLock,
-  } = useRealtimeLock();
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
 
   // Realtime: join selected section and register listeners via hooks
   // useSectionJoin(selectedSection?.id);
+
+  // const onLock = useCallback(() => {}, []);
+
+  // useSignalRListeners({ onPresence, onLock, onSectionUpdated });
 
   // Hàm dựng preview section - load section mới:
   const loadPreview = async (section) => {
     if (!section?.id) return;
     setIsPreviewLoading(true);
     setErrorMessage("");
+    setPreviewSfdt("");
+    setOriginalPreview("");
 
     try {
       const preview = await sectionService.previewSection(
@@ -184,11 +184,11 @@ const SectionEdit = ({ documentId, section, assignments }) => {
       );
 
       const sfdt = normalizeJson(preview?.sfdtContent);
-
+      console.log("dã load lại");
       // Preview hiện tại
       setPreviewSfdt(sfdt);
       // Gốc để compare dirty
-      setOriginalPreview(sfdt);
+      setOriginalPreview(section.sfdtContent);
       // reset dirty khi load section mới
       setIsDirty(false);
     } catch (error) {
@@ -202,21 +202,6 @@ const SectionEdit = ({ documentId, section, assignments }) => {
       setIsPreviewLoading(false);
     }
   };
-
-  // const { remoteCursors, onCursor, clearRemoteCursors } = useRealtimeCursor();
-
-  // const { onSectionUpdated } = useRealtimeSectionUpdate({
-  //   documentId,
-  //   selectedSectionRef,
-  //   isDirtyRef,
-  //   setSelectedSection,
-  // });
-
-  // useSignalRListeners({ onPresence, onLock, onCursor, onSectionUpdated });
-
-  // useEffect(() => {
-  //   selectedSectionRef.current = selectedSection;
-  // }, [selectedSection]);
 
   // useEffect(() => {
   //   if (!lockState || !selectedSection?.id) {
@@ -246,32 +231,36 @@ const SectionEdit = ({ documentId, section, assignments }) => {
   //   applyReadOnlyMode(false);
   // }, [lockState, selectedSection?.id]);
 
-  //Clean up khi rời khỏi section hoặc document:
+  // Release lock + leave room when switching section/unmounting
   // useEffect(() => {
   //   return () => {
   //     if (selectedSection?.id) {
   //       signalRService.releaseEditSession(selectedSection.id);
-  //       signalRService.leaveCurrentSection();
   //     }
+  //     signalRService.leaveCurrentSection();
+  //     clearRemoteCursors();
+  //     setHasLockRequested(false);
   //   };
-  // }, [selectedSection?.id]);
+  // }, [selectedSection?.id, clearRemoteCursors, setHasLockRequested]);
 
   //Helper user có quyền edit hay không:
   const canCurrentUserEdit = () => {
     const currentUser = sessionService.getCurrentUser();
-    const ls = typeof lockState !== "undefined" ? lockState : null;
+    // const ls = typeof lockState !== "undefined" ? lockState : null;
 
-    return (
-      assignment?.permission === 1 &&
-      (!ls?.isLocked || ls?.lockedByUserId === currentUser?.id)
-    );
+    // return (
+    //   assignment?.permission === 1 &&
+    //   (!ls?.isLocked || ls?.lockedByUserId === currentUser?.id)
+    // );
+    return assignment.permission === 1;
   };
 
-  // useEffect(() => {
-  //   if (!previewSfdt || !selectedSection) return;
-  //   openPreview(previewSfdt);
-  //   applyReadOnlyMode(!canCurrentUserEdit());
-  // }, [previewSfdt, selectedSection?.id, assignment?.permission]);
+  // load lại sycnfusion view
+  useEffect(() => {
+    if (!previewSfdt) return;
+    openPreview(previewSfdt);
+    applyReadOnlyMode(!canCurrentUserEdit());
+  }, [previewSfdt]);
 
   const handleCreated = () => {
     openPreview(previewSfdt);
@@ -279,159 +268,89 @@ const SectionEdit = ({ documentId, section, assignments }) => {
   };
 
   // useEffect(() => {
-  //   isDirtyRef.current = isDirty;
-  // }, [isDirty]);
+  //   if (!lockState || !selectedSection?.id) {
+  //     return;
+  //   }
 
-  const handleSave = async () => {
+  //   if (lockState.sectionId !== selectedSection.id) {
+  //     return;
+  //   }
+
+  //   const currentUser = sessionService.getCurrentUser();
+  //   const isLockedByMe = lockState.lockedByUserId === currentUser?.id;
+
+  //   if (lockState.isLocked && !isLockedByMe) {
+  //     toast.info(`${lockState.lockedByUsername} đang chỉnh sửa`);
+  //   }
+  // }, [lockState, selectedSection?.id]);
+
+  //Cleanup timeout khi unmount:
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // save realtime:
+  const saveRealtime = async (sectionId) => {
     const editor = editorRef.current?.documentEditor;
-    if (!editor || !selectedSection || !canCurrentUserEdit()) {
+    if (!editor || !sectionId || !canCurrentUserEdit()) {
+      toast.error("Không thể lưu");
+      return;
+    }
+    if (isSavingRef.current) {
       return;
     }
 
-    if (assignment?.permission !== 1) {
-      toast.error("Bạn không có quyền chỉnh sửa section này.");
-      return;
-    }
-
-    setIsSaving(true);
     try {
+      isSavingRef.current = true;
       const serialized = normalizeJson(editor.serialize());
+      await sectionService.updateSectionContent(sectionId, serialized);
 
-      // // Lưu nội dung section qua endpoint document/section content
-      await sectionService.updateSectionContent(selectedSection.id, serialized);
-
-      // Release lock sau khi lưu xong để người khác có thể edit tiếp
-      await signalRService.releaseEditSession(selectedSection.id);
-
-      setHasLockRequested(false);
-
-      setOriginalPreview(serialized);
-      setIsDirty(false);
-      toast.success("Lưu section thành công.");
+      //reload curent session
+      // Sau khi lưu thành công, cập nhật lại preview và reset dirty
+      // await signalRService.notifySectionUpdated(sectionId);
+      // await loadPreview();
+      console.log("[Realtime] autosaved");
     } catch (err) {
-      toast.error(err?.message || "Lưu thất bại. Vui lòng thử lại.");
+      console.error("Realtime save failed", err);
     } finally {
-      setIsSaving(false);
+      isSavingRef.current = false;
     }
   };
 
-  //Cleanup timeout khi unmount:
-  // useEffect(() => {
-  //   return () => {
-  //     if (autoSaveTimeoutRef.current) {
-  //       clearTimeout(autoSaveTimeoutRef.current);
-  //     }
-  //   };
-  // }, []);
-  //Tạo hàm save realtime:
-  //   const saveRealtime = async (sectionId) => {
-  //     const editor = editorRef.current?.documentEditor;
-
-  //     if (
-  //       !editor ||
-  //       !sectionId ||
-  //       assignment?.permission != 1 ||
-  //       !canCurrentUserEdit()
-  //     ) {
-  //       return;
-  //     }
-
-  //     if (isSavingRef.current) {
-  //       return;
-  //     }
-
-  //     try {
-  //       isSavingRef.current = true;
-
-  //       const serialized = normalizeJson(editor.serialize());
-
-  //       await sectionService.updateSectionContent(sectionId, serialized);
-
-  //       //reload latest section data:
-  //       const freshSections =
-  //         await sectionService.getAllSectionsByDocument(documentId);
-
-  //       setSections(freshSections);
-
-  //       // Sau khi lưu thành công, cập nhật lại preview và reset dirty
-  //       await signalRService.notifySectionUpdated(sectionId);
-
-  //       setOriginalPreview(serialized);
-
-  //       setIsDirty(false);
-
-  //       console.log("[Realtime] autosaved");
-  //     } catch (err) {
-  //       console.error("Realtime save failed", err);
-  //     } finally {
-  //       isSavingRef.current = false;
-  //     }
-  //   };
-
   const handleContentChange = () => {
     //Kiểm tra user có quyền edit hay không:
-
     const editor = editorRef.current?.documentEditor;
     if (!editor || !selectedSection) {
       return;
     }
-
     //Request lock khi bắt đầu edit:
-    if (assignment?.permission == 1 && !hasLockRequested) {
-      try {
-        signalRService.requestEditSession(selectedSection.id);
-
-        setHasLockRequested(true);
-
-        console.log("Requested edit lock");
-      } catch (err) {
-        console.error("Request lock failed", err);
-      }
-    }
-
-    // gửi cursor realtime
-    try {
-      const selection = editor.selection;
-
-      if (selection?.start) {
-        // caret element thật trong Syncfusion
-        const caret = document.querySelector(".e-de-blink-cursor");
-
-        if (caret) {
-          const rect = caret.getBoundingClientRect();
-
-          signalRService.updateCursor(selectedSection.id, {
-            x: rect.left + window.scrollX,
-
-            y: rect.top + window.scrollY,
-          });
-        }
-      }
-    } catch (err) {
-      console.error("Send cursor error", err);
-    }
+    // if (assignment?.permission == 1 && !hasLockRequested) {
+    //   try {
+    //     signalRService.requestEditSession(selectedSection.id);
+    //     setHasLockRequested(true);
+    //     console.log("Requested edit lock");
+    //   } catch (err) {
+    //     console.error("Request lock failed", err);
+    //   }
+    // }
 
     const currentSerialized = normalizeJson(editor.serialize());
-
     const dirty = currentSerialized !== normalizeJson(originalPreview);
+    // setIsDirty(dirty);
 
-    setIsDirty(dirty);
-
-    /* =========
-     AUTO SAVE (debounce 1.5s)
-  ========= */
-
-    if (assignment?.permission == 1 && dirty) {
-      // clear timer cũ
+    //  AUTO SAVE (debounce 1.5s)
+    if (canCurrentUserEdit() && dirty) {
       if (autoSaveTimeoutRef.current) {
         clearTimeout(autoSaveTimeoutRef.current);
       }
-
-      const currentSectionId = selectedSection.id;
-
+      // gọi save 1500 ms mỗi lần
       autoSaveTimeoutRef.current = setTimeout(() => {
-        saveRealtime(currentSectionId);
-      }, 1000);
+        saveRealtime(selectedSection.id);
+      }, 1500);
     }
   };
 

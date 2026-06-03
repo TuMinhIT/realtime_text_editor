@@ -195,7 +195,6 @@ const SectionAuthority = () => {
     if (selectedSection === "tongquan") {
       setPreviewSfdt(originalPreview);
       return;
-      
     }
 
     loadPreview();

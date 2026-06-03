@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using System.ComponentModel.Design;
-using Newtonsoft.Json.Linq;
 
 //using System.Diagnostics.Eventing.Reader;
 using System.Text;
@@ -31,7 +29,6 @@ namespace text_editor_server
             // Add database
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
                
-            
             builder.Services.AddDbContext<AppDbContext>(options =>
                 options.UseSqlServer(connectionString));
           
@@ -261,7 +258,7 @@ namespace text_editor_server
             app.MapControllers();
 
             // Map SignalR hub
-            app.MapHub<CollaborationHub>( "/hubs/collaboration");
+            app.MapHub<CollaborationHub>( "/api/hubs");
 
             // Health check
             app.MapGet("/", () => Results.Ok("Server is running"));

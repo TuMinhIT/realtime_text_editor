@@ -16,10 +16,6 @@ import { sessionService } from "../services/sessionService";
 // Thêm realtime service:
 import { signalRService } from "../services/signalRService";
 
-// Tách hooks realtime - dùng những hook đang sử dụng
-import useSectionJoin from "../hooks/realtime/useSectionJoin";
-import useRealtimeLock from "../hooks/realtime/useRealtimeLock";
-
 import ProofFileTab from "../components/SectionUser/ProofFileTab";
 import SectionEdit from "./SectionEdit";
 
@@ -108,18 +104,28 @@ const SectionUserEdit = () => {
     });
   }, [sections]);
 
-  // Realtime: join selected section and register listeners via hooks
-  useSectionJoin(selectedSection?.id);
-
-  //Clean up khi rời khỏi section hoặc document:
+  // Load assignment whenever selected section changes (including initial auto-select)
   useEffect(() => {
-    return () => {
-      if (selectedSection?.id) {
-        signalRService.releaseEditSession(selectedSection.id);
-        signalRService.leaveCurrentSection();
+    let mounted = true;
+
+    const loadAssignment = async () => {
+      if (!selectedSection) {
+        if (mounted) setAssignment(null);
+        return;
+      }
+
+      const assignmentData = await loadUserAssignments(selectedSection);
+      if (mounted) {
+        setAssignment(assignmentData);
       }
     };
-  }, [selectedSection?.id]);
+
+    loadAssignment();
+
+    return () => {
+      mounted = false;
+    };
+  }, [selectedSection]);
 
   const handleSelectSection = async (section) => {
     try {
@@ -132,9 +138,8 @@ const SectionUserEdit = () => {
         signalRService.leaveCurrentSection();
       }
 
-      var assignmentData = await loadUserAssignments(section);
+      setAssignment(null);
       setSelectedSection(section);
-      setAssignment(assignmentData);
     } catch (err) {
       console.error(err);
     }

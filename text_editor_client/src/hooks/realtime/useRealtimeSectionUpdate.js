@@ -3,64 +3,47 @@ import { sessionService } from "../../services/sessionService";
 import sectionService from "../../services/sectionService";
 
 export default function useRealtimeSectionUpdate({
-    documentId,
-    selectedSectionRef,
-    isDirtyRef,
-    setSections,
+  documentId,
+  selectedSectionRef,
+  isDirtyRef,
+  setSections,
 }) {
+  const onSectionUpdated = useCallback(
+    async (data) => {
+      const currentUserId = sessionService.getCurrentUser()?.id;
 
-    const onSectionUpdated = useCallback(async (data) => {
+      // bỏ event của chính mình
+      if (data.userId === currentUserId) {
+        return;
+      }
 
-        const currentUserId =
-            sessionService.getCurrentUser()?.id;
+      const currentSectionId = selectedSectionRef.current?.id;
 
-        // bỏ event của chính mình
-        if (data.userId === currentUserId) {
-            return;
-        }
+      // section khác -> ignore
+      if (data.sectionId !== currentSectionId) {
+        return;
+      }
 
-        const currentSectionId =
-            selectedSectionRef.current?.id;
+      // đang edit -> ignore
+      if (isDirtyRef.current) {
+        return;
+      }
 
-        // section khác -> ignore
-        if (data.sectionId !== currentSectionId) {
-            return;
-        }
+      try {
+        // const freshSections =
+        //   await sectionService.getAllSectionsByDocument(documentId);
 
-        // đang edit -> ignore
-        if (isDirtyRef.current) {
-            return;
-        }
+        // setSections(freshSections);
 
-        try {
+        console.log("[Realtime] section synced");
+      } catch (err) {
+        console.error("[Realtime] onSectionUpdated error", err);
+      }
+    },
+    [documentId, selectedSectionRef, isDirtyRef, setSections],
+  );
 
-            const freshSections =
-                await sectionService.getAllSectionsByDocument(
-                    documentId
-                );
-
-            setSections(freshSections);
-
-            console.log(
-                "[Realtime] section synced"
-            );
-
-        } catch (err) {
-
-            console.error(
-                "[Realtime] onSectionUpdated error",
-                err
-            );
-        }
-
-    }, [
-        documentId,
-        selectedSectionRef,
-        isDirtyRef,
-        setSections,
-    ]);
-
-    return {
-        onSectionUpdated,
-    };
+  return {
+    onSectionUpdated,
+  };
 }
