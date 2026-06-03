@@ -95,17 +95,27 @@ const SectionEdit = ({ documentId, tempSection }) => {
 
   const sectionRef = useRef(null);
   const isDirtyRef = useRef(false);
-  const [presence, onPresence] = useState(true);
-  const [hasLockRequested, setHasLockRequested] = useState(true);
+  const [presence, setPresence] = useState(null);
+  const [hasLockRequested, setHasLockRequested] = useState(false);
   const [lockState, setLockState] = useState(null);
 
   const userId = sessionService.getCurrentUser()?.id;
 
-  // const { onSectionUpdated } = useRealtimeSectionUpdate({
-  //   documentId,
-  //   sectionRef,
-  //   isDirtyRef,
-  // });
+  const { onSectionUpdated } = useRealtimeSectionUpdate({
+    documentId,
+    selectedSectionRef: sectionRef,
+    isDirtyRef,
+  });
+
+  useSignalRListeners({
+    onPresence: setPresence,
+    onLock: setLockState,
+    onSectionUpdated,
+  });
+
+  useEffect(() => {
+    sectionRef.current = section;
+  }, [section]);
 
   const openPreview = (sfdt) => {
     const editor = editorRef.current?.documentEditor;
@@ -113,7 +123,7 @@ const SectionEdit = ({ documentId, tempSection }) => {
       return;
     }
     editor.open(sfdt);
-    editor.isReadOnly = false;
+    editor.isReadOnly = canCurrentUserEdit();
   };
   // thiết lập có dc chỉnh sửa hay không
   const applyReadOnlyMode = (flag) => {
@@ -169,6 +179,49 @@ const SectionEdit = ({ documentId, tempSection }) => {
     };
   }, [tempSection?.id, userId, documentId]);
 
+  useEffect(() => {
+    setPresence(null);
+    setLockState(null);
+    setHasLockRequested(false);
+  }, [tempSection?.id]);
+
+  useEffect(() => {
+    if (!section?.id) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const requestLock = async () => {
+      if (permission !== 1) {
+        setHasLockRequested(false);
+        return;
+      }
+
+      try {
+        await signalRService.requestEditSession(section.id);
+
+        if (!cancelled) {
+          setHasLockRequested(true);
+        }
+      } catch (err) {
+        if (cancelled) {
+          return;
+        }
+
+        setHasLockRequested(false);
+        applyReadOnlyMode(true);
+        toast.info("Section này đang được người khác chỉnh sửa.");
+      }
+    };
+
+    requestLock();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [permission, section?.id]);
+
   const refetch = async () => {
     try {
       const newSection = await sectionService.getSectionbyId(
@@ -190,9 +243,8 @@ const SectionEdit = ({ documentId, tempSection }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
 
-  // Realtime: join selected section and register listeners via hooks
-  useSectionJoin(tempSection?.id);
-  // useSignalRListeners({ onPresence, onLock, onSectionUpdated });
+  // Realtime: join selected section
+  useSectionJoin(tempSection.id);
 
   // Hàm dựng preview section - load section mới:
   const loadPreview = async (section) => {
@@ -208,7 +260,6 @@ const SectionEdit = ({ documentId, tempSection }) => {
       const sfdt = normalizeJson(preview?.sfdtContent);
       // Preview hiện tại
       setPreviewSfdt(sfdt);
-      // reset dirty khi load section mới
       setIsDirty(false);
     } catch (error) {
       console.error("Load preview error:", error);
@@ -264,15 +315,22 @@ const SectionEdit = ({ documentId, tempSection }) => {
 
   //Helper user có quyền edit hay không:
   const canCurrentUserEdit = () => {
-    const currentUser = sessionService.getCurrentUser();
-    // const ls = typeof lockState !== "undefined" ? lockState : null;
-
-    // return (
-    //   assignment?.permission === 1 &&
-    //   (!ls?.isLocked || ls?.lockedByUserId === currentUser?.id)
-    // );
-    return permission === 1;
+    if (permission !== 1 || !hasLockRequested) {
+      return false;
+    }
+    if (!lockState?.isLocked) {
+      return true;
+    }
+    return lockState.lockedByUserId === userId;
   };
+
+  useEffect(() => {
+    if (!section?.id) {
+      return;
+    }
+
+    applyReadOnlyMode(!canCurrentUserEdit());
+  }, [hasLockRequested, lockState, permission, section?.id]);
 
   // load lại sycnfusion view
   useEffect(() => {
@@ -327,11 +385,6 @@ const SectionEdit = ({ documentId, tempSection }) => {
       isSavingRef.current = true;
       const serialized = normalizeJson(editor.serialize());
       await sectionService.updateSectionContent(sectionId, serialized);
-
-      //reload curent session
-      // Sau khi lưu thành công, cập nhật lại preview và reset dirty
-      // await signalRService.notifySectionUpdated(sectionId);
-
       console.log("[Realtime] autosaved");
     } catch (err) {
       console.error("Realtime save failed", err);
@@ -408,22 +461,8 @@ const SectionEdit = ({ documentId, tempSection }) => {
                       style={{
                         marginLeft: index === 0 ? 0 : -8,
                       }}
-                      className="
-                              relative
-                              flex
-                              h-9
-                              w-9
-                              items-center
-                              justify-center
-                              rounded-full
-                              border-2
-                              border-white
-                              bg-blue-500
-                              text-xs
-                              font-semibold
-                              text-white
-                              shadow
-                            "
+                      className="relative flex h-9 w-9 items-center justify-center rounded-full border-2
+                              border-white bg-blue-500 text-xs font-semibold text-white shadow"
                     >
                       {getInitials(user.username)}
 
@@ -448,18 +487,9 @@ const SectionEdit = ({ documentId, tempSection }) => {
               {/* ========= LOCK UI ========= */}
               {lockState?.isLocked && (
                 <div
-                  className={`
-                              flex
-                              items-center
-                              gap-2
-                              rounded-full
-                              border
-                              px-3
-                              py-1
-                              text-sm
+                  className={`flex items-centergap-2 rounded-full border px-3 py-1 text-sm
                               ${
-                                lockState.lockedByUserId ===
-                                sessionService.getCurrentUser()?.id
+                                lockState.lockedByUserId === userId
                                   ? `
                                     border-green-200
                                     bg-green-50
@@ -475,8 +505,7 @@ const SectionEdit = ({ documentId, tempSection }) => {
                 >
                   <Lock size={14} />
 
-                  {lockState.lockedByUserId ===
-                  sessionService.getCurrentUser()?.id ? (
+                  {lockState.lockedByUserId === userId ? (
                     <span>Bạn đang chỉnh sửa</span>
                   ) : (
                     <span>{lockState.lockedByUsername} đang chỉnh sửa</span>

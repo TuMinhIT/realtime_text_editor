@@ -23,6 +23,7 @@ export const sessionService = {
   },
 
   clearStore() {
+    window.localStorage.clear();
     window.localStorage.removeItem("user");
     window.localStorage.removeItem("accessToken");
   },

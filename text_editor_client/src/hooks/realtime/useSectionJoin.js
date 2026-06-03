@@ -17,11 +17,19 @@ export function useSectionJoin(sectionId) {
 
     return () => {
       if (!mounted) return;
-      try {
-        signalRService.leaveCurrentSection();
-      } catch (err) {
-        // ignore
-      }
+      (async () => {
+        try {
+          await signalRService.releaseEditSession(sectionId);
+        } catch (err) {
+          // ignore release errors on cleanup
+        }
+
+        try {
+          await signalRService.leaveCurrentSection();
+        } catch (err) {
+          // ignore leave errors on cleanup
+        }
+      })();
       mounted = false;
     };
   }, [sectionId]);

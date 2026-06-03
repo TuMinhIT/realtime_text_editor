@@ -1,8 +1,7 @@
 import * as signalR from "@microsoft/signalr";
+import { sessionService } from "./sessionService";
 
-const resource = "/hubs";
-
-const HUB_URL = import.meta.env.VITE_API_URL + resource;
+const HUB_URL = import.meta.env.VITE_SIGNALR_URL;
 
 let connection = null; //websocket connection instance
 let connectionPromise = null; // race condition guard for connection initialization
@@ -77,7 +76,7 @@ async function ensureConnection() {
   })();
 
   const conn = await connectionPromise;
-  connectionPromise = null;
+  // connectionPromise = null;
 
   return conn;
 }
@@ -226,19 +225,6 @@ export const signalRService = {
 
   getConnection() {
     return connection;
-  },
-
-  // Đăng ký callback cho sự kiện cập nhật con trỏ
-  async updateCursor(sectionId, cursor) {
-    try {
-      const conn = await ensureConnection();
-
-      await conn.invoke("UpdateCursor", sectionId, cursor);
-
-      return true;
-    } catch (err) {
-      console.error("[SignalR] updateCursor error", err);
-    }
   },
 
   async notifySectionUpdated(sectionId) {

@@ -9,11 +9,6 @@ import SectionUserEdit from "./pages/SectionUserEdit";
 
 //test realtime:
 import { useEffect } from "react";
-//Test chức năng realtime với SignalR
-// import { testSignalR } from "./testSignalR";
-
-//Gọi service realtime:
-import { signalRService } from "./services/signalRService";
 import DocOverview from "./pages/DocOverview";
 
 function ProtectedRoute({ children }) {

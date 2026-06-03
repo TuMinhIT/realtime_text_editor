@@ -23,7 +23,6 @@ namespace text_editor_server.Realtime.Hubs
                 _presenceService;
 
 
-
         public CollaborationHub(
             IRealtimeStateManager stateManager,
             IPresenceService presenceService)
@@ -37,19 +36,17 @@ namespace text_editor_server.Realtime.Hubs
 
         // 
         // CONNECT
-
-
         public override async Task
             OnConnectedAsync()
         {
-            Console.WriteLine("");
+            Console.WriteLine("-----");
     
             Console.WriteLine(
                 "SIGNALR CONNECTED");
 
             Console.WriteLine(
                 $"ConnectionId: {Context.ConnectionId}");
-
+            
   
             foreach (var claim
                 in Context.User!.Claims)
@@ -108,8 +105,6 @@ namespace text_editor_server.Realtime.Hubs
 
 
         // DISCONNECT
-
-
         public override async Task
             OnDisconnectedAsync(
                 Exception? exception)

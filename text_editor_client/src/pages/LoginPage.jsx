@@ -59,13 +59,11 @@ const LoginPage = () => {
           formData.password,
         );
         if (response) {
-
-
           sessionService.setLogin(response.user, response.accessToken);
-          
+
           //Kết nối SignalR sau khi đăng nhập thành công
-          signalRService.connect();
-          
+          await signalRService.connect();
+
           navigate("/", { replace: true });
         }
 

@@ -258,7 +258,7 @@ namespace text_editor_server
             app.MapControllers();
 
             // Map SignalR hub
-            app.MapHub<CollaborationHub>( "/api/hubs");
+            app.MapHub<CollaborationHub>( "/hubs");
 
             // Health check
             app.MapGet("/", () => Results.Ok("Server is running"));
