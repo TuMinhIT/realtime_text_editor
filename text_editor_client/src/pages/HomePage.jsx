@@ -105,8 +105,10 @@ const HomePage = () => {
     event.target.value = "";
   };
 
-  const openDocument = (documentId) => {
-    navigate(`document/${documentId}`);
+  const openDocument = (documentId, title) => {
+    navigate(`/document/${title}/${documentId}`, {
+      replace: true,
+    });
   };
 
   const handleLogout = () => {
@@ -123,7 +125,12 @@ const HomePage = () => {
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex w-full max-w-[1440px] items-center gap-4 px-4 py-3 md:px-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1a73e8] text-white">
+            <div
+              onClick={() => {
+                navigate("/", { replace: true });
+              }}
+              className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1a73e8] text-white"
+            >
               <FileText size={20} />
             </div>
             <div>
@@ -241,7 +248,7 @@ const HomePage = () => {
                       <td className="border-b border-slate-100 px-4 py-4">
                         <button
                           type="button"
-                          onClick={() => openDocument(doc.id)}
+                          onClick={() => openDocument(doc.id, doc.title)}
                           className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-3 py-1.5 text-sm font-medium transition hover:border-[#1a73e8] hover:text-[#1a73e8]"
                         >
                           <FolderOpen size={15} />

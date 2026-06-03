@@ -58,16 +58,6 @@ function GuestRoute({ children }) {
 }
 
 function App() {
-  // //Test chức năng realtime với SignalR
-  // useEffect(() => {
-  //   signalRService.connect();
-
-  //   return () => {
-  //       signalRService.disconnect();
-  //   };
-
-  // }, []);
-
   return (
     <Routes>
       {/* Guest Routes - dành cho chưa login */}
@@ -100,7 +90,7 @@ function App() {
       />
 
       <Route
-        path={`document/:documentId`}
+        path={`document/:title/:documentId`}
         element={
           <UserRoute>
             <SectionUserEdit />
@@ -137,7 +127,7 @@ function App() {
 
       {/* Catch-all route */}
       <Route
-        path={"*"}
+        path={"/*"}
         element={
           <ProtectedRoute>
             <HomePage />

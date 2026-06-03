@@ -115,17 +115,17 @@ const SectionEdit = ({ documentId, tempSection }) => {
     editor.open(sfdt);
     editor.isReadOnly = false;
   };
-
+  // thiết lập có dc chỉnh sửa hay không
   const applyReadOnlyMode = (flag) => {
-    // const editor = editorRef.current?.documentEditor;
-    // if (!editor) {
-    //   return;
-    // }
-    // try {
-    //   editor.isReadOnly = flag;
-    // } catch {
-    //   // Ignore if this Syncfusion build does not expose the flag yet.
-    // }
+    const editor = editorRef.current?.documentEditor;
+    if (!editor) {
+      return;
+    }
+    try {
+      editor.isReadOnly = flag;
+    } catch {
+      // Ignore if this Syncfusion build does not expose the flag yet.
+    }
   };
 
   // init data
@@ -175,9 +175,7 @@ const SectionEdit = ({ documentId, tempSection }) => {
         tempSection.id,
         userId,
       );
-
       const sfdt = normalizeJson(newSection?.content);
-
       setPreviewSfdt(sfdt);
       setOriginalPreview(sfdt);
       setSection(newSection);
@@ -193,10 +191,7 @@ const SectionEdit = ({ documentId, tempSection }) => {
   const [isDirty, setIsDirty] = useState(false);
 
   // Realtime: join selected section and register listeners via hooks
-  // useSectionJoin(section?.id);
-
-  // const onLock = useCallback(() => {}, []);
-
+  useSectionJoin(tempSection?.id);
   // useSignalRListeners({ onPresence, onLock, onSectionUpdated });
 
   // Hàm dựng preview section - load section mới:
@@ -342,6 +337,7 @@ const SectionEdit = ({ documentId, tempSection }) => {
       console.error("Realtime save failed", err);
     } finally {
       isSavingRef.current = false;
+      setIsDirty(false);
     }
   };
 
@@ -364,7 +360,7 @@ const SectionEdit = ({ documentId, tempSection }) => {
 
     const currentSerialized = normalizeJson(editor.serialize());
     const dirty = currentSerialized !== normalizeJson(originalPreview);
-    // setIsDirty(dirty);
+    setIsDirty(dirty);
 
     //  AUTO SAVE (debounce 1.5s)
     if (canCurrentUserEdit() && dirty) {
@@ -488,17 +484,21 @@ const SectionEdit = ({ documentId, tempSection }) => {
                 </div>
               )}
 
-              <div
-                className={`
+              {canCurrentUserEdit() ? (
+                <div
+                  className={`
                       rounded-full
                       px-3
                       py-1
                       text-sm
                       ${isDirty ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700"}
                     `}
-              >
-                {isDirty ? "Đang đồng bộ..." : "Đã lưu"}
-              </div>
+                >
+                  {isDirty ? "Đang đồng bộ..." : "Đã lưu"}
+                </div>
+              ) : (
+                <div className=" py-1 px-2 text-gray-500">Chỉ xem</div>
+              )}
             </div>
           </div>
         </div>
@@ -509,7 +509,7 @@ const SectionEdit = ({ documentId, tempSection }) => {
         showNavigationPane={true}
         handleCreated={handleCreated}
         handleContentChange={handleContentChange}
-        canEdit={permission == 1}
+        canEdit={canCurrentUserEdit()}
       />
     </section>
   );

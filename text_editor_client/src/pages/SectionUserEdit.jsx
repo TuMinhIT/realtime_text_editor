@@ -21,13 +21,11 @@ import SectionEdit from "./SectionEdit";
 
 const SectionUserEdit = () => {
   const location = useLocation();
-  const { documentId } = useParams();
+  const { documentId, title } = useParams();
   const navigate = useNavigate();
 
   const [sections, setSections] = useState([]);
-  const [documentTitle, setDocumentTitle] = useState(
-    location.state?.documentTitle || "Tài liệu",
-  );
+
   const [isLoading, setIsLoading] = useState(true);
 
   const [selectedSection, setSelectedSection] = useState(null);
@@ -139,9 +137,7 @@ const SectionUserEdit = () => {
 
             <div>
               <span className="text-slate-500">Văn bản:</span>{" "}
-              <span className="font-medium text-slate-900">
-                {documentTitle}
-              </span>
+              <span className="font-medium text-slate-900">{title}</span>
             </div>
           </div>
         </div>

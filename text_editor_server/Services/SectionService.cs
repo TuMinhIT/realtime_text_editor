@@ -122,18 +122,6 @@ namespace text_editor_server.Services
             var sections = await _context.Sections
                 .AsNoTracking()
                 .Where(s => s.DocumentId == documentId)
-                .Select(s => new Section
-                {
-                    Id = s.Id,
-                    DocumentId = s.DocumentId,
-                    Title = s.Title,
-                    Level = s.Level,
-                    OrderIndex = s.OrderIndex,
-                    ParentSectionId = s.ParentSectionId,
-                    Content = "no fetch content",
-                    Version = s.Version,
-                    Timestamp = s.Timestamp
-                })
                 .OrderBy(s => s.OrderIndex)               
                 .ToListAsync();
             return ServiceResult<List<Section>>.Ok(sections);
@@ -163,7 +151,7 @@ namespace text_editor_server.Services
                 ParentSectionId = section.ParentSectionId,
                 Content = section.Content,
                 UserId = userId,
-                Permission = permission?.Permission ?? PermissionLevel.Edit,
+                Permission = permission?.Permission ?? PermissionLevel.ViewOnly,
                 AssignedAt = permission?.AssignedAt ?? DateTime.UtcNow
             });
         }
