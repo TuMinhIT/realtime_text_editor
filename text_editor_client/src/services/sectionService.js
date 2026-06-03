@@ -14,6 +14,15 @@ export const sectionService = {
       throw toError(err);
     }
   },
+  // get section by id
+  async getSectionbyId(secsionId, userId) {
+    try {
+      const res = await http.get(`${resource}/${secsionId}/user/${userId}`);
+      return res.data;
+    } catch (err) {
+      throw toError(err);
+    }
+  },
 
   async updateSectionContent(sectionId, jsonContent) {
     try {

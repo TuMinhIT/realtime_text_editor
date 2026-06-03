@@ -1,13 +1,13 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 using text_editor_server.Data;
 using text_editor_server.DTOs.res;
 using text_editor_server.Entities;
-
-using System.Text.RegularExpressions;
 
 namespace text_editor_server.Services
 {
@@ -122,10 +122,52 @@ namespace text_editor_server.Services
             var sections = await _context.Sections
                 .AsNoTracking()
                 .Where(s => s.DocumentId == documentId)
+                .Select(s => new Section
+                {
+                    Id = s.Id,
+                    DocumentId = s.DocumentId,
+                    Title = s.Title,
+                    Level = s.Level,
+                    OrderIndex = s.OrderIndex,
+                    ParentSectionId = s.ParentSectionId,
+                    Content = "no fetch content",
+                    Version = s.Version,
+                    Timestamp = s.Timestamp
+                })
                 .OrderBy(s => s.OrderIndex)               
                 .ToListAsync();
             return ServiceResult<List<Section>>.Ok(sections);
         }
+
+        // get section by id:
+        public async Task<ServiceResult<SectionRes>> getSectionAndPermissionAsync(Guid userId, Guid sectionId)
+        {     
+            var section = await _context.Sections.FirstOrDefaultAsync(s => s.Id == sectionId);
+            if (section == null)
+            {
+                return ServiceResult<SectionRes>.Fail("Section not found");
+            }
+
+            var permission = await _context.SectionPermissions
+                    .AsNoTracking()
+                    .Where(s => s.SectionId == sectionId && s.UserId == userId)
+                    .FirstOrDefaultAsync();
+
+            return ServiceResult<SectionRes>.Ok(new SectionRes
+            {
+                Id = section.Id,
+                DocumentId = section.DocumentId,
+                Title = section.Title,
+                Level = section.Level,
+                OrderIndex = section.OrderIndex,
+                ParentSectionId = section.ParentSectionId,
+                Content = section.Content,
+                UserId = userId,
+                Permission = permission?.Permission ?? PermissionLevel.Edit,
+                AssignedAt = permission?.AssignedAt ?? DateTime.UtcNow
+            });
+        }
+
 
         public async Task<List<BlockPermissionRes>> GetSectionPermissonAsync(Guid sectionId)
         {

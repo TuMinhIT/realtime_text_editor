@@ -31,7 +31,7 @@ const SectionUserEdit = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   const [selectedSection, setSelectedSection] = useState(null);
-  const [assignment, setAssignment] = useState(null);
+
   const [openAside, setOpenAside] = useState(true);
   const [tab, setTab] = useState("section");
 
@@ -46,25 +46,6 @@ const SectionUserEdit = () => {
           : [];
 
     setSections(list);
-  };
-
-  const loadUserAssignments = async (selectedSection) => {
-    const currentUser = sessionService.getCurrentUser();
-
-    try {
-      const result = await sectionService.getUserAssignments({
-        userId: currentUser.id,
-        sectionId: selectedSection.id,
-      });
-
-      if (!result) {
-        return null;
-      }
-      return result;
-    } catch (err) {
-      console.log(err);
-      return null;
-    }
   };
 
   // load section all section
@@ -104,29 +85,6 @@ const SectionUserEdit = () => {
     });
   }, [sections]);
 
-  // Load assignment whenever selected section changes (including initial auto-select)
-  useEffect(() => {
-    let mounted = true;
-
-    const loadAssignment = async () => {
-      if (!selectedSection) {
-        if (mounted) setAssignment(null);
-        return;
-      }
-
-      const assignmentData = await loadUserAssignments(selectedSection);
-      if (mounted) {
-        setAssignment(assignmentData);
-      }
-    };
-
-    loadAssignment();
-
-    return () => {
-      mounted = false;
-    };
-  }, [selectedSection]);
-
   const handleSelectSection = async (section) => {
     try {
       if (selectedSection?.id === section.id) {
@@ -138,7 +96,6 @@ const SectionUserEdit = () => {
         signalRService.leaveCurrentSection();
       }
 
-      setAssignment(null);
       setSelectedSection(section);
     } catch (err) {
       console.error(err);
@@ -305,12 +262,8 @@ const SectionUserEdit = () => {
         )}
 
         {/* Nọi dung */}
-        {selectedSection && assignment && (
-          <SectionEdit
-            documentId={documentId}
-            section={selectedSection}
-            assignments={assignment}
-          />
+        {selectedSection && (
+          <SectionEdit documentId={documentId} tempSection={selectedSection} />
         )}
       </div>
     </main>

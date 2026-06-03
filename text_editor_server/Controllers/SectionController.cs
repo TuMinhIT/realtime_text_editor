@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
 using text_editor_server.DTOs.req;
@@ -33,6 +34,20 @@ namespace text_editor_server.Controllers
             {
                 return BadRequest(new { message = result.Message });
             }
+            return Ok(result.Data);
+        }
+
+        //Hàm get một section theo ID và kèm theo quyền chỉnh sửa
+        [HttpGet("{sectionID:guid}/user/{userID:guid}")]
+        [Authorize]
+        public async Task<IActionResult> GetSectionAndPermission(Guid sectionId, Guid userID)
+        {
+            var result = await _sectionService.getSectionAndPermissionAsync( userID, sectionId);
+            if (!result.Success)
+            {
+                return BadRequest(new { message = result.Message });
+            }
+           
             return Ok(result.Data);
         }
 
