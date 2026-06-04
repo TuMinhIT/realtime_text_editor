@@ -76,7 +76,9 @@ const getInitials = (name) => {
     .toUpperCase();
 };
 
-const SectionEdit = ({ documentId, tempSection }) => {
+
+
+const SectionEdit = ({ documentId, tempSection ,setSections}) => {
   const navigate = useNavigate();
   const editorRef = useRef(null);
 
@@ -101,10 +103,34 @@ const SectionEdit = ({ documentId, tempSection }) => {
 
   const userId = sessionService.getCurrentUser()?.id;
 
+  //handler realtime update khi có sự kiện update từ server gửi về:
+  const handleRealtimeContentReceived = useCallback(({ sfdt }) => {
+    const editor = editorRef.current?.documentEditor;
+
+    if (!editor || !sfdt) return;
+
+    // delay để tránh crash internal layout
+    requestAnimationFrame(() => {
+      try {
+        editor.open(sfdt);
+      } catch (e) {
+        console.warn("[UI] open failed", e);
+      }
+    });
+
+    setPreviewSfdt(sfdt);
+    setOriginalPreview(sfdt);
+    setIsDirty(false);
+  }, []);
+
+
+
   const { onSectionUpdated } = useRealtimeSectionUpdate({
     documentId,
     selectedSectionRef: sectionRef,
-    isDirtyRef
+    isDirtyRef,
+    setSections,
+    onContentReceived: handleRealtimeContentReceived,
   });
 
   useSignalRListeners({
@@ -324,6 +350,7 @@ const SectionEdit = ({ documentId, tempSection }) => {
     applyReadOnlyMode(!canCurrentUserEdit());
   };
 
+ 
   // useEffect(() => {
   //   if (!lockState || !section?.id) {
   //     return;
@@ -365,6 +392,9 @@ const SectionEdit = ({ documentId, tempSection }) => {
       isSavingRef.current = true;
       const serialized = normalizeJson(editor.serialize());
       await sectionService.updateSectionContent(sectionId, serialized);
+
+
+      await signalRService.notifySectionUpdated(sectionId);
       console.log("[Realtime] autosaved");
     } catch (err) {
       console.error("Realtime save failed", err);

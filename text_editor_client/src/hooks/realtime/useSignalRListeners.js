@@ -1,30 +1,57 @@
 import { useEffect } from "react";
 import { signalRService } from "../../services/signalRService";
 
-// Hook to register SignalR event listeners and clean them up on unmount
-export function useSignalRListeners({ onPresence, onLock, onSectionUpdated }) {
+export function useSignalRListeners({
+  onPresence,
+  onLock,
+  onSectionUpdated,
+}) {
   useEffect(() => {
-    let mounted = true;
+    console.log("[SignalR Hook] Register listeners...");
 
-    const setup = async () => {
+    const register = async () => {
       try {
-        if (onPresence) await signalRService.onPresenceUpdated(onPresence);
-        if (onLock) await signalRService.onLockUpdated(onLock);
-        if (onSectionUpdated)
-          await signalRService.onSectionUpdated(onSectionUpdated);
+        // presence
+        if (onPresence) {
+          console.log("[SignalR Hook] attaching presence listener");
+          signalRService.onPresenceUpdated((data) => {
+            console.log("[SignalR][Presence]", data);
+            onPresence(data);
+          });
+        }
+
+        // lock
+        if (onLock) {
+          console.log("[SignalR Hook] attaching lock listener");
+          signalRService.onLockUpdated((data) => {
+            console.log("[SignalR][Lock]", data);
+            onLock(data);
+          });
+        }
+
+        // section update
+        if (onSectionUpdated) {
+          console.log("[SignalR Hook] attaching sectionUpdated listener");
+          signalRService.onSectionUpdated((data) => {
+            console.log("[SignalR][SectionUpdated RAW]", data);
+            onSectionUpdated(data);
+          });
+        }
+
+        console.log("[SignalR Hook] listeners registered OK");
       } catch (err) {
-        console.error("[useSignalRListeners] setup error", err);
+        console.error("[SignalR Hook] setup error:", err);
       }
     };
 
-    setup();
+    register();
 
     return () => {
-      if (!mounted) return;
-      if (onPresence) signalRService.offPresenceUpdated();
-      if (onLock) signalRService.offLockUpdated();
-      if (onSectionUpdated) signalRService.offSectionUpdated();
-      mounted = false;
+      console.log("[SignalR Hook] cleanup listeners");
+
+      signalRService.offPresenceUpdated();
+      signalRService.offLockUpdated();
+      signalRService.offSectionUpdated();
     };
   }, [onPresence, onLock, onSectionUpdated]);
 }

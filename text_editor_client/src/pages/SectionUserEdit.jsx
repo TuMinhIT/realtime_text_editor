@@ -259,7 +259,7 @@ const SectionUserEdit = () => {
 
         {/* Nọi dung */}
         {selectedSection && (
-          <SectionEdit documentId={documentId} tempSection={selectedSection} />
+          <SectionEdit documentId={documentId} tempSection={selectedSection}  setSections={setSections} />
         )}
       </div>
     </main>
