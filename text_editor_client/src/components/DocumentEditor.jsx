@@ -15,6 +15,7 @@ import {
   Users,
   BlocksIcon,
   Download,
+  ArrowLeft,
 } from "lucide-react";
 
 import { TbLockOpen } from "react-icons/tb";
@@ -277,7 +278,7 @@ const DocumentEditor = () => {
             className="inline-flex h-10 w-10 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100"
             aria-label="Back to home"
           >
-            <Home size={18} />
+            <ArrowLeft size={18} />
           </button>
 
           <div className="flex items-center gap-2">

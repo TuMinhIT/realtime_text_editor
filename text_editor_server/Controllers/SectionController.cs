@@ -160,8 +160,6 @@ namespace text_editor_server.Controllers
                 message = "Section updated successfully"
             });
         }
-
-
     }
 
 

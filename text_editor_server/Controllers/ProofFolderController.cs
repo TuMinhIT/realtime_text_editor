@@ -5,6 +5,7 @@ using text_editor_server.DTOs.req;
 using text_editor_server.Entities;
 using text_editor_server.Services;
 
+
 namespace text_editor_server.Controllers
 {
     [ApiController]
@@ -23,12 +24,34 @@ namespace text_editor_server.Controllers
         [HttpPost("folders")]
         public async Task<IActionResult> CreateFolder([FromBody] CreateFolderReq request)
         {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrWhiteSpace(userIdClaim) ||
+                !Guid.TryParse(userIdClaim, out var currentUserId))
+            {
+                return Unauthorized("Invalid token payload");
+            }
+
             if (string.IsNullOrWhiteSpace(request.Name))
             {
                 return BadRequest(new { message = "Folder name is required" });
             }
 
-            var result = await _proofFileService.CreateFolderAsync(request.Name);
+            if (request.IsGlobal && request.DocumentId.HasValue)
+            {
+                return BadRequest(new { message = "Global folder cannot attach to document" });
+            }
+
+            if (!request.IsGlobal && !request.DocumentId.HasValue)
+            {
+                return BadRequest(new { message = "DocumentId is required" });
+            }
+
+            var result = await _proofFileService.CreateFolderAsync(
+                request.Name,
+                request.IsGlobal,
+                request.DocumentId,
+                currentUserId);
 
             if (!result.Success)
             {
@@ -53,53 +76,6 @@ namespace text_editor_server.Controllers
             return Ok(new { success = true });
         }
 
-        // get all global folders
-        [Authorize]
-        [HttpGet("folders/global")]
-        public async Task<IActionResult> GetAllFolderGlobal()
-        {
-            var result = await _proofFileService.GetAllFolderGlobalAsync();
-
-            if (!result.Success)
-            {
-                return BadRequest(new { message = result.Message });
-            }
-
-            return Ok(result.Data);
-        }
-
-        // get all folders by document
-        [Authorize]
-        [HttpGet("folders/document/{documentId:guid}")]
-        public async Task<IActionResult> GetAllFolderDocument(Guid documentId)
-        {
-            var result = await _proofFileService.GetAllFolderDocumentAsync(documentId);
-
-            if (!result.Success)
-            {
-                return BadRequest(new { message = result.Message });
-            }
-
-            return Ok(result.Data);
-        }
-
-        // download folder (zip)
-        [HttpGet("folders/{folderId:guid}/download")]
-        public async Task<IActionResult> DownloadFolder(Guid folderId)
-        {
-            var result = await _proofFileService.DownloadFolderAsync(folderId);
-
-            if (!result.Success || result.Data == null)
-            {
-                return NotFound(new { message = result.Message });
-            }
-
-            return File(
-                result.Data.Data,
-                result.Data.ContentType,
-                result.Data.FileName
-            );
-        }
 
         // thêm file vào folders
         [Authorize]
@@ -176,4 +152,5 @@ namespace text_editor_server.Controllers
             );
         }        
     }
+
 }

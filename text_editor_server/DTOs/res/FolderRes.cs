@@ -7,5 +7,7 @@ namespace text_editor_server.DTOs.res
         public string Name { get; set; } = null!;
 
         public DateTime CreatedAt { get; set; }
+
+        public bool IsGlobal { get; set; }
     }
 }

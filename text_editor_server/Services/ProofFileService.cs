@@ -142,6 +142,60 @@ namespace text_editor_server.Services
             }
         }
 
+        public async Task<ServiceResult<DocumentFile>> CreateDocumentFolderAsync(
+            Guid userId,
+            Guid documentId,
+            Guid folderId)
+        {
+            try
+            {
+                var documentExists = await _context.Documents
+                    .AsNoTracking()
+                    .AnyAsync(x => x.Id == documentId);
+
+                if (!documentExists)
+                {
+                    return ServiceResult<DocumentFile>.Fail("Document not found");
+                }
+
+                var folderExists = await _context.Folders
+                    .AsNoTracking()
+                    .AnyAsync(x => x.Id == folderId);
+
+                if (!folderExists)
+                {
+                    return ServiceResult<DocumentFile>.Fail("Folder not found");
+                }
+
+                var existed = await _context.DocumentFiles
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.DocumentId == documentId && x.FolderId == folderId);
+
+                if (existed != null)
+                {
+                    return ServiceResult<DocumentFile>.Fail("Folder already attached");
+                }
+
+                var documentFolder = new DocumentFile
+                {
+                    Id = Guid.NewGuid(),
+                    DocumentId = documentId,
+                    FolderId = folderId,
+                    AttachedBy = userId,
+                    AttachedAt = DateTime.UtcNow
+                };
+
+                _context.DocumentFiles.Add(documentFolder);
+                await _context.SaveChangesAsync();
+
+                return ServiceResult<DocumentFile>.Ok(documentFolder);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to create document folder");
+                return ServiceResult<DocumentFile>.Fail("Failed to create document folder");
+            }
+        }
 
         public async Task<ServiceResult<ProofFileDownloadRes>> DownloadProofFileAsync(Guid fileId)
         {
@@ -253,14 +307,12 @@ namespace text_editor_server.Services
 
         public async Task<ServiceResult<List<ProofFileRes>>> GetAllInternalAsync(Guid documentId)
         {
-
-
             var files = await _context.DocumentFiles
             .AsNoTracking()
-            .Where(d => d.DocumentId == documentId)
+            .Where(d => d.DocumentId == documentId && d.FileId != null)
             .Select(d => new ProofFileRes
             {
-                Id = d.File.Id,
+                Id = d.File!.Id,
                 FileName = d.File.FileName,
                 StoredFileName = d.File.StoredFileName,
                 FileUrl = d.File.StoredFileName,
@@ -272,11 +324,7 @@ namespace text_editor_server.Services
             .ToListAsync();
 
             return ServiceResult<List<ProofFileRes>>.Ok(files);
-
-
         }
-
-
 
         public async Task<ServiceResult<List< ProofFileRes>>> GetAllAsync()
         {
@@ -285,7 +333,7 @@ namespace text_editor_server.Services
                 .AsNoTracking()
                 .Where(f => f.IsGlobal) // Chỉ lấy các file có IsGlobal = true
                 .Select(f =>
-                 
+                
                 new ProofFileRes
                 {
                     Id = f.Id,
@@ -305,7 +353,11 @@ namespace text_editor_server.Services
             
         }
 
-        public async Task<ServiceResult<FolderRes>> CreateFolderAsync(string name)
+        public async Task<ServiceResult<FolderRes>> CreateFolderAsync(
+            string name,
+            bool isGlobal,
+            Guid? documentId,
+            Guid currentUserId)
         {
             try
             {
@@ -314,21 +366,46 @@ namespace text_editor_server.Services
                     return ServiceResult<FolderRes>.Fail("Folder name is required");
                 }
 
+                if (isGlobal && documentId.HasValue)
+                {
+                    return ServiceResult<FolderRes>.Fail("Global folder cannot attach to document");
+                }
+
+                if (!isGlobal && !documentId.HasValue)
+                {
+                    return ServiceResult<FolderRes>.Fail("DocumentId is required");
+                }
+
                 var folder = new Folder
                 {
                     Id = Guid.NewGuid(),
                     Name = name.Trim(),
+                    IsGlobal = isGlobal,
                     CreatedAt = DateTime.UtcNow
                 };
 
                 _context.Folders.Add(folder);
                 await _context.SaveChangesAsync();
 
+                if (!isGlobal)
+                {
+                    var linkResult = await CreateDocumentFolderAsync(
+                        currentUserId,
+                        documentId!.Value,
+                        folder.Id);
+
+                    if (!linkResult.Success)
+                    {
+                        return ServiceResult<FolderRes>.Fail(linkResult.Message);
+                    }
+                }
+
                 return ServiceResult<FolderRes>.Ok(new FolderRes
                 {
                     Id = folder.Id,
                     Name = folder.Name,
-                    CreatedAt = folder.CreatedAt
+                    CreatedAt = folder.CreatedAt,
+                    IsGlobal = folder.IsGlobal
                 });
             }
             catch (Exception ex)
@@ -356,6 +433,11 @@ namespace text_editor_server.Services
                     file.FolderId = null;
                 }
 
+                var folderLinks = await _context.DocumentFiles
+                    .Where(x => x.FolderId == folderId)
+                    .ToListAsync();
+
+                _context.DocumentFiles.RemoveRange(folderLinks);
                 _context.Folders.Remove(folder);
                 await _context.SaveChangesAsync();
 
@@ -373,7 +455,45 @@ namespace text_editor_server.Services
             Guid currentUserId,
             Guid folderId)
         {
-            return await UploadProofFileAsync(file, currentUserId, false, folderId);
+            var folder = await _context.Folders
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == folderId);
+
+            if (folder == null)
+            {
+                return ServiceResult<ProofFileRes>.Fail("Folder not found");
+            }
+
+            var uploadResult = await UploadProofFileAsync(file, currentUserId, folder.IsGlobal, folderId);
+
+            if (!uploadResult.Success || uploadResult.Data == null)
+            {
+                return uploadResult;
+            }
+
+            if (!folder.IsGlobal)
+            {
+                var folderLink = await _context.DocumentFiles
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.FolderId == folderId);
+
+                if (folderLink == null)
+                {
+                    return ServiceResult<ProofFileRes>.Fail("Folder not attached to document");
+                }
+
+                var linkResult = await CreateDocumentFileAsync(
+                    currentUserId,
+                    folderLink.DocumentId,
+                    uploadResult.Data.Id);
+
+                if (!linkResult.Success)
+                {
+                    return ServiceResult<ProofFileRes>.Fail(linkResult.Message);
+                }
+            }
+
+            return uploadResult;
         }
 
         public async Task<ServiceResult<List<ProofFileRes>>> UploadProofFilesToFolderAsync(
@@ -390,7 +510,7 @@ namespace text_editor_server.Services
 
             foreach (var file in files)
             {
-                var uploadResult = await UploadProofFileAsync(file, currentUserId, false, folderId);
+                var uploadResult = await UploadProofFileToFolderAsync(file, currentUserId, folderId);
 
                 if (!uploadResult.Success || uploadResult.Data == null)
                 {
@@ -407,16 +527,15 @@ namespace text_editor_server.Services
         {
             try
             {
-                var folders = await _context.ProofFiles
+                var folders = await _context.Folders
                     .AsNoTracking()
-                    .Where(f => f.IsGlobal && f.FolderId != null)
-                    .Select(f => f.Folder!)
-                    .GroupBy(f => new { f.Id, f.Name, f.CreatedAt })
-                    .Select(g => new FolderRes
+                    .Where(f => f.IsGlobal)
+                    .Select(f => new FolderRes
                     {
-                        Id = g.Key.Id,
-                        Name = g.Key.Name,
-                        CreatedAt = g.Key.CreatedAt
+                        Id = f.Id,
+                        Name = f.Name,
+                        CreatedAt = f.CreatedAt,
+                        IsGlobal = f.IsGlobal
                     })
                     .ToListAsync();
 
@@ -435,20 +554,15 @@ namespace text_editor_server.Services
             {
                 var folders = await _context.DocumentFiles
                     .AsNoTracking()
-                    .Where(df => df.DocumentId == documentId)
-                    .Join(
-                        _context.ProofFiles.AsNoTracking(),
-                        df => df.FileId,
-                        f => f.Id,
-                        (df, f) => f)
-                    .Where(f => f.FolderId != null)
-                    .Select(f => f.Folder!)
-                    .GroupBy(f => new { f.Id, f.Name, f.CreatedAt })
+                    .Where(df => df.DocumentId == documentId && df.FolderId != null)
+                    .Select(df => df.Folder!)
+                    .GroupBy(f => new { f.Id, f.Name, f.CreatedAt, f.IsGlobal })
                     .Select(g => new FolderRes
                     {
                         Id = g.Key.Id,
                         Name = g.Key.Name,
-                        CreatedAt = g.Key.CreatedAt
+                        CreatedAt = g.Key.CreatedAt,
+                        IsGlobal = g.Key.IsGlobal
                     })
                     .ToListAsync();
 
