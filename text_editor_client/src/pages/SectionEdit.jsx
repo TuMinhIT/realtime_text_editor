@@ -104,7 +104,7 @@ const SectionEdit = ({ documentId, tempSection }) => {
   const { onSectionUpdated } = useRealtimeSectionUpdate({
     documentId,
     selectedSectionRef: sectionRef,
-    isDirtyRef,
+    isDirtyRef
   });
 
   useSignalRListeners({
@@ -185,42 +185,20 @@ const SectionEdit = ({ documentId, tempSection }) => {
     setHasLockRequested(false);
   }, [tempSection?.id]);
 
-  useEffect(() => {
-    if (!section?.id) {
+  const requestEditLock = async () => {
+    if (!section?.id || permission !== 1 || hasLockRequested) {
       return;
     }
 
-    let cancelled = false;
-
-    const requestLock = async () => {
-      if (permission !== 1) {
-        setHasLockRequested(false);
-        return;
-      }
-
-      try {
-        await signalRService.requestEditSession(section.id);
-
-        if (!cancelled) {
-          setHasLockRequested(true);
-        }
-      } catch (err) {
-        if (cancelled) {
-          return;
-        }
-
-        setHasLockRequested(false);
-        applyReadOnlyMode(true);
-        toast.info("Section này đang được người khác chỉnh sửa.");
-      }
-    };
-
-    requestLock();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [permission, section?.id]);
+    try {
+      await signalRService.requestEditSession(section.id);
+      setHasLockRequested(true);
+    } catch (err) {
+      setHasLockRequested(false);
+      applyReadOnlyMode(true);
+      toast.info("Section này đang được người khác chỉnh sửa.");
+    }
+  };
 
   const refetch = async () => {
     try {
@@ -315,12 +293,14 @@ const SectionEdit = ({ documentId, tempSection }) => {
 
   //Helper user có quyền edit hay không:
   const canCurrentUserEdit = () => {
-    if (permission !== 1 || !hasLockRequested) {
+    if (permission !== 1) {
       return false;
     }
+
     if (!lockState?.isLocked) {
       return true;
     }
+
     return lockState.lockedByUserId === userId;
   };
 
@@ -330,7 +310,7 @@ const SectionEdit = ({ documentId, tempSection }) => {
     }
 
     applyReadOnlyMode(!canCurrentUserEdit());
-  }, [hasLockRequested, lockState, permission, section?.id]);
+  }, [lockState, permission, section?.id]);
 
   // load lại sycnfusion view
   useEffect(() => {
@@ -394,33 +374,24 @@ const SectionEdit = ({ documentId, tempSection }) => {
     }
   };
 
-  const handleContentChange = () => {
-    //Kiểm tra user có quyền edit hay không:
+  const handleContentChange = async () => {
     const editor = editorRef.current?.documentEditor;
     if (!editor || !section) {
       return;
     }
-    //Request lock khi bắt đầu edit:
-    // if (assignment?.permission == 1 && !hasLockRequested) {
-    //   try {
-    //     signalRService.requestEditSession(section.id);
-    //     setHasLockRequested(true);
-    //     console.log("Requested edit lock");
-    //   } catch (err) {
-    //     console.error("Request lock failed", err);
-    //   }
-    // }
+
+    if (permission === 1 && !hasLockRequested) {
+      requestEditLock();
+    }
 
     const currentSerialized = normalizeJson(editor.serialize());
     const dirty = currentSerialized !== normalizeJson(originalPreview);
     setIsDirty(dirty);
 
-    //  AUTO SAVE (debounce 1.5s)
     if (canCurrentUserEdit() && dirty) {
       if (autoSaveTimeoutRef.current) {
         clearTimeout(autoSaveTimeoutRef.current);
       }
-      // gọi save 1500 ms mỗi lần
       autoSaveTimeoutRef.current = setTimeout(() => {
         saveRealtime(section.id);
       }, 1500);

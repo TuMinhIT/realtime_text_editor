@@ -98,7 +98,7 @@ namespace text_editor_server
                             if (
                                 !string.IsNullOrEmpty(accessToken)
                                 &&
-                                path.StartsWithSegments("/hubs/collaboration"))
+                                path.StartsWithSegments("/hubs"))
                             {
                                 Console.WriteLine("SIGNALR TOKEN SET");
 
