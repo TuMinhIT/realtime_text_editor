@@ -111,6 +111,24 @@ namespace text_editor_server.Migrations
                     b.ToTable("DocumentSnapshots");
                 });
 
+            modelBuilder.Entity("text_editor_server.Entities.Folder", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Folders");
+                });
+
             modelBuilder.Entity("text_editor_server.Entities.ProofFile", b =>
                 {
                     b.Property<Guid>("Id")
@@ -135,6 +153,9 @@ namespace text_editor_server.Migrations
                     b.Property<long>("FileSize")
                         .HasColumnType("bigint");
 
+                    b.Property<Guid?>("FolderId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<bool>("IsGlobal")
                         .HasColumnType("bit");
 
@@ -143,6 +164,8 @@ namespace text_editor_server.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("FolderId");
 
                     b.ToTable("ProofFiles");
                 });
@@ -375,6 +398,16 @@ namespace text_editor_server.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("text_editor_server.Entities.ProofFile", b =>
+                {
+                    b.HasOne("text_editor_server.Entities.Folder", "Folder")
+                        .WithMany("Files")
+                        .HasForeignKey("FolderId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Folder");
+                });
+
             modelBuilder.Entity("text_editor_server.Entities.RefreshToken", b =>
                 {
                     b.HasOne("text_editor_server.Entities.User", "User")
@@ -448,6 +481,11 @@ namespace text_editor_server.Migrations
                     b.Navigation("DocumentFiles");
 
                     b.Navigation("Sections");
+                });
+
+            modelBuilder.Entity("text_editor_server.Entities.Folder", b =>
+                {
+                    b.Navigation("Files");
                 });
 
             modelBuilder.Entity("text_editor_server.Entities.ProofFile", b =>

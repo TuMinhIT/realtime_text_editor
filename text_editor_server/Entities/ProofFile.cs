@@ -16,10 +16,14 @@
 
         public bool IsGlobal { get; set; }
 
+        public Guid? FolderId { get; set; }
+
+        public Folder? Folder { get; set; }
+
         public DateTime CreatedAt { get; set; }
 
         public ICollection<DocumentFile> DocumentFiles { get; set; } = new List<DocumentFile>();
     }
 
-   
+
 }

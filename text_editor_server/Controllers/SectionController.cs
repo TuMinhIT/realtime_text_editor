@@ -1,7 +1,5 @@
-﻿using DocumentFormat.OpenXml.Spreadsheet;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json.Linq;
 using text_editor_server.DTOs.req;
 using text_editor_server.Entities;
 using text_editor_server.Services;
@@ -132,7 +130,6 @@ namespace text_editor_server.Controllers
             return Ok(assignment);
             
         }
-
 
         //Hàm get assignment trên 1 section 
         [HttpGet("user/{userId:guid}/section/{sectionId:guid}")]

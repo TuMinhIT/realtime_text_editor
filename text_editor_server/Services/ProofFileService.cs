@@ -1,5 +1,5 @@
-﻿using DocumentFormat.OpenXml.Bibliography;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -22,13 +22,25 @@ namespace text_editor_server.Services
         }
 
         public async Task<ServiceResult<ProofFileRes>> UploadProofFileAsync(
-            IFormFile file,      
-            Guid currentUserId, bool isGlobal)
+            IFormFile file,
+            Guid currentUserId, bool isGlobal, Guid? folderId = null)
         {
             try
             {
                 if (file == null || file.Length == 0)
                     return ServiceResult<ProofFileRes>.Fail("File không hợp lệ");
+
+                if (folderId.HasValue)
+                {
+                    var folderExists = await _context.Folders
+                        .AsNoTracking()
+                        .AnyAsync(x => x.Id == folderId.Value);
+
+                    if (!folderExists)
+                    {
+                        return ServiceResult<ProofFileRes>.Fail("Folder not found");
+                    }
+                }
 
                 byte[] fileBytes;
 
@@ -50,7 +62,8 @@ namespace text_editor_server.Services
                     ContentType = file.ContentType,
                     Data = encryptedData,
                     CreatedAt = DateTime.UtcNow,
-                    IsGlobal = isGlobal
+                    IsGlobal = isGlobal,
+                    FolderId = folderId
                 };
 
                 _context.ProofFiles.Add(entity);
@@ -292,66 +305,222 @@ namespace text_editor_server.Services
             
         }
 
+        public async Task<ServiceResult<FolderRes>> CreateFolderAsync(string name)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                    return ServiceResult<FolderRes>.Fail("Folder name is required");
+                }
 
-        //public List<HyperlinkIndexedRes> BuildHyperlinkIndexFromSfdtJson(JsonElement sfdt)
-        //{
-        //    var result = new List<HyperlinkIndexedRes>();
+                var folder = new Folder
+                {
+                    Id = Guid.NewGuid(),
+                    Name = name.Trim(),
+                    CreatedAt = DateTime.UtcNow
+                };
 
-        //    if (!sfdt.TryGetProperty("b", out var sections))
-        //        return result;
+                _context.Folders.Add(folder);
+                await _context.SaveChangesAsync();
 
-        //    int sectionCounter = 0;
+                return ServiceResult<FolderRes>.Ok(new FolderRes
+                {
+                    Id = folder.Id,
+                    Name = folder.Name,
+                    CreatedAt = folder.CreatedAt
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to create folder");
+                return ServiceResult<FolderRes>.Fail("Failed to create folder");
+            }
+        }
 
-        //    foreach (var section in sections.EnumerateArray())
-        //    {
-        //        sectionCounter++;
+        public async Task<ServiceResult<bool>> DeleteFolderAsync(Guid folderId)
+        {
+            try
+            {
+                var folder = await _context.Folders
+                    .Include(x => x.Files)
+                    .FirstOrDefaultAsync(x => x.Id == folderId);
 
-        //        if (!section.TryGetProperty("i", out var inlineNodes))
-        //            continue;
+                if (folder == null)
+                {
+                    return ServiceResult<bool>.Fail("Folder not found");
+                }
 
-        //        int linkCounter = 0;
+                foreach (var file in folder.Files)
+                {
+                    file.FolderId = null;
+                }
 
-        //        foreach (var node in inlineNodes.EnumerateArray())
-        //        {
-        //            if (!node.TryGetProperty("tlp", out var tlp))
-        //                continue;
+                _context.Folders.Remove(folder);
+                await _context.SaveChangesAsync();
 
-        //            var text = tlp.GetString();
-        //            var url = ExtractHyperlink(text);
+                return ServiceResult<bool>.Ok(true);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to delete folder");
+                return ServiceResult<bool>.Fail("Failed to delete folder");
+            }
+        }
 
-        //            if (string.IsNullOrEmpty(url))
-        //                continue;
+        public async Task<ServiceResult<ProofFileRes>> UploadProofFileToFolderAsync(
+            IFormFile file,
+            Guid currentUserId,
+            Guid folderId)
+        {
+            return await UploadProofFileAsync(file, currentUserId, false, folderId);
+        }
 
-        //            linkCounter++;
+        public async Task<ServiceResult<List<ProofFileRes>>> UploadProofFilesToFolderAsync(
+            IFormFileCollection files,
+            Guid currentUserId,
+            Guid folderId)
+        {
+            if (files == null || files.Count == 0)
+            {
+                return ServiceResult<List<ProofFileRes>>.Fail("File không hợp lệ");
+            }
 
-        //            result.Add(new HyperlinkIndexedRes
-        //            {
-        //                Code = $"1.{sectionCounter}.{linkCounter}",
-        //                Url = url
-        //            });
-        //        }
-        //    }
+            var results = new List<ProofFileRes>();
 
-        //    return result;
-        //}
-        //private string? ExtractHyperlink(string text)
-        //{
-        //    const string prefix = "HYPERLINK \"";
+            foreach (var file in files)
+            {
+                var uploadResult = await UploadProofFileAsync(file, currentUserId, false, folderId);
 
-        //    if (string.IsNullOrEmpty(text))
-        //        return null;
+                if (!uploadResult.Success || uploadResult.Data == null)
+                {
+                    return ServiceResult<List<ProofFileRes>>.Fail(uploadResult.Message);
+                }
 
-        //    var start = text.IndexOf(prefix, StringComparison.OrdinalIgnoreCase);
-        //    if (start == -1)
-        //        return null;
+                results.Add(uploadResult.Data);
+            }
 
-        //    start += prefix.Length;
+            return ServiceResult<List<ProofFileRes>>.Ok(results);
+        }
 
-        //    var end = text.IndexOf("\"", start);
-        //    if (end == -1)
-        //        return null;
+        public async Task<ServiceResult<List<FolderRes>>> GetAllFolderGlobalAsync()
+        {
+            try
+            {
+                var folders = await _context.ProofFiles
+                    .AsNoTracking()
+                    .Where(f => f.IsGlobal && f.FolderId != null)
+                    .Select(f => f.Folder!)
+                    .GroupBy(f => new { f.Id, f.Name, f.CreatedAt })
+                    .Select(g => new FolderRes
+                    {
+                        Id = g.Key.Id,
+                        Name = g.Key.Name,
+                        CreatedAt = g.Key.CreatedAt
+                    })
+                    .ToListAsync();
 
-        //    return text.Substring(start, end - start);
-        //}
+                return ServiceResult<List<FolderRes>>.Ok(folders);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get global folders");
+                return ServiceResult<List<FolderRes>>.Fail("Failed to get folders");
+            }
+        }
+
+        public async Task<ServiceResult<List<FolderRes>>> GetAllFolderDocumentAsync(Guid documentId)
+        {
+            try
+            {
+                var folders = await _context.DocumentFiles
+                    .AsNoTracking()
+                    .Where(df => df.DocumentId == documentId)
+                    .Join(
+                        _context.ProofFiles.AsNoTracking(),
+                        df => df.FileId,
+                        f => f.Id,
+                        (df, f) => f)
+                    .Where(f => f.FolderId != null)
+                    .Select(f => f.Folder!)
+                    .GroupBy(f => new { f.Id, f.Name, f.CreatedAt })
+                    .Select(g => new FolderRes
+                    {
+                        Id = g.Key.Id,
+                        Name = g.Key.Name,
+                        CreatedAt = g.Key.CreatedAt
+                    })
+                    .ToListAsync();
+
+                return ServiceResult<List<FolderRes>>.Ok(folders);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get document folders");
+                return ServiceResult<List<FolderRes>>.Fail("Failed to get folders");
+            }
+        }
+
+        public async Task<ServiceResult<FolderDownloadRes>> DownloadFolderAsync(Guid folderId)
+        {
+            try
+            {
+                var folder = await _context.Folders
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.Id == folderId);
+
+                if (folder == null)
+                {
+                    return ServiceResult<FolderDownloadRes>.Fail("Folder not found");
+                }
+
+                var files = await _context.ProofFiles
+                    .AsNoTracking()
+                    .Where(x => x.FolderId == folderId)
+                    .ToListAsync();
+
+                if (files.Count == 0)
+                {
+                    return ServiceResult<FolderDownloadRes>.Fail("Folder is empty");
+                }
+
+                using var zipStream = new MemoryStream();
+
+                using (var archive = new ZipArchive(zipStream, ZipArchiveMode.Create, true))
+                {
+                    foreach (var file in files)
+                    {
+                        byte[] decryptedData;
+
+                        try
+                        {
+                            decryptedData = DecryptFile(file.Data);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Failed to decrypt proof file {FileId}", file.Id);
+                            return ServiceResult<FolderDownloadRes>.Fail("Failed to decrypt file");
+                        }
+
+                        var entry = archive.CreateEntry(file.FileName, CompressionLevel.Fastest);
+
+                        await using var entryStream = entry.Open();
+                        await entryStream.WriteAsync(decryptedData);
+                    }
+                }
+
+                return ServiceResult<FolderDownloadRes>.Ok(new FolderDownloadRes
+                {
+                    FileName = $"{folder.Name}.zip",
+                    ContentType = "application/zip",
+                    Data = zipStream.ToArray()
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to download folder {FolderId}", folderId);
+                return ServiceResult<FolderDownloadRes>.Fail("Failed to download folder");
+            }
+        }
     }
 }
