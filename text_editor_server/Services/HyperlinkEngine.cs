@@ -86,6 +86,16 @@ namespace text_editor_server.Services
 
                     // ================= SEPARATOR =================
 
+                    // bỏ toàn bộ text còn lại trong hyperlink
+                    if (insideHyperlink
+                      && passedSeparator
+                      && hyperlinkCaptured
+                      && node.TryGetProperty("tlp", out var t))
+                    {
+                        Console.WriteLine(t.GetString());
+                        continue;
+                    }
+
                     if (insideHyperlink
                         && node.TryGetProperty("ft", out var ftSeparator)
                         && ftSeparator.GetInt32() == 2)

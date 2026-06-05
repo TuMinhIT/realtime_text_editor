@@ -194,7 +194,7 @@ const UserPermission = ({ selectedSection, loadPreview }) => {
                   onChange={(e) => setPermission(Number(e.target.value))}
                   className="w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-400"
                 >
-                  {/* <option value="0">View</option> */}
+                  <option value="0">View</option>
                   <option value="1">Edit</option>
                   {/* <option value="2">Owner</option> */}
                 </select>
