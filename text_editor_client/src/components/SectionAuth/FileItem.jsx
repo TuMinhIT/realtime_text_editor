@@ -1,7 +1,9 @@
 import { FileText, MoreVertical, Copy, Download, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import fileService from "../../services/fileService";
 
 import React from "react";
+import { toast } from "react-toastify";
 
 const formatDate = (value) => {
   if (!value) {
@@ -30,9 +32,10 @@ const createId = () => {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 };
 
-const FileItem = ({ doc, handleCopy, handleDelete, getDownloadUrl }) => {
+const FileItem = ({ doc, loadFiles }) => {
   const [openMenu, setOpenMenu] = useState(false);
   const menuRef = useRef(null);
+  const base = import.meta.env.VITE_API_URL || "";
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -47,6 +50,39 @@ const FileItem = ({ doc, handleCopy, handleDelete, getDownloadUrl }) => {
       document.removeEventListener("click", handleClickOutside);
     };
   }, []);
+
+  const getDownloadUrl = (doc) => {
+    if (!doc) return "";
+    return `${base}/prooffile/file/${doc.id}`;
+  };
+
+  const handleCopy = async (doc) => {
+    try {
+      const url = getDownloadUrl(doc);
+      if (!url) return;
+      await navigator.clipboard.writeText(url);
+      toast.success("Đã copy link.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Copy thất bại.");
+    }
+  };
+
+  const handleDelete = async (id) => {
+    const isConfirmed = window.confirm("Bạn có chắc muốn xóa file này?");
+
+    if (!isConfirmed) return;
+
+    try {
+      await fileService.deleteFile(id);
+      toast.success("Đã xóa file.");
+      await loadFiles();
+    } catch (err) {
+      console.error(err);
+
+      toast.error("Xóa thất bại");
+    }
+  };
 
   return (
     <div className="group relative flex items-center gap-4 border-t border-slate-200 bg-white px-4 py-3 transition hover:bg-slate-50">

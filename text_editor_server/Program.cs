@@ -37,6 +37,7 @@ namespace text_editor_server
             builder.Services.AddScoped<DocumentService>();
             builder.Services.AddScoped<SectionService>();
             builder.Services.AddScoped<ProofFileService>();
+            builder.Services.AddScoped<FolderService>();
             builder.Services.AddScoped<HyperlinkEngine>();
 
             builder.Services.AddHttpContextAccessor();
