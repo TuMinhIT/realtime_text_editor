@@ -14,6 +14,7 @@ namespace text_editor_server.Data
         public DbSet<DocumentSnapshot> DocumentSnapshots { get; set; }
         public DbSet<ProofFile> ProofFiles { get; set; }
         public DbSet<DocumentFile> DocumentFiles { get; set; }
+        public DbSet<Folder> Folders { get; set; }
 
         //Thêm file minh chứng
         public DbSet<SectionHyperlink> SectionHyperlinks { get; set; }
@@ -100,6 +101,11 @@ namespace text_editor_server.Data
                 .WithMany(x => x.DocumentFiles)
                 .HasForeignKey(x => x.FileId);
 
+            modelBuilder.Entity<Folder>()
+                .HasMany(x => x.Files)
+                .WithOne(x => x.Folder)
+                .HasForeignKey(x => x.FolderId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             //Thiết lập quan hệ giữa SectionHyperlink và ProofFile và Section
 
@@ -134,6 +140,10 @@ namespace text_editor_server.Data
         }
     }
 }
+
+
+
+
 
 
 

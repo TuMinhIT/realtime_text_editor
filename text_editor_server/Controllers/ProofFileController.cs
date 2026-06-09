@@ -1,13 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json.Linq;
 using System.Security.Claims;
-using text_editor_server.DTOs.res;
+using text_editor_server.DTOs.req;
 using text_editor_server.Entities;
 using text_editor_server.Services;
-
-using Newtonsoft.Json.Linq;
-using System.Text.Json;
 
 namespace text_editor_server.Controllers
 {
@@ -16,15 +12,14 @@ namespace text_editor_server.Controllers
     public class ProofFileController : ControllerBase
     {
         private readonly ProofFileService _proofFileService;
-        private readonly HyperlinkEngine _engine;
-
-        public ProofFileController(ProofFileService proofFileService, HyperlinkEngine engine)
+        
+        public ProofFileController(ProofFileService proofFileService)
         {
             _proofFileService = proofFileService;
-            _engine = engine;
+            
         }
-
-        [Authorize]
+        // upload file,Global 
+        [Authorize]     
         [HttpPost("upload")]
         [RequestSizeLimit(104_857_600)] // 100MB
         [Consumes("multipart/form-data")]
@@ -50,7 +45,7 @@ namespace text_editor_server.Controllers
             return Ok(result.Data);
         }
 
-
+        // upload file by user, not global
         [Authorize]
         [HttpPost("uploadByUser")]
         [RequestSizeLimit(104_857_600)] // 100MB
@@ -91,8 +86,8 @@ namespace text_editor_server.Controllers
                 documentFile = f.Id
             });
         }
-
-
+ 
+        // tải xuống 1 file
         [HttpGet("file/{id:guid}/")]
         public async Task<IActionResult> Download(Guid id)
         {
@@ -190,7 +185,5 @@ namespace text_editor_server.Controllers
 
             return Ok(result);
         }
-
-
     }
 }

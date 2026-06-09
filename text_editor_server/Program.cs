@@ -37,6 +37,7 @@ namespace text_editor_server
             builder.Services.AddScoped<DocumentService>();
             builder.Services.AddScoped<SectionService>();
             builder.Services.AddScoped<ProofFileService>();
+            builder.Services.AddScoped<FolderService>();
             builder.Services.AddScoped<HyperlinkEngine>();
 
             builder.Services.AddHttpContextAccessor();
@@ -101,7 +102,6 @@ namespace text_editor_server
                                 path.StartsWithSegments("/hubs"))
                             {
                                 Console.WriteLine("SIGNALR TOKEN SET");
-
                                 context.Token = accessToken;
                             }
 
@@ -112,7 +112,6 @@ namespace text_editor_server
                         {
                             Console.WriteLine(
                                 $"AUTH FAILED: {context.Exception.Message}");
-
                             return Task.CompletedTask;
                         }
                     };

@@ -1,34 +1,36 @@
 import { http } from "./http";
 
-const resource = "/prooffile";
+const resource = "/ProofFolder";
 
 const toError = (err) => err?.response?.data || err;
 
-const normalizeUploadOptions = (options) => {
-  if (typeof options === "boolean") {
-    return { isGlobal: options };
-  }
+export const folderService = {
+  async createFolder(name, isGlobal = true, documentId = null) {
+    try {
+      const res = await http.post(`${resource}`, {
+        name,
+        isGlobal,
+        documentId,
+      });
 
-  return options || {};
-};
+      return res.data;
+    } catch (err) {
+      throw toError(err);
+    }
+  },
 
-export const fileService = {
-  async uploadFile(file, options = {}) {
+  async uploadFileToFolder(file, folderId) {
     try {
       if (!file) throw new Error("No file provided");
 
-      const { isGlobal = true, folderId } = normalizeUploadOptions(options);
-
       const formData = new FormData();
       formData.append("file", file);
-
-      formData.append("isGlobal", String(isGlobal));
 
       if (folderId) {
         formData.append("folderId", folderId);
       }
 
-      const res = await http.post(`${resource}/upload`, formData, {
+      const res = await http.post(`${resource}/${folderId}/upload`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -72,9 +74,10 @@ export const fileService = {
     }
   },
 
-  async getAllFiles() {
+  //oke
+  async getAllFolder() {
     try {
-      const res = await http.get(`${resource}/getFiles`);
+      const res = await http.get(`${resource}`);
       return res.data;
     } catch (err) {
       throw toError(err);
@@ -89,8 +92,8 @@ export const fileService = {
       throw toError(err);
     }
   },
-
-  async deleteFile(id) {
+  //oke
+  async deleteFolder(id) {
     try {
       const res = await http.delete(`${resource}/${id}`);
       return res.data;
@@ -100,4 +103,4 @@ export const fileService = {
   },
 };
 
-export default fileService;
+export default folderService;

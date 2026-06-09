@@ -1,5 +1,5 @@
-﻿using DocumentFormat.OpenXml.Bibliography;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -22,13 +22,25 @@ namespace text_editor_server.Services
         }
 
         public async Task<ServiceResult<ProofFileRes>> UploadProofFileAsync(
-            IFormFile file,      
-            Guid currentUserId, bool isGlobal)
+            IFormFile file,
+            Guid currentUserId, bool isGlobal, Guid? folderId = null)
         {
             try
             {
                 if (file == null || file.Length == 0)
                     return ServiceResult<ProofFileRes>.Fail("File không hợp lệ");
+
+                if (folderId.HasValue)
+                {
+                    var folderExists = await _context.Folders
+                        .AsNoTracking()
+                        .AnyAsync(x => x.Id == folderId.Value);
+
+                    if (!folderExists)
+                    {
+                        return ServiceResult<ProofFileRes>.Fail("Folder not found");
+                    }
+                }
 
                 byte[] fileBytes;
 
@@ -50,7 +62,8 @@ namespace text_editor_server.Services
                     ContentType = file.ContentType,
                     Data = encryptedData,
                     CreatedAt = DateTime.UtcNow,
-                    IsGlobal = isGlobal
+                    IsGlobal = isGlobal,
+                    FolderId = folderId
                 };
 
                 _context.ProofFiles.Add(entity);
@@ -128,7 +141,6 @@ namespace text_editor_server.Services
                 return ServiceResult<DocumentFile>.Fail("Đã xảy ra lỗi khi tải tệp: " + ex.Message);
             }
         }
-
 
         public async Task<ServiceResult<ProofFileDownloadRes>> DownloadProofFileAsync(Guid fileId)
         {
@@ -240,14 +252,12 @@ namespace text_editor_server.Services
 
         public async Task<ServiceResult<List<ProofFileRes>>> GetAllInternalAsync(Guid documentId)
         {
-
-
             var files = await _context.DocumentFiles
             .AsNoTracking()
-            .Where(d => d.DocumentId == documentId)
+            .Where(d => d.DocumentId == documentId && d.FileId != null)
             .Select(d => new ProofFileRes
             {
-                Id = d.File.Id,
+                Id = d.File!.Id,
                 FileName = d.File.FileName,
                 StoredFileName = d.File.StoredFileName,
                 FileUrl = d.File.StoredFileName,
@@ -259,11 +269,7 @@ namespace text_editor_server.Services
             .ToListAsync();
 
             return ServiceResult<List<ProofFileRes>>.Ok(files);
-
-
         }
-
-
 
         public async Task<ServiceResult<List< ProofFileRes>>> GetAllAsync()
         {
@@ -272,7 +278,7 @@ namespace text_editor_server.Services
                 .AsNoTracking()
                 .Where(f => f.IsGlobal) // Chỉ lấy các file có IsGlobal = true
                 .Select(f =>
-                 
+                
                 new ProofFileRes
                 {
                     Id = f.Id,
@@ -292,66 +298,6 @@ namespace text_editor_server.Services
             
         }
 
-
-        //public List<HyperlinkIndexedRes> BuildHyperlinkIndexFromSfdtJson(JsonElement sfdt)
-        //{
-        //    var result = new List<HyperlinkIndexedRes>();
-
-        //    if (!sfdt.TryGetProperty("b", out var sections))
-        //        return result;
-
-        //    int sectionCounter = 0;
-
-        //    foreach (var section in sections.EnumerateArray())
-        //    {
-        //        sectionCounter++;
-
-        //        if (!section.TryGetProperty("i", out var inlineNodes))
-        //            continue;
-
-        //        int linkCounter = 0;
-
-        //        foreach (var node in inlineNodes.EnumerateArray())
-        //        {
-        //            if (!node.TryGetProperty("tlp", out var tlp))
-        //                continue;
-
-        //            var text = tlp.GetString();
-        //            var url = ExtractHyperlink(text);
-
-        //            if (string.IsNullOrEmpty(url))
-        //                continue;
-
-        //            linkCounter++;
-
-        //            result.Add(new HyperlinkIndexedRes
-        //            {
-        //                Code = $"1.{sectionCounter}.{linkCounter}",
-        //                Url = url
-        //            });
-        //        }
-        //    }
-
-        //    return result;
-        //}
-        //private string? ExtractHyperlink(string text)
-        //{
-        //    const string prefix = "HYPERLINK \"";
-
-        //    if (string.IsNullOrEmpty(text))
-        //        return null;
-
-        //    var start = text.IndexOf(prefix, StringComparison.OrdinalIgnoreCase);
-        //    if (start == -1)
-        //        return null;
-
-        //    start += prefix.Length;
-
-        //    var end = text.IndexOf("\"", start);
-        //    if (end == -1)
-        //        return null;
-
-        //    return text.Substring(start, end - start);
-        //}
+ 
     }
 }

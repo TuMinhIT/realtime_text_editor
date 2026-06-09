@@ -5,24 +5,18 @@ using System.Security.Claims;
 using text_editor_server.Realtime.Constants;
 using text_editor_server.Realtime.DTOs;
 using text_editor_server.Realtime.Interfaces;
-
 using ConnectionInfo =
     text_editor_server.Realtime.Models.ConnectionInfo;
-
 namespace text_editor_server.Realtime.Hubs
 {
     [Authorize]
     public class CollaborationHub : Hub
     {
-        private readonly
-            IRealtimeStateManager
-                _stateManager;
+        private readonly IRealtimeStateManager _stateManager;
 
-        private readonly
-            IPresenceService
-                _presenceService;
+        private readonly IPresenceService _presenceService;
 
-
+        //constructor
         public CollaborationHub(
             IRealtimeStateManager stateManager,
             IPresenceService presenceService)
@@ -34,40 +28,25 @@ namespace text_editor_server.Realtime.Hubs
                 presenceService;
         }
 
-        // 
         // CONNECT
         public override async Task
             OnConnectedAsync()
-        {
-            Console.WriteLine("-----");
-    
+        {  
+          
             Console.WriteLine(
-                "SIGNALR CONNECTED");
-
+            $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] SIGNALR CONNECTED");
             Console.WriteLine(
                 $"ConnectionId: {Context.ConnectionId}");
-            
-  
-            foreach (var claim
-                in Context.User!.Claims)
-            {
-                Console.WriteLine(
-                    $"{claim.Type}: {claim.Value}");
-            }
 
-            var userId =
-                Guid.Parse(
-                    Context.User!
-                        .FindFirst(
-                            ClaimTypes.NameIdentifier)!
-                        .Value);
+            var userId =Guid.Parse(Context.User!.FindFirst(
+                            ClaimTypes.NameIdentifier)!.Value);
 
             var username =
                 Context.User!
                     .FindFirst("fullName")?
                     .Value
                 ?? "Unknown";
-
+            ///tạo 1 connnection mới và lưu vào state manager
             var connection =
                 new ConnectionInfo
                 {
@@ -110,8 +89,9 @@ namespace text_editor_server.Realtime.Hubs
                 Exception? exception)
         {
 
+       
             Console.WriteLine(
-                "SIGNALR DISCONNECTED");
+            $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] SIGNALR DISCONNECTED");
 
             Console.WriteLine(
                 $"ConnectionId: {Context.ConnectionId}");
@@ -130,12 +110,9 @@ namespace text_editor_server.Realtime.Hubs
                     $"CURRENT SECTION: {connection.CurrentSectionId}");
             }
 
-            if (connection?
-                .CurrentSectionId
-                    != null)
+            if (connection?.CurrentSectionId!= null)
             {
-                var sectionId =
-                    connection
+                var sectionId = connection
                         .CurrentSectionId
                         .Value;
 
@@ -192,8 +169,6 @@ namespace text_editor_server.Realtime.Hubs
 
             Console.WriteLine(
                 "===================================");
-
-
             await base
                 .OnDisconnectedAsync(
                     exception);
@@ -201,7 +176,6 @@ namespace text_editor_server.Realtime.Hubs
 
 
         // JOIN SECTION
-
 
         public async Task
             JoinSection(
@@ -218,9 +192,7 @@ namespace text_editor_server.Realtime.Hubs
                 $"SectionId: {request.SectionId}");
 
             var connection =
-                _stateManager
-                    .GetConnection(
-                        Context.ConnectionId);
+                _stateManager.GetConnection(Context.ConnectionId);
 
             if (connection == null)
             {
@@ -298,16 +270,11 @@ namespace text_editor_server.Realtime.Hubs
             Console.WriteLine(
                 "LOCK EVENT SENT");
 
-            Console.WriteLine(
-                "===================================");
-
             Console.WriteLine("");
         }
 
 
         // LEAVE SECTION
-
-
         public async Task
             LeaveCurrentSection()
         {
@@ -398,8 +365,6 @@ namespace text_editor_server.Realtime.Hubs
 
 
         // REQUEST LOCK
-
-
         public async Task
             RequestEditSession(
                 Guid sectionId)
@@ -462,22 +427,14 @@ namespace text_editor_server.Realtime.Hubs
                 Console.WriteLine(
                     "PRESENCE EVENT SENT");
             }
-
-            Console.WriteLine(
-                "===================================");
-
-            Console.WriteLine("");
         }
 
 
         // RELEASE LOCK
-
-
         public async Task
             ReleaseEditSession(
                 Guid sectionId)
         {
-            Console.WriteLine("");
             Console.WriteLine(
                 "=========== RELEASE LOCK ===========");
 
@@ -515,54 +472,11 @@ namespace text_editor_server.Realtime.Hubs
 
             Console.WriteLine(
                 "===================================");
-
-            Console.WriteLine("");
-        }
-
-        //Cursor position:
-        // CURSOR POSITION
-
-        public async Task
-            UpdateCursor(
-                Guid sectionId,
-                CursorDto cursor)
-        {
-            var connection =
-                _stateManager
-                    .GetConnection(
-                        Context.ConnectionId);
-
-            if (connection == null)
-            {
-                return;
-            }
-
-            // chỉ gửi cho user khác
-            await Clients
-                .OthersInGroup(
-                    RealtimeGroups
-                        .Section(sectionId))
-                .SendAsync(
-                    RealtimeEvents
-                        .CursorUpdated,
-                    new
-                    {
-                        sectionId,
-
-                        userId =
-                            connection.UserId,
-
-                        username =
-                            connection.FullName,
-
-                        x = cursor.X,
-                        y = cursor.Y
-                    });
         }
 
         // CONTENT UPDATE   
         public async Task
-     NotifySectionUpdated(
+            NotifySectionUpdated(
          Guid sectionId)
         {
             var connection =
