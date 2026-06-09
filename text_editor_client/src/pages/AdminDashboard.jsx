@@ -18,7 +18,8 @@ import { SiAuthelia } from "react-icons/si";
 
 import ProofFileSection from "../components/SectionAuth/ProofFileSection";
 import DocumentSection from "../components/SectionAuth/documentSection";
-
+import { signalRService } from "../services/signalRService";
+import http from "../services/http";
 const AdminDashBoard = () => {
   const navigate = useNavigate();
 
@@ -27,7 +28,6 @@ const AdminDashBoard = () => {
   const handleLogout = () => {
     //Kết thúc signalR khi đăng xuất:
     signalRService.disconnect();
-
     sessionService.clearStore();
     http.setToken(null);
     window.localStorage.removeItem("accessToken");
