@@ -20,20 +20,39 @@ import ProofFileSection from "../components/SectionAuth/ProofFileSection";
 import DocumentSection from "../components/SectionAuth/documentSection";
 import { signalRService } from "../services/signalRService";
 import http from "../services/http";
+import { userService } from "../services/userService";
 const AdminDashBoard = () => {
   const navigate = useNavigate();
 
   const currentUser = sessionService.getCurrentUser();
 
-  const handleLogout = () => {
-    //Kết thúc signalR khi đăng xuất:
-    signalRService.disconnect();
-    sessionService.clearStore();
-    http.setToken(null);
-    window.localStorage.removeItem("accessToken");
-    window.localStorage.removeItem("user");
+  // const handleLogout = () => {
+  //   //Kết thúc signalR khi đăng xuất:
+  //   signalRService.disconnect();
+  //   sessionService.clearStore();
+  //   http.setToken(null);
+  //   window.localStorage.removeItem("accessToken");
+  //   window.localStorage.removeItem("user");
 
-    navigate("/login", { replace: true });
+  //   navigate("/login", { replace: true });
+  // };
+  const handleLogout = async () => {
+    try {
+      await userService.logout(); // revoke refresh token
+    } catch (err) {
+      console.error("Logout API error:", err);
+    } finally {
+      signalRService.disconnect();
+
+      sessionService.clearStore();
+
+      http.setToken(null);
+
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("user");
+
+      navigate("/login", { replace: true });
+    }
   };
 
   return (

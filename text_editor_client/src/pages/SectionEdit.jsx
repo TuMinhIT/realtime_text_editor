@@ -395,9 +395,9 @@ const SectionEdit = ({ documentId, tempSection ,setSections}) => {
 
 
       await signalRService.notifySectionUpdated(sectionId);
-      console.log("[Realtime] autosaved");
+      //console.log("[Realtime] autosaved");
     } catch (err) {
-      console.error("Realtime save failed", err);
+      //console.error("Realtime save failed", err);
     } finally {
       isSavingRef.current = false;
       setIsDirty(false);

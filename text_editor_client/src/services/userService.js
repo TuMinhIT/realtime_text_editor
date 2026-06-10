@@ -13,7 +13,7 @@ export const userService = {
     try {
       const res = await http.post(userResource + "/login", { email, password });
       const data = res.data;
-      console.log(data);
+      //console.log(data);
       if (data?.token) {
         http.setToken(data.token);
       }
@@ -78,4 +78,12 @@ export const userService = {
       throw toError(err);
     }
   },
+  async logout() {
+  try {
+    const res = await http.post(`${userResource}/logout`);
+    return res.data;
+  } catch (err) {
+    throw toError(err);
+  }
+}
 };

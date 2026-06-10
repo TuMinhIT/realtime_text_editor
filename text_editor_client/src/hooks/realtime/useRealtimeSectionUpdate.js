@@ -49,8 +49,8 @@ export default function useRealtimeSectionUpdate({
   ========================= */
   const onSectionUpdated = useCallback(
     (data) => {
-      console.log("================================");
-      console.log("[Realtime] EVENT RECEIVED:", data);
+      // console.log("================================");
+      // console.log("[Realtime] EVENT RECEIVED:", data);
 
       // debounce burst events
       if (debounceRef.current) {
@@ -72,35 +72,35 @@ export default function useRealtimeSectionUpdate({
       const currentUserId = sessionService.getCurrentUser()?.id;
       const currentSectionId = selectedSectionRef.current?.id;
 
-      console.log("[Realtime] syncing...");
+      //console.log("[Realtime] syncing...");
 
       // 1. ignore self update
       if (data?.updatedByUserId === currentUserId) {
-        console.log("[Realtime] ignore self update");
+        //console.log("[Realtime] ignore self update");
         return;
       }
 
       // 2. wrong section
       if (data?.sectionId !== currentSectionId) {
-        console.log("[Realtime] ignore different section");
+        //console.log("[Realtime] ignore different section");
         return;
       }
 
       // 3. user is editing locally
       if (isDirtyRef.current) {
-        console.log("[Realtime] ignore dirty state");
+        //console.log("[Realtime] ignore dirty state");
         return;
       }
 
       // 4. prevent parallel sync
       if (syncingRef.current) {
-        console.log("[Realtime] ignore duplicate sync");
+        //console.log("[Realtime] ignore duplicate sync");
         return;
       }
 
       syncingRef.current = true;
 
-      console.log("[Realtime] FETCH FROM DB ONLY");
+      //console.log("[Realtime] FETCH FROM DB ONLY");
 
       const latest = await sectionService.getSectionbyId(
         data.sectionId,
@@ -108,7 +108,7 @@ export default function useRealtimeSectionUpdate({
       );
 
       if (!latest?.content) {
-        console.log("[Realtime] empty response");
+        //console.log("[Realtime] empty response");
         return;
       }
 
@@ -131,11 +131,11 @@ export default function useRealtimeSectionUpdate({
       }
 
       if (!sfdt) {
-        console.log("[Realtime] no valid SFDT to apply");
+        //console.log("[Realtime] no valid SFDT to apply");
         return;
       }
 
-      console.log("[Realtime] APPLY UPDATE TO UI");
+      //console.log("[Realtime] APPLY UPDATE TO UI");
 
       onContentReceived?.({
         sfdt,
@@ -148,12 +148,12 @@ export default function useRealtimeSectionUpdate({
 
       setSections(freshSections);
 
-      console.log("[Realtime] SYNC DONE");
+      //console.log("[Realtime] SYNC DONE");
     } catch (err) {
       console.error("[Realtime] ERROR:", err);
     } finally {
       syncingRef.current = false;
-      console.log("================================");
+      //console.log("================================");
     }
   };
 

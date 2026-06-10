@@ -22,6 +22,8 @@ import { ClipLoader } from "react-spinners";
 import { toast } from "react-toastify";
 import { SiAuthelia } from "react-icons/si";
 
+import { userService } from "../services/userService";
+
 const formatDate = (value) => {
   if (!value) {
     return "-";
@@ -111,14 +113,21 @@ const HomePage = () => {
     });
   };
 
-  const handleLogout = () => {
+const handleLogout = async () => {
+  try {
+    await userService.logout();
+    //console.log("Logout success");
+  } catch (err) {
+    console.error("Logout API error:", err);
+  } finally {
     sessionService.clearStore();
     http.setToken(null);
-    window.localStorage.removeItem("accessToken");
-    window.localStorage.removeItem("user");
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("user");
 
     navigate("/login", { replace: true });
-  };
+  }
+};
 
   return (
     <main className="min-h-screen bg-[#f1f3f4] text-slate-900">

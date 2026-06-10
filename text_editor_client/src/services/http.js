@@ -23,54 +23,78 @@ axiosInstance.interceptors.request.use((config) => {
 });
 
 //Thêm refresh token:
+let isRefreshing = false;
+let refreshPromise = null;
+
 axiosInstance.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    //console.log("[RESPONSE OK]", response.config.url, response.status);
+    return response;
+  },
+
   async (error) => {
     const originalRequest = error.config;
-    //Nếu lỗi 401 và chưa retry:
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-      // Gọi API refresh token ở đây
-      try {
-        const res = await axios.post(
-          "https://localhost:8001/api/auth/refresh-token",
-          {},
-          { withCredentials: true },
-        );
-        const newAccessToken = res.data.accessToken;
-        //Lưu token mới và retry request cũ:
-        localStorage.setItem("accessToken", newAccessToken);
-        //gắn lại header cho request cũ:
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
 
-        //Gọi lại request ban đầu:
+    //console.log("[RESPONSE ERROR]", originalRequest?.url);
+    //console.log("[STATUS]", error.response?.status);
+
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      originalRequest.url !== "/users/refresh-token"
+    ) {
+      originalRequest._retry = true;
+
+      try {
+        // Chỉ cho phép 1 request refresh chạy
+        if (!isRefreshing) {
+          isRefreshing = true;
+
+          //console.log("[REFRESH] Starting refresh...");
+
+          refreshPromise = axiosInstance
+            .post("/users/refresh-token")
+            .then((res) => {
+              //console.log("[REFRESH RESPONSE]", res.data);
+
+              const token = res.data.accessToken;
+
+              localStorage.setItem("accessToken", token);
+
+              return token;
+            })
+            .finally(() => {
+              isRefreshing = false;
+            });
+        }
+
+        // Các request khác sẽ đợi refresh xong
+        const newAccessToken = await refreshPromise;
+
+        //console.log("[NEW ACCESS TOKEN]", newAccessToken);
+
+        originalRequest.headers.Authorization =
+          `Bearer ${newAccessToken}`;
+
+        //console.log("[RETRY]", originalRequest.url);
+
         return axiosInstance(originalRequest);
+
       } catch (refreshError) {
-        //Nếu refresh token cũng lỗi (ví dụ hết hạn), xóa token và redirect login:
+
+
         localStorage.removeItem("accessToken");
+
         window.location.href = "/login";
+
         return Promise.reject(refreshError);
       }
     }
+
     return Promise.reject(error);
-  },
+  }
 );
 
-// axiosInstance.interceptors.response.use(
-//   (response) => response,
-//   async (error) => {
-//     if (error.response?.status === 401) {
-//       //Tránh loop redirect:
-//       const isLoginRequest = error.config.url.includes("/auth/login");
-//       if (!isLoginRequest) {
-//         window.localStorage.removeItem("accessToken");
-//         window.location.href = "/login";
-//       }
-//     }
-//     return Promise.reject(error);
-//   }
-
-// );
 
 export const http = {
   setToken(token) {

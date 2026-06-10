@@ -42,7 +42,7 @@ async function ensureConnection() {
     });
 
     connection.onreconnected(async () => {
-      console.log("[SignalR] reconnected");
+      //console.log("[SignalR] reconnected");
 
       // restore state after reconnect
       if (currentSectionId) {
@@ -70,7 +70,7 @@ async function ensureConnection() {
 
     await connection.start();
 
-    console.log("[SignalR] connected");
+    //console.log("[SignalR] connected");
 
     return connection;
   })();
