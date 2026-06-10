@@ -12,21 +12,17 @@ namespace text_editor_server.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "ProofFiles",
+                name: "Folders",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    FileName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    StoredFileName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Data = table.Column<byte[]>(type: "varbinary(max)", nullable: false),
-                    FileSize = table.Column<long>(type: "bigint", nullable: false),
-                    ContentType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     IsGlobal = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ProofFiles", x => x.Id);
+                    table.PrimaryKey("PK_Folders", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -44,6 +40,31 @@ namespace text_editor_server.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Users", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ProofFiles",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    FileName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    StoredFileName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Data = table.Column<byte[]>(type: "varbinary(max)", nullable: false),
+                    FileSize = table.Column<long>(type: "bigint", nullable: false),
+                    ContentType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsGlobal = table.Column<bool>(type: "bit", nullable: false),
+                    FolderId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProofFiles", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ProofFiles_Folders_FolderId",
+                        column: x => x.FolderId,
+                        principalTable: "Folders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.CreateTable(
@@ -102,7 +123,8 @@ namespace text_editor_server.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     DocumentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    FileId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    FileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    FolderId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     AttachedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     AttachedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
@@ -116,11 +138,15 @@ namespace text_editor_server.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
+                        name: "FK_DocumentFiles_Folders_FolderId",
+                        column: x => x.FolderId,
+                        principalTable: "Folders",
+                        principalColumn: "Id");
+                    table.ForeignKey(
                         name: "FK_DocumentFiles_ProofFiles_FileId",
                         column: x => x.FileId,
                         principalTable: "ProofFiles",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -249,6 +275,11 @@ namespace text_editor_server.Migrations
                 column: "FileId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_DocumentFiles_FolderId",
+                table: "DocumentFiles",
+                column: "FolderId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Documents_CreatedBy",
                 table: "Documents",
                 column: "CreatedBy");
@@ -257,6 +288,11 @@ namespace text_editor_server.Migrations
                 name: "IX_DocumentSnapshots_DocumentId",
                 table: "DocumentSnapshots",
                 column: "DocumentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProofFiles_FolderId",
+                table: "ProofFiles",
+                column: "FolderId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_RefreshTokens_TokenId",
@@ -328,6 +364,9 @@ namespace text_editor_server.Migrations
 
             migrationBuilder.DropTable(
                 name: "Sections");
+
+            migrationBuilder.DropTable(
+                name: "Folders");
 
             migrationBuilder.DropTable(
                 name: "Documents");

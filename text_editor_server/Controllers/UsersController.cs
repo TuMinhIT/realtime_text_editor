@@ -6,15 +6,13 @@ using text_editor_server.DTOs.req;
 using text_editor_server.Services;
 
 namespace text_editor_server.Controllers
-{
-    
+{    
     [ApiController]
     [Route("api/[controller]")]
     public class UsersController : ControllerBase
     {
         private readonly AppDbContext _context;
-      private readonly AuthService _authService;
-      
+        private readonly AuthService _authService;
         private readonly ILogger<UsersController> _logger;
 
         public UsersController(AppDbContext context, AuthService authService,ILogger<UsersController> logger)
@@ -46,11 +44,10 @@ namespace text_editor_server.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error registering user: {ex.Message}");
+                _logger.LogError(ex, $"Error registering user");
                 return StatusCode(500, "Failed to register user");
             }
         }
-
 
         [HttpPost("refresh-token")]
         public async Task<IActionResult> RefreshToken()
@@ -61,7 +58,7 @@ namespace text_editor_server.Controllers
             {
                 return Unauthorized("Refresh token is missing");
             }
-
+         
             var newTokens = await _authService.RefreshTokenAsync(refreshToken);
 
             if (newTokens == null)
@@ -76,8 +73,8 @@ namespace text_editor_server.Controllers
             Response.Cookies.Append("refreshToken", newTokens.RefreshToken, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = false,
-                SameSite = SameSiteMode.Lax, //  FIX QUAN TRỌNG
+                Secure = true,
+                SameSite = SameSiteMode.None,  // chỉ gửi cookie trong cùng một site
                 Expires = DateTime.UtcNow.AddDays(7)
             });
 
@@ -107,8 +104,8 @@ namespace text_editor_server.Controllers
             Response.Cookies.Append("refreshToken", refreshToken!, new CookieOptions
             {
                 HttpOnly = true,    
-                Secure = false,       
-                SameSite = SameSiteMode.Lax,
+                Secure = true,       
+                SameSite = SameSiteMode.None,  // chỉ gửi cookie trong cùng một site
                 Expires = DateTime.UtcNow.AddDays(7)
             });
 
@@ -121,11 +118,9 @@ namespace text_editor_server.Controllers
             });
         }
 
-
         /// <summary>
         /// Get current user profile
         /// </summary>
-      
         [HttpGet("me")]
         public async Task<IActionResult> GetMe()
         {
@@ -161,7 +156,6 @@ namespace text_editor_server.Controllers
 
         }
 
-        
         /// <summary>
         /// Logout
         /// </summary>
@@ -170,12 +164,15 @@ namespace text_editor_server.Controllers
         public async Task<IActionResult> Logout()
         {
             var refreshToken = Request.Cookies["refreshToken"];
+            Console.WriteLine("COOKIE = " + refreshToken);
 
             if (string.IsNullOrEmpty(refreshToken))
                 return BadRequest("No refresh token");
 
+
             var result = await _authService.Logout(refreshToken);
 
+            Console.WriteLine("RESULT = " + result);
             if (!result)
                 return BadRequest("Invalid token");
 
@@ -183,11 +180,5 @@ namespace text_editor_server.Controllers
 
             return Ok(new { message = "Logged out" });
         }
-
-
     }
-
-
-
-
 }

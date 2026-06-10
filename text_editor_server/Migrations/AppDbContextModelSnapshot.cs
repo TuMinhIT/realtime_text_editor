@@ -69,7 +69,10 @@ namespace text_editor_server.Migrations
                     b.Property<Guid>("DocumentId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("FileId")
+                    b.Property<Guid?>("FileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("FolderId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
@@ -77,6 +80,8 @@ namespace text_editor_server.Migrations
                     b.HasIndex("DocumentId");
 
                     b.HasIndex("FileId");
+
+                    b.HasIndex("FolderId");
 
                     b.ToTable("DocumentFiles");
                 });
@@ -119,6 +124,9 @@ namespace text_editor_server.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsGlobal")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -380,13 +388,17 @@ namespace text_editor_server.Migrations
 
                     b.HasOne("text_editor_server.Entities.ProofFile", "File")
                         .WithMany("DocumentFiles")
-                        .HasForeignKey("FileId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("FileId");
+
+                    b.HasOne("text_editor_server.Entities.Folder", "Folder")
+                        .WithMany("DocumentFiles")
+                        .HasForeignKey("FolderId");
 
                     b.Navigation("Document");
 
                     b.Navigation("File");
+
+                    b.Navigation("Folder");
                 });
 
             modelBuilder.Entity("text_editor_server.Entities.DocumentSnapshot", b =>
@@ -485,6 +497,8 @@ namespace text_editor_server.Migrations
 
             modelBuilder.Entity("text_editor_server.Entities.Folder", b =>
                 {
+                    b.Navigation("DocumentFiles");
+
                     b.Navigation("Files");
                 });
 

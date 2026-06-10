@@ -137,13 +137,14 @@ namespace text_editor_server.Services
         public async Task<RefreshTokenRes?> RefreshTokenAsync(string refreshToken)
         {
             var parts = refreshToken.Split('.'); //Tách TokenId và phần random của refresh token
-            if (parts.Length != 2)
+            if (parts.Length != 2 || string.IsNullOrWhiteSpace(parts[0]))
             {
                 _logger.LogWarning("Invalid refresh token format");
                 return null;
             }
             var tokenId = parts[0];
 
+            //Lấy token từ DB
             var token = await _context.RefreshTokens
                 .Include(x => x.User)
                 .FirstOrDefaultAsync(x => x.TokenId == tokenId && !x.IsRevoked && x.ExpiresAt > DateTime.UtcNow);
@@ -162,41 +163,53 @@ namespace text_editor_server.Services
                 return null;
             }
 
-            // rotate
-            token.IsRevoked = true;
+            //Transaction:
+            using var transaction = await _context.Database.BeginTransactionAsync();
 
-            // Generate new refresh token
-            var newTokenId = Guid.NewGuid().ToString();
-            var newRandom = GenerateRefreshToken();
-            var newRawToken = $"{newTokenId}.{newRandom}";
-
-            var http = _httpContextAccessor.HttpContext;
-            var ip = http?.Connection.RemoteIpAddress?.ToString();
-            var device = http?.Request.Headers["User-Agent"].ToString();
-
-            var newToken = new RefreshToken
+            try
             {
-                TokenId = newTokenId,
-                TokenHash = BCrypt.Net.BCrypt.HashPassword(newRawToken),
-                ExpiresAt = DateTime.UtcNow.AddDays(7),
-                UserId = token.UserId,
-                CreatedByIp = ip,
-                Device = device
-            };
+                // rotate
+                token.IsRevoked = true;
+                token.RevokedAt = DateTime.UtcNow;
+                // Generate new refresh token
+                var newTokenId = Guid.NewGuid().ToString();
+                var newRandom = GenerateRefreshToken();
+                var newRawToken = $"{newTokenId}.{newRandom}";
 
-            token.ReplacedByToken = newRawToken;
+                var http = _httpContextAccessor.HttpContext;
+                var ip = http?.Connection.RemoteIpAddress?.ToString();
+                var device = http?.Request.Headers["User-Agent"].ToString();
 
-            _context.RefreshTokens.Add(newToken);
+                var newToken = new RefreshToken
+                {
+                    TokenId = newTokenId,
+                    TokenHash = BCrypt.Net.BCrypt.HashPassword(newRawToken),
+                    ExpiresAt = DateTime.UtcNow.AddDays(7),
+                    UserId = token.UserId,
+                    CreatedByIp = ip,
+                    Device = device
+                };
 
-            var accessToken = GenerateAccessToken(token.User);
+                token.ReplacedByToken = newTokenId;
 
-            await _context.SaveChangesAsync();
+                _context.RefreshTokens.Add(newToken);
 
-            return new RefreshTokenRes
+                var accessToken = GenerateAccessToken(token.User);
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return new RefreshTokenRes
+                {
+                    AccessToken = accessToken,
+                    RefreshToken = newRawToken
+                };
+            }
+            catch
             {
-                AccessToken = accessToken,
-                RefreshToken = newRawToken
-            };
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         //  LOGOUT
@@ -206,9 +219,7 @@ namespace text_editor_server.Services
             if (parts.Length != 2)
                 return false;
             var tokenId = parts[0];
-
             var token = await _context.RefreshTokens.FirstOrDefaultAsync(x => x.TokenId == tokenId && !x.IsRevoked);
-
             if (token == null)
                 return false;
 
@@ -218,9 +229,7 @@ namespace text_editor_server.Services
 
             token.IsRevoked = true;
             token.RevokedAt = DateTime.UtcNow;
-
             await _context.SaveChangesAsync();
-
             return true;
         }
 

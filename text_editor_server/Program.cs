@@ -262,6 +262,14 @@ namespace text_editor_server
             // Health check
             app.MapGet("/", () => Results.Ok("Server is running"));
 
+
+            Console.WriteLine(
+    $"ENV = {builder.Environment.EnvironmentName}"
+);
+
+            Console.WriteLine(
+                $"EXP = {builder.Configuration["Jwt:AccessTokenExpiryMinutes"]}"
+            );
             app.Run();
         }
     }
