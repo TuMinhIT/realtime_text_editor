@@ -1,44 +1,48 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using text_editor_server.Entities;
 
 namespace text_editor_server.Tests.Helper
 {
-    public  class AuthServiceTestHelper
+    public static class AuthServiceTestHelper
     {
+        public static User CreateUser(
+            string email = "test@gmail.com",
+            string password = "123456",
+            string fullName = "Test User",
+            bool isActive = true,
+            string role = "User")
+        {
+            return new User
+            {
+                Id = Guid.NewGuid(),
+                Email = email,
+                FullName = fullName,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
+                IsActive = isActive,
+                Role = role,
+                CreatedAt = DateTime.UtcNow
+            };
+        }
+
         public static User CreateTestUser()
         {
-            return new User
-            {
-                Id = Guid.NewGuid(),
-                Email = "test@gmail.com",
-                FullName = "Test User",
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456"),
-                IsActive = true,
-                Role = "User",
-                CreatedAt = DateTime.UtcNow
-            };
+            return CreateUser();
         }
-        //Test case: Tạo user inactive:
-        public static User CreateInActiveUser()
+
+        public static User CreateInactiveUser()
         {
-            return new User
-            {
-                Id = Guid.NewGuid(),
-                Email = "inactive@gmail.com",
-                FullName = "Test User",
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456"),
-                IsActive = false, // Không hoạt động.
-                Role = "User",
-                CreatedAt = DateTime.UtcNow
-            };
+            return CreateUser(
+                email: "inactive@gmail.com",
+                isActive: false
+            );
         }
 
-
+        public static User CreateAdminUser()
+        {
+            return CreateUser(
+                email: "admin@gmail.com",
+                role: "Admin"
+            );
+        }
     }
-
-    
 }

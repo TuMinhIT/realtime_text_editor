@@ -50,6 +50,15 @@ namespace text_editor_server.Services
         //REGISTER
         public async Task<UserRes?> RegisterUser(string email, string password, string fullName)
         {
+
+            if (string.IsNullOrWhiteSpace(email) ||
+                string.IsNullOrWhiteSpace(password) ||
+                string.IsNullOrWhiteSpace(fullName))
+            {
+                _logger.LogWarning("Register failed due to empty fields");
+                return null;
+            }
+
             if (await _context.Users.AnyAsync(x => x.Email == email))
                 return null;
 

@@ -131,7 +131,7 @@ namespace text_editor_server.Tests
             var context = CreateDbContext();
 
             context.Users.Add(
-                AuthServiceTestHelper.CreateInActiveUser());
+                AuthServiceTestHelper.CreateInactiveUser());
 
             await context.SaveChangesAsync();
 
@@ -177,6 +177,145 @@ namespace text_editor_server.Tests
             Assert.True(BCrypt.Net.BCrypt.Verify("123456", userInDb.PasswordHash));
         }
 
+        //Test case: Register with existing email
+        [Fact]
+        public async Task Register_DuplicateEmail_ShouldReturnNull()
+        {
+            var context = CreateDbContext();
+
+            context.Users.Add(AuthServiceTestHelper.CreateTestUser());
+            await context.SaveChangesAsync();
+
+            var service = CreateAuthService(context);
+
+            var result = await service.RegisterUser(
+                "test@gmail.com",
+                "123456",
+                "Another User"
+            );
+
+            Assert.Null(result);
+        }
+
+        //Test case: Register with empty email, password, and full name
+        [Fact]
+        public async Task Register_EmptyFields_ShouldReturnNull()
+        {
+            var context = CreateDbContext();
+            var service = CreateAuthService(context);
+            var result = await service.RegisterUser(
+                "",
+                "",
+                ""
+            );
+            Assert.Null(result);
+        }
+
+
+        //Test case: Login - Check refresh token generation
+        [Fact]
+        public async Task Login_ShouldCreateRefreshToken()
+        {
+            var context = CreateDbContext();
+
+            context.Users.Add(AuthServiceTestHelper.CreateTestUser());
+            await context.SaveChangesAsync();
+
+            var service = CreateAuthService(context);
+
+            var result = await service.Login("test@gmail.com", "123456");
+
+            Assert.NotNull(result);
+
+            var refreshTokens = await context.RefreshTokens.ToListAsync();
+
+            Assert.Single(refreshTokens);
+            Assert.Equal(result.User.Id, refreshTokens[0].UserId);
+            Assert.False(string.IsNullOrEmpty(refreshTokens[0].TokenHash));
+        }
+
+        // Test case: Refresh token - Wrong token
+        [Fact]
+        public async Task RefreshToken_NotFound_ShouldReturnNull()
+        {
+            var context = CreateDbContext();
+            var service = CreateAuthService(context);
+
+            var fakeToken = "11111111-1111-1111-1111-111111111111.randomstring";
+
+            var result = await service.RefreshTokenAsync(fakeToken);
+
+            Assert.Null(result);
+        }
+
+        // Test case: Refresh token - Expired token
+
+        [Fact]
+        public async Task RefreshToken_Expired_ShouldReturnNull()
+        {
+            var context = CreateDbContext();
+
+            var user = AuthServiceTestHelper.CreateTestUser();
+            context.Users.Add(user);
+
+            var token = new RefreshToken
+            {
+                TokenId = Guid.NewGuid().ToString(),
+                TokenHash = BCrypt.Net.BCrypt.HashPassword("test"),
+                UserId = user.Id,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(-10),
+                IsRevoked = false
+            };
+
+            context.RefreshTokens.Add(token);
+            await context.SaveChangesAsync();
+
+            var service = CreateAuthService(context);
+
+            var result = await service.RefreshTokenAsync("fake.fake");
+
+            Assert.Null(result);
+        }
+
+       
+
+
+
+        //Test case: Logout Success case
+        [Fact]
+        public async Task Logout_Success()
+        {
+            var context = CreateDbContext();
+
+            context.Users.Add(AuthServiceTestHelper.CreateTestUser());
+            await context.SaveChangesAsync();
+
+            var service = CreateAuthService(context);
+
+            var login = await service.Login("test@gmail.com", "123456");
+
+            Assert.NotNull(login);
+
+            var result = await service.Logout(login.RefreshToken);
+
+            Assert.True(result);
+
+            var tokenInDb = await context.RefreshTokens.FirstAsync();
+
+            Assert.True(tokenInDb.IsRevoked);
+        }
+        //Test case: Logout with invalid token
+
+        [Fact]
+        public async Task Logout_InvalidToken_ShouldReturnFalse()
+        {
+            var context = CreateDbContext();
+            var service = CreateAuthService(context);
+
+            var result = await service.Logout("invalid.token");
+
+            Assert.False(result);
+        }
 
     }
 }
