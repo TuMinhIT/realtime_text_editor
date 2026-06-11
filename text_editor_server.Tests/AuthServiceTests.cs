@@ -277,10 +277,6 @@ namespace text_editor_server.Tests
             Assert.Null(result);
         }
 
-       
-
-
-
         //Test case: Logout Success case
         [Fact]
         public async Task Logout_Success()

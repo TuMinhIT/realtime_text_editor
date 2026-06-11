@@ -87,7 +87,6 @@ namespace text_editor_server.Controllers
         /// Login user
         /// </summary>
         [HttpPost("login")]
-      
         public async Task<IActionResult> Login([FromBody] LoginReq request)
         {
             if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))

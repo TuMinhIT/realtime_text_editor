@@ -1,0 +1,508 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|c:\\users\\lpn31\\computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\services\\sectionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|solutionrelative:text_editor_server\\services\\sectionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|c:\\users\\lpn31\\computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\controllers\\sectioncontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|solutionrelative:text_editor_server\\controllers\\sectioncontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|c:\\users\\lpn31\\computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\dtos\\res\\updatecontentres.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|solutionrelative:text_editor_server\\dtos\\res\\updatecontentres.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|c:\\users\\lpn31\\computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\services\\serviceresult.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|solutionrelative:text_editor_server\\services\\serviceresult.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|c:\\users\\lpn31\\computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\dtos\\res\\documentres.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|solutionrelative:text_editor_server\\dtos\\res\\documentres.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|c:\\users\\lpn31\\computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\dtos\\res\\userres.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|solutionrelative:text_editor_server\\dtos\\res\\userres.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|c:\\users\\lpn31\\computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\dtos\\res\\sectionres.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|solutionrelative:text_editor_server\\dtos\\res\\sectionres.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|c:\\users\\lpn31\\computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\dtos\\res\\documentuploadres.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|solutionrelative:text_editor_server\\dtos\\res\\documentuploadres.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|c:\\users\\lpn31\\computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\services\\documentservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|solutionrelative:text_editor_server\\services\\documentservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|c:\\users\\lpn31\\computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\services\\authservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|solutionrelative:text_editor_server\\services\\authservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|c:\\users\\lpn31\\computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\controllers\\documentcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|solutionrelative:text_editor_server\\controllers\\documentcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|c:\\users\\lpn31\\computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\controllers\\userscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|solutionrelative:text_editor_server\\controllers\\userscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|c:\\users\\lpn31\\computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\appsettings.development.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|solutionrelative:text_editor_server\\appsettings.development.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|c:\\users\\lpn31\\computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|solutionrelative:text_editor_server\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Migrations\\20260611075550_InitialCreate.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:text_editor_server\\Migrations\\20260611075550_InitialCreate.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|c:\\users\\lpn31\\computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\data\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|solutionrelative:text_editor_server\\data\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|c:\\users\\lpn31\\computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\services\\syncfusionhelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|solutionrelative:text_editor_server\\services\\syncfusionhelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|c:\\users\\lpn31\\computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\services\\hyperlinkengine.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|solutionrelative:text_editor_server\\services\\hyperlinkengine.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|c:\\users\\lpn31\\computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\services\\sectionparser.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|solutionrelative:text_editor_server\\services\\sectionparser.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|c:\\users\\lpn31\\computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\services\\prooffileservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|solutionrelative:text_editor_server\\services\\prooffileservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|c:\\users\\lpn31\\computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\entities\\sectionhyperlink.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|solutionrelative:text_editor_server\\entities\\sectionhyperlink.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|c:\\users\\lpn31\\computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\entities\\section.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|solutionrelative:text_editor_server\\entities\\section.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|c:\\users\\lpn31\\computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\enums\\operationtype.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|solutionrelative:text_editor_server\\enums\\operationtype.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|c:\\users\\lpn31\\computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\services\\folderservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|solutionrelative:text_editor_server\\services\\folderservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|c:\\users\\lpn31\\computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|solutionrelative:text_editor_server\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|c:\\users\\lpn31\\computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\entities\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|solutionrelative:text_editor_server\\entities\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|c:\\users\\lpn31\\computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\dtos\\req\\loginreq.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|solutionrelative:text_editor_server\\dtos\\req\\loginreq.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|c:\\users\\lpn31\\computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\middleware\\checkaccesstoken.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|solutionrelative:text_editor_server\\middleware\\checkaccesstoken.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|c:\\users\\lpn31\\computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\middleware\\checkrole.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2E98BB3F-D393-A047-EC1B-20B7E99E1C8D}|text_editor_server\\text_editor_server.csproj|solutionrelative:text_editor_server\\middleware\\checkrole.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 369,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "SectionService.cs",
+              "DocumentMoniker": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Services\\SectionService.cs",
+              "RelativeDocumentMoniker": "text_editor_server\\Services\\SectionService.cs",
+              "ToolTip": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Services\\SectionService.cs",
+              "RelativeToolTip": "text_editor_server\\Services\\SectionService.cs",
+              "ViewState": "AgIAAA0BAAAAAAAAAAAjwBYBAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-11T07:07:41.234Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "SectionController.cs",
+              "DocumentMoniker": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Controllers\\SectionController.cs",
+              "RelativeDocumentMoniker": "text_editor_server\\Controllers\\SectionController.cs",
+              "ToolTip": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Controllers\\SectionController.cs",
+              "RelativeToolTip": "text_editor_server\\Controllers\\SectionController.cs",
+              "ViewState": "AgIAAJAAAAAAAAAAAIAwwJgAAAA1AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-11T07:00:35.386Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "ServiceResult.cs",
+              "DocumentMoniker": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Services\\ServiceResult.cs",
+              "RelativeDocumentMoniker": "text_editor_server\\Services\\ServiceResult.cs",
+              "ToolTip": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Services\\ServiceResult.cs",
+              "RelativeToolTip": "text_editor_server\\Services\\ServiceResult.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAAdAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-11T07:07:50.033Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "UpdateContentRes.cs",
+              "DocumentMoniker": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\DTOs\\res\\UpdateContentRes.cs",
+              "RelativeDocumentMoniker": "text_editor_server\\DTOs\\res\\UpdateContentRes.cs",
+              "ToolTip": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\DTOs\\res\\UpdateContentRes.cs",
+              "RelativeToolTip": "text_editor_server\\DTOs\\res\\UpdateContentRes.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAAVAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-11T08:04:46.604Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "UserRes.cs",
+              "DocumentMoniker": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\DTOs\\res\\UserRes.cs",
+              "RelativeDocumentMoniker": "text_editor_server\\DTOs\\res\\UserRes.cs",
+              "ToolTip": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\DTOs\\res\\UserRes.cs",
+              "RelativeToolTip": "text_editor_server\\DTOs\\res\\UserRes.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-11T08:05:05.108Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "SectionRes.cs",
+              "DocumentMoniker": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\DTOs\\res\\SectionRes.cs",
+              "RelativeDocumentMoniker": "text_editor_server\\DTOs\\res\\SectionRes.cs",
+              "ToolTip": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\DTOs\\res\\SectionRes.cs",
+              "RelativeToolTip": "text_editor_server\\DTOs\\res\\SectionRes.cs",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAAAAYAAAAkAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-11T08:04:58.379Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "DocumentRes.cs",
+              "DocumentMoniker": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\DTOs\\res\\DocumentRes.cs",
+              "RelativeDocumentMoniker": "text_editor_server\\DTOs\\res\\DocumentRes.cs",
+              "ToolTip": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\DTOs\\res\\DocumentRes.cs",
+              "RelativeToolTip": "text_editor_server\\DTOs\\res\\DocumentRes.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-11T08:04:50.974Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "DocumentUploadRes.cs",
+              "DocumentMoniker": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\DTOs\\res\\DocumentUploadRes.cs",
+              "RelativeDocumentMoniker": "text_editor_server\\DTOs\\res\\DocumentUploadRes.cs",
+              "ToolTip": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\DTOs\\res\\DocumentUploadRes.cs",
+              "RelativeToolTip": "text_editor_server\\DTOs\\res\\DocumentUploadRes.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAABHAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-11T08:04:51.844Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "UsersController.cs",
+              "DocumentMoniker": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Controllers\\UsersController.cs",
+              "RelativeDocumentMoniker": "text_editor_server\\Controllers\\UsersController.cs",
+              "ToolTip": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Controllers\\UsersController.cs",
+              "RelativeToolTip": "text_editor_server\\Controllers\\UsersController.cs",
+              "ViewState": "AgIAAFQAAAAAAAAAAAAgwF4AAAAvAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-10T03:02:45.054Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "AuthService.cs",
+              "DocumentMoniker": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Services\\AuthService.cs",
+              "RelativeDocumentMoniker": "text_editor_server\\Services\\AuthService.cs",
+              "ToolTip": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Services\\AuthService.cs",
+              "RelativeToolTip": "text_editor_server\\Services\\AuthService.cs",
+              "ViewState": "AgIAAOAAAAAAAAAAAAAtwFcAAAAlAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-10T01:34:14.685Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "DocumentController.cs",
+              "DocumentMoniker": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Controllers\\DocumentController.cs",
+              "RelativeDocumentMoniker": "text_editor_server\\Controllers\\DocumentController.cs",
+              "ToolTip": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Controllers\\DocumentController.cs",
+              "RelativeToolTip": "text_editor_server\\Controllers\\DocumentController.cs",
+              "ViewState": "AgIAAAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-10T01:22:10.34Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "DocumentService.cs",
+              "DocumentMoniker": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Services\\DocumentService.cs",
+              "RelativeDocumentMoniker": "text_editor_server\\Services\\DocumentService.cs",
+              "ToolTip": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Services\\DocumentService.cs",
+              "RelativeToolTip": "text_editor_server\\Services\\DocumentService.cs",
+              "ViewState": "AgIAAOIAAAAAAAAAAAAwwO4AAAAzAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-10T01:53:50.672Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "appsettings.Development.json",
+              "DocumentMoniker": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\appsettings.Development.json",
+              "RelativeDocumentMoniker": "text_editor_server\\appsettings.Development.json",
+              "ToolTip": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\appsettings.Development.json",
+              "RelativeToolTip": "text_editor_server\\appsettings.Development.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABQAAAANAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-06-10T04:06:58.54Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\appsettings.json",
+              "RelativeDocumentMoniker": "text_editor_server\\appsettings.json",
+              "ToolTip": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\appsettings.json",
+              "RelativeToolTip": "text_editor_server\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAfAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-06-11T06:52:30.913Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "20260611075550_InitialCreate.cs",
+              "DocumentMoniker": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Migrations\\20260611075550_InitialCreate.cs",
+              "RelativeDocumentMoniker": "text_editor_server\\Migrations\\20260611075550_InitialCreate.cs",
+              "ToolTip": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Migrations\\20260611075550_InitialCreate.cs",
+              "RelativeToolTip": "text_editor_server\\Migrations\\20260611075550_InitialCreate.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-11T07:55:50.425Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "AppDbContext.cs",
+              "DocumentMoniker": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Data\\AppDbContext.cs",
+              "RelativeDocumentMoniker": "text_editor_server\\Data\\AppDbContext.cs",
+              "ToolTip": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Data\\AppDbContext.cs",
+              "RelativeToolTip": "text_editor_server\\Data\\AppDbContext.cs",
+              "ViewState": "AgIAAHAAAAAAAAAAAAAYwFUAAAA0AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-11T07:35:26.349Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
+              "Title": "HyperlinkEngine.cs",
+              "DocumentMoniker": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Services\\HyperlinkEngine.cs",
+              "RelativeDocumentMoniker": "text_editor_server\\Services\\HyperlinkEngine.cs",
+              "ToolTip": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Services\\HyperlinkEngine.cs",
+              "RelativeToolTip": "text_editor_server\\Services\\HyperlinkEngine.cs",
+              "ViewState": "AgIAAHIAAAAAAAAAAAAtwH8AAAAzAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-11T07:07:30.186Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "SectionParser.cs",
+              "DocumentMoniker": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Services\\SectionParser.cs",
+              "RelativeDocumentMoniker": "text_editor_server\\Services\\SectionParser.cs",
+              "ToolTip": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Services\\SectionParser.cs",
+              "RelativeToolTip": "text_editor_server\\Services\\SectionParser.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-11T07:20:46.861Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "SyncfusionHelper.cs",
+              "DocumentMoniker": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Services\\SyncfusionHelper.cs",
+              "RelativeDocumentMoniker": "text_editor_server\\Services\\SyncfusionHelper.cs",
+              "ToolTip": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Services\\SyncfusionHelper.cs",
+              "RelativeToolTip": "text_editor_server\\Services\\SyncfusionHelper.cs",
+              "ViewState": "AgIAAGoAAAAAAAAAAAAQwHkAAAArAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-11T07:17:09.446Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
+              "Title": "ProofFileService.cs",
+              "DocumentMoniker": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Services\\ProofFileService.cs",
+              "RelativeDocumentMoniker": "text_editor_server\\Services\\ProofFileService.cs",
+              "ToolTip": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Services\\ProofFileService.cs",
+              "RelativeToolTip": "text_editor_server\\Services\\ProofFileService.cs",
+              "ViewState": "AgIAAKAAAAAAAAAAAAAkwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-11T07:07:26.014Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 20,
+              "Title": "SectionHyperlink.cs",
+              "DocumentMoniker": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Entities\\SectionHyperlink.cs",
+              "RelativeDocumentMoniker": "text_editor_server\\Entities\\SectionHyperlink.cs",
+              "ToolTip": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Entities\\SectionHyperlink.cs",
+              "RelativeToolTip": "text_editor_server\\Entities\\SectionHyperlink.cs",
+              "ViewState": "AgIAAAwAAAAAAAAAAAAmwCAAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-11T07:20:37.12Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 21,
+              "Title": "Section.cs",
+              "DocumentMoniker": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Entities\\Section.cs",
+              "RelativeDocumentMoniker": "text_editor_server\\Entities\\Section.cs",
+              "ToolTip": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Entities\\Section.cs",
+              "RelativeToolTip": "text_editor_server\\Entities\\Section.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-11T07:20:33.429Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 22,
+              "Title": "OperationType.cs",
+              "DocumentMoniker": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Enums\\OperationType.cs",
+              "RelativeDocumentMoniker": "text_editor_server\\Enums\\OperationType.cs",
+              "ToolTip": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Enums\\OperationType.cs",
+              "RelativeToolTip": "text_editor_server\\Enums\\OperationType.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-11T07:19:57.715Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 23,
+              "Title": "FolderService.cs",
+              "DocumentMoniker": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Services\\FolderService.cs",
+              "RelativeDocumentMoniker": "text_editor_server\\Services\\FolderService.cs",
+              "ToolTip": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Services\\FolderService.cs",
+              "RelativeToolTip": "text_editor_server\\Services\\FolderService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-11T07:11:46.993Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 24,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Program.cs",
+              "RelativeDocumentMoniker": "text_editor_server\\Program.cs",
+              "ToolTip": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Program.cs",
+              "RelativeToolTip": "text_editor_server\\Program.cs",
+              "ViewState": "AgIAAOwAAAAAAAAAAAAwwAkBAAAVAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-10T02:42:41.797Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 25,
+              "Title": "User.cs",
+              "DocumentMoniker": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Entities\\User.cs",
+              "RelativeDocumentMoniker": "text_editor_server\\Entities\\User.cs",
+              "ToolTip": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Entities\\User.cs",
+              "RelativeToolTip": "text_editor_server\\Entities\\User.cs",
+              "ViewState": "AgIAAAcAAAAAAAAAAAA5wAIAAAAVAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-10T02:39:55.772Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 26,
+              "Title": "LoginReq.cs",
+              "DocumentMoniker": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\DTOs\\req\\LoginReq.cs",
+              "RelativeDocumentMoniker": "text_editor_server\\DTOs\\req\\LoginReq.cs",
+              "ToolTip": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\DTOs\\req\\LoginReq.cs",
+              "RelativeToolTip": "text_editor_server\\DTOs\\req\\LoginReq.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-10T01:27:57.991Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 27,
+              "Title": "CheckAccessToken.cs",
+              "DocumentMoniker": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Middleware\\CheckAccessToken.cs",
+              "RelativeDocumentMoniker": "text_editor_server\\Middleware\\CheckAccessToken.cs",
+              "ToolTip": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Middleware\\CheckAccessToken.cs",
+              "RelativeToolTip": "text_editor_server\\Middleware\\CheckAccessToken.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABkAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-10T01:27:20.193Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 28,
+              "Title": "CheckRole.cs",
+              "DocumentMoniker": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Middleware\\CheckRole.cs",
+              "RelativeDocumentMoniker": "text_editor_server\\Middleware\\CheckRole.cs",
+              "ToolTip": "C:\\Users\\lpn31\\Computer\\realtime_text_editor\\realtime_text_editor\\text_editor_server\\Middleware\\CheckRole.cs",
+              "RelativeToolTip": "text_editor_server\\Middleware\\CheckRole.cs",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAgwCsAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-10T01:27:24.343Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

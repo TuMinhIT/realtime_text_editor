@@ -192,12 +192,20 @@ namespace text_editor_server.Services
             return permission;
         }
 
-        public async Task<bool> UpdateSectionContentAsync(
+        public async Task<ServiceResult<UpdateContentRes>> UpdateSectionContentAsync(
      Guid sectionId,
      string newContent)
         {
             using var transaction =
                 await _context.Database.BeginTransactionAsync();
+
+            //Khởi tạo:
+            var response = new UpdateContentRes
+            {
+                Id = sectionId,
+                Flag = false
+            };
+
 
             try
             {
@@ -206,7 +214,10 @@ namespace text_editor_server.Services
                         .FirstOrDefaultAsync(x => x.Id == sectionId);
 
                 if (section == null)
-                    return false;
+                {
+                    return ServiceResult<UpdateContentRes>
+                        .Fail("Section not found");
+                }
 
                 // =========================
                 // PHASE 1: PARSE SFDT
@@ -244,20 +255,33 @@ namespace text_editor_server.Services
                         .Where(x => x.SectionId == sectionId)
                         .ToListAsync();
 
+                //lưu ds cũ
+                var oldUrls = oldLinks
+                        .Select(x => x.Url)
+                        .ToHashSet();
+
                 _context.SectionHyperlinks.RemoveRange(oldLinks);
 
                 foreach (var item in rewriteResult.Hyperlinks)
                 {
+                    var hyperlinkId = Guid.NewGuid();
+
                     _context.SectionHyperlinks.Add(
                         new SectionHyperlink
                         {
-                            Id = Guid.NewGuid(),
+                            Id = hyperlinkId,
                             SectionId = sectionId,
                             ProofFileId = item.ProofFileId,
                             Url = item.Url,
                             Position = item.Position,
                             CreatedAt = DateTime.UtcNow
                         });
+
+                    if (!oldUrls.Contains(item.Url))
+                    {
+                        response.Flag = true;
+                   
+                    }
                 }
 
                 await _context.SaveChangesAsync();
@@ -310,14 +334,16 @@ namespace text_editor_server.Services
 
                 await transaction.CommitAsync();
 
-                return true;
+                return ServiceResult<UpdateContentRes>
+                    .Ok(response);
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
 
                 _logger.LogError(ex, "UpdateSectionContent error");
-                return false;
+                return ServiceResult<UpdateContentRes>
+                     .Fail(ex.Message);
             }
         }
         //Hàm chuyển từ sfdt gốc sang section content:
