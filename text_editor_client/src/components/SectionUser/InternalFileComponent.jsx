@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Clock3,
   Copy,
+  CopyCheck,
   DeleteIcon,
   Download,
   DownloadCloud,
@@ -122,7 +123,7 @@ const InternalFileComponent = ({ documentId }) => {
       <div className="flex flex-row items-center justify-between mt-5">
         <div className="flex items-center flex-row gap-2.5">
           <span className="flex text-lg font-medium text-slate-900">
-            Internal file
+            File nọi bộ
           </span>
 
           <span className=" flex text-sm text-slate-500">
@@ -166,22 +167,30 @@ const InternalFileComponent = ({ documentId }) => {
           </div>
         ) : files && files.length ? (
           files.map((doc) => (
-            <div
-              key={doc.id}
-              className="text-sm text-slate-700 hover:bg-[#f8fafc] group relative"
-            >
-              <button
-                type="button"
-                onClick={() => handleDelete(doc.id)}
-                title="Xóa"
-                className="absolute right-2 top-2 hidden items-center justify-center rounded p-1 text-red-600 bg-white border border-slate-200 group-hover:flex hover:bg-red-50"
-              >
-                <DeleteIcon size={16} />
-              </button>
+            <div key={doc.id} className=" p-2 text-slate-700 group relative">
+              <div className="absolute gap-2 right-2 top-2 hidden items-center p-1 group-hover:flex">
+                <button
+                  type="button"
+                  onClick={() => handleCopy(doc)}
+                  title="copy"
+                  className="p-1 text-blue-400 bg-white border border-slate-200 group-hover:flex hover:bg-blue-100"
+                >
+                  <CopyCheck size={16} />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleDelete(doc.id)}
+                  title="Xóa"
+                  className=" p-1 text-red-600 bg-white border border-slate-200 group-hover:flex hover:bg-red-50"
+                >
+                  <DeleteIcon size={16} />
+                </button>
+              </div>
 
               <div className="border-b border-slate-100 px-2 py-2">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-5 w-5 items-center justify-center rounded-lg bg-[#e8f0fe] text-[#1a73e8]">
+                  <div className="flex h-5 w-5 items-center justify-center text-blue-600">
                     <FileText size={16} />
                   </div>
                   <div>
@@ -198,14 +207,6 @@ const InternalFileComponent = ({ documentId }) => {
                   >
                     link: ....file/{doc.id}
                   </a> */}
-                  <button
-                    type="button"
-                    onClick={() => handleCopy(doc)}
-                    className="inline-flex items-center gap-2 rounded px-2 py-1 border border-slate-300 text-sm font-medium transition hover:bg-slate-100"
-                  >
-                    <Copy size={14} />
-                    Copy link
-                  </button>
                 </div>
               </div>
             </div>

@@ -242,14 +242,10 @@ const ProofFileSection = () => {
           {folders.length ? (
             <>
               {folders.map((f) => (
-                <FolderItem key={f.id} doc={f} loadFolders={loadFolders} />
+                <FolderItem key={f.id} folder={f} loadFolders={loadFolders} />
               ))}
             </>
-          ) : (
-            <div className="rounded-2xl border border-dashed border-slate-300 py-12 text-center text-slate-500">
-              Chưa có file nào trong folder này
-            </div>
-          )}
+          ) : null}
         </div>
       </div>
 

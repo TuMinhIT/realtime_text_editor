@@ -43,14 +43,10 @@ const AdminDashBoard = () => {
       console.error("Logout API error:", err);
     } finally {
       signalRService.disconnect();
-
       sessionService.clearStore();
-
       http.setToken(null);
-
       localStorage.removeItem("accessToken");
       localStorage.removeItem("user");
-
       navigate("/login", { replace: true });
     }
   };

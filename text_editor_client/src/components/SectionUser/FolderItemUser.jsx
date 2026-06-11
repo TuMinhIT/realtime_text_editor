@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ChevronRight,
   Upload,
+  CopyCheck,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { formatDate } from "../../utils/utilsFunction";
@@ -15,8 +16,9 @@ import React from "react";
 import { toast } from "react-toastify";
 import folderService from "../../services/folderService";
 import { CgSpinner } from "react-icons/cg";
-import FileItem from "./FileItem";
-const FolderItem = ({ folder, loadFolders }) => {
+import FileItemUser from "./FileItemUser";
+// import FileItem from "./FileItem";
+const FolderItemUser = ({ folder, loadFolders }) => {
   const [openMenu, setOpenMenu] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const base = import.meta.env.VITE_API_URL || "";
@@ -25,19 +27,19 @@ const FolderItem = ({ folder, loadFolders }) => {
   const [files, setFiles] = useState([]);
   const [loadFiles, setLoadFiles] = useState(false);
 
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
-        setOpenMenu(false);
-      }
-    };
+  // useEffect(() => {
+  //   const handleClickOutside = (e) => {
+  //     if (menuRef.current && !menuRef.current.contains(e.target)) {
+  //       setOpenMenu(false);
+  //     }
+  //   };
 
-    document.addEventListener("click", handleClickOutside);
+  //   document.addEventListener("click", handleClickOutside);
 
-    return () => {
-      document.removeEventListener("click", handleClickOutside);
-    };
-  }, []);
+  //   return () => {
+  //     document.removeEventListener("click", handleClickOutside);
+  //   };
+  // }, []);
 
   const handleDelete = async (id) => {
     const isConfirmed = window.confirm("Bạn có chắc muốn xóa file này?");
@@ -101,8 +103,8 @@ const FolderItem = ({ folder, loadFolders }) => {
   };
 
   useEffect(() => {
-    if (expanded) fetchFiles();
-  }, [expanded]);
+    fetchFiles();
+  }, []);
 
   const fetchFiles = async () => {
     setLoadFiles(true);
@@ -119,14 +121,11 @@ const FolderItem = ({ folder, loadFolders }) => {
   };
 
   return (
-    <div className=" border-t border-slate-200 bg-white px-4 py-3 transition hover:bg-slate-50">
-      <div
-        onClick={() => setExpanded((v) => !v)}
-        className="group relative flex items-center gap-4 "
-      >
+    <div className=" bg-white px-4 py-1 transition hover:bg-slate-50">
+      <div className="group relative flex items-center  gap-4 ">
         {/* File Info */}
         <div className="flex min-w-0 flex-1 items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100 text-gray-800">
+          <div className="flex h-8 w-8 items-center justify-center  text-yellow-400">
             <Folder size={20} />
           </div>
 
@@ -136,19 +135,28 @@ const FolderItem = ({ folder, loadFolders }) => {
         </div>
 
         {/* Expand button */}
-        <div className="w-24">
-          <button className="rounded p-1 hover:bg-slate-200">
+        <div className="w-18">
+          <button
+            onClick={() => setExpanded((v) => !v)}
+            className="rounded p-1 hover:bg-slate-200"
+          >
             {expanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
           </button>
         </div>
 
-        {/* Created */}
-        <div className="hidden w-32 text-sm text-slate-500 lg:block">
-          {formatDate(folder.createdAt)}
+        <div className="absolute right-2 hidden items-center p-1 group-hover:flex">
+          <button
+            type="button"
+            onClick={() => handleCopy(folder)}
+            title="copy"
+            className="p-1 text-blue-400 bg-white border border-slate-200 group-hover:flex hover:bg-blue-100"
+          >
+            <CopyCheck size={16} />
+          </button>
         </div>
 
         {/* Menu */}
-        <div ref={menuRef} className="relative">
+        {/* <div ref={menuRef} className="relative">
           <button
             onClick={() => setOpenMenu((v) => !v)}
             className={`rounded-full p-2 transition hover:bg-slate-200 ${
@@ -201,7 +209,7 @@ const FolderItem = ({ folder, loadFolders }) => {
               </button>
             </div>
           )}
-        </div>
+        </div> */}
       </div>
 
       {expanded && (
@@ -211,7 +219,7 @@ const FolderItem = ({ folder, loadFolders }) => {
           ) : (
             files?.map((child) => (
               <div key={child.id} className="ml-8">
-                <FileItem doc={child} loadFiles={loadFolders} />
+                <FileItemUser doc={child} />
               </div>
             ))
           )}
@@ -221,4 +229,4 @@ const FolderItem = ({ folder, loadFolders }) => {
   );
 };
 
-export default FolderItem;
+export default FolderItemUser;

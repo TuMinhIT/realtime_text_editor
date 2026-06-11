@@ -84,6 +84,16 @@ export const folderService = {
     }
   },
 
+  //oke
+  async getAllFileInFolder(folderId) {
+    try {
+      const res = await http.get(`${resource}/${folderId}/files`);
+      return res.data;
+    } catch (err) {
+      throw toError(err);
+    }
+  },
+
   async getAllInternalFiles(id) {
     try {
       const res = await http.get(`${resource}/getInternalFiles/${id}`);

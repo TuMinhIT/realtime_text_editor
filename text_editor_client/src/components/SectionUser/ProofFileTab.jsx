@@ -20,7 +20,9 @@ import { ClipLoader } from "react-spinners";
 import { toast } from "react-toastify";
 import { SiAuthelia } from "react-icons/si";
 import InternalFileComponent from "./InternalFileComponent";
-
+import FileItemUser from "./FileItemUser";
+import folderService from "../../services/folderService";
+import FolderItemUser from "./FolderItemUser";
 const formatDate = (value) => {
   if (!value) {
     return "-";
@@ -42,6 +44,7 @@ const ProofFileTab = ({ documentId }) => {
   const [keyword, setKeyword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const base = import.meta.env.VITE_API_URL || "";
+  const [folders, setFolders] = useState([]);
   const loadFiles = async () => {
     setIsLoading(true);
     setErrorMessage("");
@@ -55,6 +58,7 @@ const ProofFileTab = ({ documentId }) => {
   // mới dô load data lên đi
   useEffect(() => {
     loadFiles();
+    loadFolders();
   }, []);
 
   const formatFileSize = (size) => {
@@ -71,20 +75,13 @@ const ProofFileTab = ({ documentId }) => {
     event.target.value = "";
   };
 
-  const getDownloadUrl = (doc) => {
-    if (!doc) return "";
-    return `${base}/prooffile/file/${doc.id}`;
-  };
-
-  const handleCopy = async (doc) => {
+  const loadFolders = async () => {
     try {
-      const url = getDownloadUrl(doc);
-      if (!url) return;
-      await navigator.clipboard.writeText(url);
-      toast.success("Copied link to clipboard.");
+      const result = await folderService.getAllFolder();
+      setFolders(result.data);
     } catch (err) {
-      console.error(err);
-      toast.error("Copy failed.");
+      setFolders([]);
+      setErrorMessage(err?.message || "Không thể tải danh sách file.");
     }
   };
 
@@ -93,11 +90,11 @@ const ProofFileTab = ({ documentId }) => {
       <div className="flex flex-row items-center justify-between">
         <div className="flex items-center flex-row gap-2.5">
           <span className="flex text-lg font-medium text-slate-900">
-            Global file
+            File dùng chung
           </span>
 
           <span className=" flex text-sm text-slate-500">
-            {files && files.length} files
+            {files && files.length} files, {folders && folders.length} folders
           </span>
         </div>
       </div>
@@ -113,52 +110,21 @@ const ProofFileTab = ({ documentId }) => {
             </div>
           </div>
         ) : files && files.length ? (
-          files.map((doc) => (
-            <div
-              key={doc.id}
-              className="text-sm text-slate-700 hover:bg-[#f8fafc]"
-            >
-              <div className="border-b border-slate-100 px-2 py-2">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-5 w-5 items-center justify-center rounded-lg bg-[#e8f0fe] text-[#1a73e8]">
-                    <FileText size={16} />
-                  </div>
-                  <div>
-                    <p className="font-medium text-slate-900">{doc.fileName}</p>
-                  </div>
-                </div>
+          files.map((doc) => <FileItemUser key={doc.id} doc={doc} />)
+        ) : null}
 
-                <div className="flex items-center gap-3">
-                  {/* <a
-                    href={getDownloadUrl(doc)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-[#1a73e8] hover:underline break-all"
-                  >
-                    link: ....file/{doc.id}
-                  </a> */}
-                  <button
-                    type="button"
-                    onClick={() => handleCopy(doc)}
-                    className="inline-flex items-center gap-2 rounded px-2 py-1 border border-slate-300 text-sm font-medium transition hover:bg-slate-100"
-                  >
-                    <Copy size={14} />
-                    Copy link
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))
-        ) : (
-          <div>
-            <div
-              colSpan={5}
-              className="border-b border-slate-100 px-4 py-8 text-center text-sm text-slate-500"
-            >
-              Chua co tai lieu nao. Hay upload file `.docx` dau tien.
-            </div>
-          </div>
-        )}
+        {/* folders */}
+        <div>
+          {folders && folders.length
+            ? folders.map((folder) => (
+                <FolderItemUser
+                  key={folder.id}
+                  folder={folder}
+                  loadFolders={loadFolders}
+                />
+              ))
+            : null}
+        </div>
       </div>
 
       {/* // internal file */}

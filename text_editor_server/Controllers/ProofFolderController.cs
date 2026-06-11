@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using text_editor_server.DTOs.req;
-using text_editor_server.Entities;
 using text_editor_server.Services;
 
 
@@ -11,8 +10,7 @@ namespace text_editor_server.Controllers
     [ApiController]
     [Route("api/[controller]")]
     public class ProofFolderController: ControllerBase
-    {
-       
+    {    
         private readonly FolderService _folderService;
         private readonly ProofFileService _proofFileService;
         public ProofFolderController( FolderService folderService, ProofFileService proofFileService)
@@ -96,7 +94,7 @@ namespace text_editor_server.Controllers
 
             var result = await  _folderService
                 .UploadProofFileToFolderAsync(file, currentUserId, folderId);
-
+                
             if (!result.Success)
             {
                 return BadRequest(new { message = result.Message });
@@ -104,7 +102,7 @@ namespace text_editor_server.Controllers
 
             return Ok(result.Data);
         }
-
+        // load all file in folder
         [HttpGet("{folderId:guid}/files")]
         [Authorize]
         public async Task<IActionResult> GetAllFileInFolder(Guid folderId)
@@ -125,8 +123,6 @@ namespace text_editor_server.Controllers
 
             return Ok(result);
         }
-
-
 
 
         [HttpGet()]
@@ -215,7 +211,9 @@ namespace text_editor_server.Controllers
         //        result.Data.ContentType,
         //        result.Data.FileName
         //    );
-        //}        
+        //}
+        //
+
     }
 
 }

@@ -73,28 +73,21 @@ axiosInstance.interceptors.response.use(
 
         //console.log("[NEW ACCESS TOKEN]", newAccessToken);
 
-        originalRequest.headers.Authorization =
-          `Bearer ${newAccessToken}`;
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
 
         //console.log("[RETRY]", originalRequest.url);
 
         return axiosInstance(originalRequest);
-
       } catch (refreshError) {
-
-
         localStorage.removeItem("accessToken");
-
         window.location.href = "/login";
-
         return Promise.reject(refreshError);
       }
     }
 
     return Promise.reject(error);
-  }
+  },
 );
-
 
 export const http = {
   setToken(token) {
