@@ -321,7 +321,7 @@ namespace text_editor_server.Services
             }
         }
         //Hàm chuyển từ sfdt gốc sang section content:
-        public static List<JObject> ExtractBlocksFromSfdt(string json)
+    public static List<JObject> ExtractBlocksFromSfdt(string json)
         {
             var result = new List<JObject>();
 
@@ -369,9 +369,8 @@ namespace text_editor_server.Services
             return result;
         }
 
-     
         //HELPER for update:
-        private void RecalculateOwners(List<SectionHyperlink> links)
+    private void RecalculateOwners(List<SectionHyperlink> links)
         {
             var groups =
                 links
@@ -398,7 +397,6 @@ namespace text_editor_server.Services
             }
         }
         
-
         private void BuildNumbering(
     List<SectionHyperlink> links,
     Guid documentId)
@@ -456,7 +454,7 @@ namespace text_editor_server.Services
             }
         }
 
-        private void RewriteAllSections(Guid documentId)
+    private void RewriteAllSections(Guid documentId)
         {
             var sections =
                 _context.Sections
@@ -493,7 +491,7 @@ namespace text_editor_server.Services
             }
         }
 
-        private string RewriteSfdtDisplayText(
+    private string RewriteSfdtDisplayText(
      string content,
      Dictionary<Guid, string> codeMap)
         {

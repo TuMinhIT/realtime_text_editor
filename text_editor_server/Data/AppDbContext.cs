@@ -10,7 +10,6 @@ namespace text_editor_server.Data
         public DbSet<Section> Sections { get; set; }
         public DbSet<SectionPermission> SectionPermissions { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
- 
         public DbSet<DocumentSnapshot> DocumentSnapshots { get; set; }
         public DbSet<ProofFile> ProofFiles { get; set; }
         public DbSet<DocumentFile> DocumentFiles { get; set; }
@@ -130,11 +129,7 @@ namespace text_editor_server.Data
                     .HasForeignKey(x => x.OwnerSectionId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                //Kiểm tra file minh chứng:
-                entity.HasOne(x => x.ProofFile)
-                    .WithMany()
-                    .HasForeignKey(x => x.ProofFileId)
-                    .OnDelete(DeleteBehavior.SetNull);
+           
             });
 
         }

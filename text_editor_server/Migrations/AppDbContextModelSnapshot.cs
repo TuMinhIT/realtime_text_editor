@@ -300,8 +300,6 @@ namespace text_editor_server.Migrations
 
                     b.HasIndex("OwnerSectionId");
 
-                    b.HasIndex("ProofFileId");
-
                     b.HasIndex("SectionId");
 
                     b.ToTable("SectionHyperlinks");
@@ -453,11 +451,6 @@ namespace text_editor_server.Migrations
                         .HasForeignKey("OwnerSectionId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("text_editor_server.Entities.ProofFile", "ProofFile")
-                        .WithMany()
-                        .HasForeignKey("ProofFileId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("text_editor_server.Entities.Section", "Section")
                         .WithMany()
                         .HasForeignKey("SectionId")
@@ -465,8 +458,6 @@ namespace text_editor_server.Migrations
                         .IsRequired();
 
                     b.Navigation("OwnerSection");
-
-                    b.Navigation("ProofFile");
 
                     b.Navigation("Section");
                 });

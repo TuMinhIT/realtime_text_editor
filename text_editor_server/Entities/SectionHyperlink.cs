@@ -28,8 +28,6 @@
         // file minh chứng nếu có
         public Guid? ProofFileId { get; set; }
 
-        public ProofFile? ProofFile { get; set; }
-
         public DateTime CreatedAt { get; set; }
     }
 }
