@@ -255,33 +255,25 @@ namespace text_editor_server.Services
                         .Where(x => x.SectionId == sectionId)
                         .ToListAsync();
 
-                //lưu ds cũ
-                var oldUrls = oldLinks
-                        .Select(x => x.Url)
-                        .ToHashSet();
+                var oldCount = oldLinks.Count;
+                var newCount = rewriteResult.Hyperlinks.Count;
+
+                response.Flag = newCount > oldCount;
 
                 _context.SectionHyperlinks.RemoveRange(oldLinks);
 
                 foreach (var item in rewriteResult.Hyperlinks)
                 {
-                    var hyperlinkId = Guid.NewGuid();
-
                     _context.SectionHyperlinks.Add(
                         new SectionHyperlink
                         {
-                            Id = hyperlinkId,
+                            Id = Guid.NewGuid(),
                             SectionId = sectionId,
                             ProofFileId = item.ProofFileId,
                             Url = item.Url,
                             Position = item.Position,
                             CreatedAt = DateTime.UtcNow
                         });
-
-                    if (!oldUrls.Contains(item.Url))
-                    {
-                        response.Flag = true;
-                   
-                    }
                 }
 
                 await _context.SaveChangesAsync();
