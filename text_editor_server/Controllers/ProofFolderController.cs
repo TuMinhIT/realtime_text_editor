@@ -124,7 +124,6 @@ namespace text_editor_server.Controllers
             return Ok(result);
         }
 
-
         [HttpGet()]
         [Authorize]
         public async Task<IActionResult> GetAllFolderGlobal()
@@ -194,25 +193,27 @@ namespace text_editor_server.Controllers
         }
 
 
-        // tải xuống 1 file trong folder
-        //[HttpGet("folders/{folderId:guid}/file/{id:guid}")]
-        //public async Task<IActionResult> Download(Guid id)
-        //{
-        //    var result = await  _folderService
-        //        .DownloadProofFileAsync(id);
+        // load  1 folder + and all file
+        [HttpGet("{folderId:guid}/public")]
+        [Authorize]
+        public async Task<IActionResult> GetFolder(Guid folderId)
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        //    if (!result.Success || result.Data == null)
-        //    {
-        //        return NotFound(new { message = result.Message });
-        //    }
+            if (string.IsNullOrWhiteSpace(userIdClaim) || !Guid.TryParse(userIdClaim, out var currentUserId))
+            {
+                return Unauthorized("Invalid token payload");
+            }
 
-        //    return File(
-        //        result.Data.Data,
-        //        result.Data.ContentType,
-        //        result.Data.FileName
-        //    );
-        //}
-        //
+            var result = await _folderService.GetFolderAsync(folderId);
+
+            if (result == null)
+            {
+                return BadRequest(new { message = "Can't get folder" });
+            }
+
+            return Ok(result);
+        }
 
     }
 

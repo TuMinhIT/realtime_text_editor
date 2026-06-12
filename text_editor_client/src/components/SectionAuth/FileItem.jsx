@@ -114,7 +114,7 @@ const FileItem = ({ doc, loadFiles }) => {
         <button
           onClick={() => setOpenMenu((v) => !v)}
           className={`rounded-full p-2 transition hover:bg-slate-200 ${
-            openMenu ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+            openMenu ? "opacity-100" : "opacity-100"
           }`}
         >
           <MoreVertical size={18} />

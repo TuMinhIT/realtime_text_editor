@@ -609,7 +609,10 @@ namespace text_editor_server.Services
                         Id = g.Id,
                         FileName = g.FileName,
                         CreatedAt = g.CreatedAt,
-                        IsGlobal = g.IsGlobal
+                        IsGlobal = g.IsGlobal,
+                        FileSize = g.FileSize,
+
+               
                     })
                     .ToListAsync();
 
@@ -647,6 +650,27 @@ namespace text_editor_server.Services
             {
                 _logger.LogError(ex, "Failed to get document folders");
                 return ServiceResult<List<FolderRes>>.Fail("Failed to get folders");
+            }
+        }
+
+
+        public async Task<ServiceResult<Object>> GetFolderAsync(Guid Id)
+        {
+            try
+            {
+                var folder = await _context.Folders
+                    .AsNoTracking()
+                    .Where(df => df.Id == Id)
+                    .FirstOrDefaultAsync();
+
+                var dataFiles = await GetAllFileInFolderAsync(Id);
+
+                return ServiceResult<Object>.Ok(new { Folder = folder, Files = dataFiles.Data });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get document folders");
+                return ServiceResult<Object>.Fail("Failed to get folders");
             }
         }
 

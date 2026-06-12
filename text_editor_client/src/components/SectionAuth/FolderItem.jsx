@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Upload,
   Eye,
+  ArrowLeft,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { formatDate } from "../../utils/utilsFunction";
@@ -155,7 +156,7 @@ const FolderItem = ({ folder, loadFolders }) => {
           <button
             onClick={() => setOpenMenu((v) => !v)}
             className={`rounded-full p-2 transition hover:bg-slate-200 ${
-              openMenu ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+              openMenu ? "opacity-100" : "opacity-100"
             }`}
           >
             <MoreVertical size={18} />

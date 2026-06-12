@@ -84,6 +84,16 @@ export const folderService = {
     }
   },
 
+  //get 1 folder with full files
+  async getFolder(id) {
+    try {
+      const res = await http.get(`${resource}/${id}/public`);
+      return res.data;
+    } catch (err) {
+      throw toError(err);
+    }
+  },
+
   //oke
   async getAllFileInFolder(folderId) {
     try {

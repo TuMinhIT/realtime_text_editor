@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   FolderOpen,
   Download,
@@ -6,71 +6,65 @@ import {
   FileSpreadsheet,
   FileImage,
   Search,
+  ArrowLeft,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
+import folderService from "../services/folderService";
+import { toast } from "react-toastify";
+import { formatDate } from "../utils/utilsFunction";
 
-const getIcon = (type) => {
-  const iconClass =
-    "flex h-9 w-9 items-center justify-center rounded-lg bg-[#e8f0fe] text-[#1a73e8]";
-  switch (type) {
-    case "excel":
-      return (
-        <div className={iconClass}>
-          <FileSpreadsheet size={20} />
-        </div>
-      );
-    case "image":
-      return (
-        <div className={iconClass}>
-          <FileImage size={20} />
-        </div>
-      );
-    default:
-      return (
-        <div className={iconClass}>
-          <FileText size={20} />
-        </div>
-      );
-  }
-};
-
-const files = [
-  {
-    id: 1,
-    name: "BangDiem.pdf",
-    size: "1.2 MB",
-    type: "pdf",
-  },
-  {
-    id: 2,
-    name: "ChungChiToeic.pdf",
-    size: "850 KB",
-    type: "pdf",
-  },
-  {
-    id: 3,
-    name: "BangTongHop.xlsx",
-    size: "450 KB",
-    type: "excel",
-  },
-  {
-    id: 4,
-    name: "MinhChung.png",
-    size: "2.1 MB",
-    type: "image",
-  },
-];
-
-const FolderPublic = ({ folder }) => {
+const FolderPublic = () => {
   const navigate = useNavigate();
   const { folderId } = useParams();
+  const [folder, setFolder] = useState(null);
+  const [files, setFiles] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const base = import.meta.env.VITE_API_URL || "";
 
-  const totalSize = files.reduce(
-    (sum, file) => sum + (file.sizeInBytes || 0),
-    0,
-  );
+  const loadAllFileFolders = async () => {
+    setLoading(true);
+    try {
+      const result = await folderService.getFolder(folderId);
 
-  console.log(folderId);
+      var data = result.data;
+      if (data) {
+        setFiles(data["files"]);
+        setFolder(data["folder"]);
+      }
+    } catch (err) {
+      toast.error("Đã lỗi xảy ra!");
+      navigate(-1);
+      setFolder(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadAllFileFolders();
+  }, []);
+
+  const getDownloadUrl = (doc) => {
+    if (!doc) return "";
+    return `${base}/ProofFolder/${doc.id}`;
+  };
+
+  const getDownloadFileUrl = (doc) => {
+    if (!doc) return "";
+    return `${base}/prooffile/file/${doc.id}`;
+  };
+
+  const handleCopy = async (doc) => {
+    try {
+      const url = getDownloadUrl(doc);
+      if (!url) return;
+      await navigator.clipboard.writeText(url);
+      toast.success("Đã copy link.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Copy thất bại.");
+    }
+  };
 
   return (
     <main className="min-h-screen bg-[#f1f3f4] text-slate-900">
@@ -86,7 +80,7 @@ const FolderPublic = ({ folder }) => {
             </div>
           </div>
 
-          <div className="flex">
+          {/* <div className="flex">
             <button
               type="button"
               onClick={() => navigate("/login", { replace: true })}
@@ -94,31 +88,44 @@ const FolderPublic = ({ folder }) => {
             >
               login
             </button>
-          </div>
+          </div> */}
         </div>
       </header>
 
       <div className="mx-auto w-full max-w-[1200px] px-4 py-6 md:px-6">
-        <section className="rounded-3xl bg-white p-5 md:p-6">
+        <section className="relative rounded-3xl bg-white p-5 md:p-6">
           {/* Header */}
-          <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center gap-3">
-              <FolderOpen className="text-[#1a73e8]" size={20} />
-
-              <div>
-                <h3 className="text-xl font-medium">tên tài liệu</h3>
-                <p className="text-sm text-slate-500">• Chia sẻ công khai</p>
-              </div>
-            </div>
-
-            <button className="flex items-center gap-2 rounded-lg border px-2 py-2 hover:bg-blue-400">
-              <Download size={16} />
-              Tải toàn bộ
-            </button>
+          <div
+            onClick={() => navigate(-1)}
+            className=" absolute top-0 left-0 p-3 hover:scale-110 hover:text-blue-500"
+          >
+            <ArrowLeft />
           </div>
+          {folder && (
+            <div className="mb-8 mt-3 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className=" ">
+                <div className="flex flex-row gap-2 items-center justify-center">
+                  <FolderOpen className="text-[#1a73e8]" size={20} />
+                  <h3 className="text-xl font-medium">{folder.name}</h3>
+                </div>
+
+                <p className="text-sm text-slate-500">
+                  •Create at {formatDate(folder.createdAt)}
+                </p>
+              </div>
+
+              <button
+                onClick={() => window.open(getDownloadUrl(folder), "_blank")}
+                className="flex items-center gap-2 rounded-lg border px-2 py-2 hover:bg-blue-400"
+              >
+                <Download size={16} />
+                Tải toàn bộ
+              </button>
+            </div>
+          )}
 
           {/* Table */}
-          <div className="overflow-hidden rounded-xl border border-slate-200">
+          <div className="overflow-hidden h-screen rounded-xl border border-slate-200">
             <div className="hidden grid-cols-12 bg-slate-50 px-6 py-3 text-sm font-medium text-slate-600 md:grid">
               <div className="col-span-7">Tên</div>
               <div className="col-span-3">Ngày tạo</div>
@@ -126,35 +133,46 @@ const FolderPublic = ({ folder }) => {
               <div className="col-span-1"></div>
             </div>
 
-            {files.map((file) => (
-              <div
-                key={file.id}
-                className="group border-b border-slate-100 px-4 py-4 hover:bg-[#f8fafc] md:px-6"
-              >
-                <div className="grid items-center gap-3 md:grid-cols-12">
-                  <div className="md:col-span-7">
-                    <button className="flex items-center gap-3 text-left hover:text-[#1a73e8]">
-                      {getIcon(file.type)}
-                      <span className="font-medium break-all">{file.name}</span>
-                    </button>
-                  </div>
+            {files &&
+              files.map((file) => (
+                <div
+                  key={file.id}
+                  className="group border-b border-slate-100 px-4 py-4 hover:bg-[#f8fafc] md:px-6"
+                >
+                  <div className="grid items-center gap-3 md:grid-cols-12">
+                    <div className="md:col-span-7">
+                      <button className="flex items-center gap-3 text-left hover:text-[#1a73e8]">
+                        <FileText
+                          size={20}
+                          className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#e8f0fe] text-[#1a73e8]"
+                        />
+                        <span className="font-medium break-all">
+                          {file.fileName}
+                        </span>
+                      </button>
+                    </div>
 
-                  <div className="text-sm text-slate-500 md:col-span-3">
-                    {file.createdAt}
-                  </div>
+                    <div className="text-sm text-slate-500 md:col-span-3">
+                      {formatDate(file.createdAt)}
+                    </div>
 
-                  <div className="text-sm text-slate-500 md:col-span-1">
-                    {file.size}
-                  </div>
+                    <div className="text-sm text-slate-500 md:col-span-1">
+                      {file.fileSize}
+                    </div>
 
-                  <div className="md:col-span-1 md:text-right">
-                    <button className="opacity-100 transition md:opacity-0 md:group-hover:opacity-100">
-                      <Download size={18} />
-                    </button>
+                    <div className="md:col-span-1 md:text-right">
+                      <button
+                        onClick={() =>
+                          window.open(getDownloadFileUrl(file), "_blank")
+                        }
+                        className="opacity-100  transition hover:text-blue-500"
+                      >
+                        <Download size={18} />
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
           </div>
         </section>
       </div>

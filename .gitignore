@@ -26,6 +26,8 @@ dist-ssr
 **/bin/
 **/obj/
 *.user
+.vscode
+.vs
 
 artifacts/
 .env
