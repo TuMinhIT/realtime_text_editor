@@ -113,21 +113,21 @@ const HomePage = () => {
     });
   };
 
-const handleLogout = async () => {
-  try {
-    await userService.logout();
-    //console.log("Logout success");
-  } catch (err) {
-    console.error("Logout API error:", err);
-  } finally {
-    sessionService.clearStore();
-    http.setToken(null);
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("user");
+  const handleLogout = async () => {
+    try {
+      await userService.logout();
+      //console.log("Logout success");
+    } catch (err) {
+      console.error("Logout API error:", err);
+    } finally {
+      sessionService.clearStore();
+      http.setToken(null);
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("user");
 
-    navigate("/login", { replace: true });
-  }
-};
+      navigate("/login", { replace: true });
+    }
+  };
 
   return (
     <main className="min-h-screen bg-[#f1f3f4] text-slate-900">
@@ -173,7 +173,7 @@ const handleLogout = async () => {
       </header>
 
       <div className="mx-auto w-full max-w-[1200px] px-4 py-6 md:px-6">
-        <section className="mt-6 rounded-3xl bg-white p-5 md:p-6">
+        <section className="h-screen rounded-3xl bg-white p-5 md:p-6">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-medium text-slate-900">
               Tài liệu gần đây

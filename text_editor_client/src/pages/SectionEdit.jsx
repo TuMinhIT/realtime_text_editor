@@ -76,9 +76,7 @@ const getInitials = (name) => {
     .toUpperCase();
 };
 
-
-
-const SectionEdit = ({ documentId, tempSection ,setSections}) => {
+const SectionEdit = ({ documentId, tempSection, setSections }) => {
   const navigate = useNavigate();
   const editorRef = useRef(null);
 
@@ -122,8 +120,6 @@ const SectionEdit = ({ documentId, tempSection ,setSections}) => {
     setOriginalPreview(sfdt);
     setIsDirty(false);
   }, []);
-
-
 
   const { onSectionUpdated } = useRealtimeSectionUpdate({
     documentId,
@@ -277,46 +273,6 @@ const SectionEdit = ({ documentId, tempSection ,setSections}) => {
     }
   };
 
-  // useEffect(() => {
-  //   if (!lockState || !section?.id) {
-  //     applyReadOnlyMode(false);
-  //     return;
-  //   }
-
-  //   if (lockState.sectionId !== section.id) {
-  //     applyReadOnlyMode(false);
-  //     return;
-  //   }
-
-  //   const currentUser = sessionService.getCurrentUser();
-
-  //   const isLockedByMe = lockState.lockedByUserId === currentUser?.id;
-
-  //   // người khác đang edit
-  //   if (lockState.isLocked && !isLockedByMe) {
-  //     applyReadOnlyMode(true);
-
-  //     toast.info(`${lockState.lockedByUsername} đang chỉnh sửa`);
-
-  //     return;
-  //   }
-
-  //   // còn lại cho edit
-  //   applyReadOnlyMode(false);
-  // }, [lockState, section?.id]);
-
-  // Release lock + leave room when switching section/unmounting
-  // useEffect(() => {
-  //   return () => {
-  //     if (section?.id) {
-  //       signalRService.releaseEditSession(section.id);
-  //     }
-  //     signalRService.leaveCurrentSection();
-  //     clearRemoteCursors();
-  //     setHasLockRequested(false);
-  //   };
-  // }, [section?.id, clearRemoteCursors, setHasLockRequested]);
-
   //Helper user có quyền edit hay không:
   const canCurrentUserEdit = () => {
     if (permission !== 1) {
@@ -350,24 +306,6 @@ const SectionEdit = ({ documentId, tempSection ,setSections}) => {
     applyReadOnlyMode(!canCurrentUserEdit());
   };
 
- 
-  // useEffect(() => {
-  //   if (!lockState || !section?.id) {
-  //     return;
-  //   }
-
-  //   if (lockState.sectionId !== section.id) {
-  //     return;
-  //   }
-
-  //   const currentUser = sessionService.getCurrentUser();
-  //   const isLockedByMe = lockState.lockedByUserId === currentUser?.id;
-
-  //   if (lockState.isLocked && !isLockedByMe) {
-  //     toast.info(`${lockState.lockedByUsername} đang chỉnh sửa`);
-  //   }
-  // }, [lockState, section?.id]);
-
   //Cleanup timeout khi unmount:
   useEffect(() => {
     return () => {
@@ -392,7 +330,6 @@ const SectionEdit = ({ documentId, tempSection ,setSections}) => {
       isSavingRef.current = true;
       const serialized = normalizeJson(editor.serialize());
       await sectionService.updateSectionContent(sectionId, serialized);
-
 
       await signalRService.notifySectionUpdated(sectionId);
       //console.log("[Realtime] autosaved");

@@ -10,6 +10,7 @@ import SectionUserEdit from "./pages/SectionUserEdit";
 //test realtime:
 import { useEffect } from "react";
 import DocOverview from "./pages/DocOverview";
+import FolderPublic from "./pages/FolderPublic";
 
 function ProtectedRoute({ children }) {
   if (!sessionService.isAuthenticated()) {
@@ -55,6 +56,9 @@ function GuestRoute({ children }) {
 function App() {
   return (
     <Routes>
+      {/* public cho user xem danh sách tài liệu */}
+      <Route path={"/folder/:folderId"} element={<FolderPublic />} />
+
       {/* Guest Routes - dành cho chưa login */}
       <Route
         path={"/login"}

@@ -151,7 +151,7 @@ const ProofFileSection = () => {
   };
 
   return (
-    <section className="mt-4 rounded-2xl bg-white p-3 md:p-6">
+    <section className=" w-full p-3 md:p-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <div className="flex items-center gap-2.5">
@@ -222,7 +222,7 @@ const ProofFileSection = () => {
         </div>
       ) : null}
 
-      <div className=" bg-white p-4 w-full">
+      <div className=" p-4 w-full">
         <div className="mt-2">
           {isLoading ? (
             <div className="py-10 text-center text-slate-500">

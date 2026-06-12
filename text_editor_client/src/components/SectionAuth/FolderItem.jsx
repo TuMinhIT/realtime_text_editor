@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ChevronRight,
   Upload,
+  Eye,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { formatDate } from "../../utils/utilsFunction";
@@ -16,6 +17,7 @@ import { toast } from "react-toastify";
 import folderService from "../../services/folderService";
 import { CgSpinner } from "react-icons/cg";
 import FileItem from "./FileItem";
+import { useNavigate } from "react-router-dom";
 const FolderItem = ({ folder, loadFolders }) => {
   const [openMenu, setOpenMenu] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -24,6 +26,7 @@ const FolderItem = ({ folder, loadFolders }) => {
   const menuRef = useRef(null);
   const [files, setFiles] = useState([]);
   const [loadFiles, setLoadFiles] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -120,10 +123,7 @@ const FolderItem = ({ folder, loadFolders }) => {
 
   return (
     <div className=" border-t border-slate-200 bg-white px-4 py-3 transition hover:bg-slate-50">
-      <div
-        onClick={() => setExpanded((v) => !v)}
-        className="group relative flex items-center gap-4 "
-      >
+      <div className="group relative flex items-center gap-4 ">
         {/* File Info */}
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100 text-gray-800">
@@ -136,8 +136,11 @@ const FolderItem = ({ folder, loadFolders }) => {
         </div>
 
         {/* Expand button */}
-        <div className="w-24">
-          <button className="rounded p-1 hover:bg-slate-200">
+        <div className="w-18">
+          <button
+            onClick={() => setExpanded((v) => !v)}
+            className="rounded p-1 hover:bg-slate-200"
+          >
             {expanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
           </button>
         </div>
@@ -174,6 +177,13 @@ const FolderItem = ({ folder, loadFolders }) => {
               >
                 <Upload size={16} />
                 Upload file
+              </button>
+              <button
+                onClick={() => navigate(`/folder/${folder.id}`)}
+                className="flex w-full items-center gap-3 px-4 py-3 text-sm hover:bg-slate-50"
+              >
+                <Eye size={16} />
+                View
               </button>
 
               <button

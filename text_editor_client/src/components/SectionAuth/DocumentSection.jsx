@@ -193,7 +193,7 @@ const DocumentSection = () => {
   };
 
   return (
-    <section className="mt-4 rounded-2xl bg-gray-50 p-3 md:p-6">
+    <section className=" w-full h-full p-3 md:p-6">
       <div className="flex flex-row items-center justify-between">
         <div className="flex items-center flex-row gap-2.5">
           <span className="flex text-lg font-medium text-slate-900">
@@ -205,7 +205,7 @@ const DocumentSection = () => {
           </span>
         </div>
 
-        <div className="flex  max-w-150 items-center gap-3 rounded-full bg-[#f1f3f4] px-4 py-2.5">
+        <div className="flex  max-w-250 items-center gap-3 rounded-full bg-[#f1f3f4] px-4 py-2.5">
           <Search size={18} className="text-slate-500" />
           <input
             value={keyword}
@@ -245,8 +245,8 @@ const DocumentSection = () => {
         </div>
       ) : null}
 
-      <div className="mt-4 overflow-x-auto pb-20">
-        <table className="w-full min-w-[760px] border-collapse">
+      <div className="mt-4  h-full pb-20">
+        <table className=" w-full border-collapse">
           <thead>
             <tr className="text-left text-xs uppercase tracking-wide text-slate-500">
               <th className="border-b border-slate-200 px-4 py-3 font-medium">
