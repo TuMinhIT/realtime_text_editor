@@ -386,7 +386,8 @@ namespace text_editor_server.Migrations
 
                     b.HasOne("text_editor_server.Entities.ProofFile", "File")
                         .WithMany("DocumentFiles")
-                        .HasForeignKey("FileId");
+                        .HasForeignKey("FileId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("text_editor_server.Entities.Folder", "Folder")
                         .WithMany("DocumentFiles")

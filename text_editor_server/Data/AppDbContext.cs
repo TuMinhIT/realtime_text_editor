@@ -93,12 +93,14 @@ namespace text_editor_server.Data
              modelBuilder.Entity<DocumentFile>()
                 .HasOne(x => x.Document)
                 .WithMany(x => x.DocumentFiles)
-                .HasForeignKey(x => x.DocumentId);
+                .HasForeignKey(x => x.DocumentId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<DocumentFile>()
                 .HasOne(x => x.File)
                 .WithMany(x => x.DocumentFiles)
-                .HasForeignKey(x => x.FileId);
+                .HasForeignKey(x => x.FileId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Folder>()
                 .HasMany(x => x.Files)
@@ -129,7 +131,6 @@ namespace text_editor_server.Data
                     .HasForeignKey(x => x.OwnerSectionId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-           
             });
 
         }
