@@ -6,6 +6,7 @@
         public string Message { get; private set; } = string.Empty;
         public T? Data { get; private set; }
 
+
         public static ServiceResult<T> Ok(T data)
         {
             return new ServiceResult<T> { Success = true, Data = data };

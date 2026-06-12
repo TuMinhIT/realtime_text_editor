@@ -146,19 +146,21 @@ namespace text_editor_server.Controllers
         [HttpPut("{sectionId}")]
         [Authorize]
         public async Task<IActionResult> UpdateSectionContent(
-       Guid sectionId,
-       [FromBody] UpdateSectionReq req)
+            Guid sectionId,
+            [FromBody] UpdateSectionReq req)
         {
             if (req == null || string.IsNullOrEmpty(req.Content))
                 return BadRequest("Invalid request");
+
             var result = await _sectionService
                 .UpdateSectionContentAsync(sectionId, req.Content);
-            if (!result)
-                return NotFound("Section not found or update failed");
-            return Ok(new
+
+            if (!result.Success)
             {
-                message = "Section updated successfully"
-            });
+                return NotFound(result.Message);
+            }
+
+            return Ok(result.Data);
         }
     }
 
