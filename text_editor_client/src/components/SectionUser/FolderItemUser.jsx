@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Upload,
   CopyCheck,
+  Eye,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { formatDate } from "../../utils/utilsFunction";
@@ -17,6 +18,7 @@ import { toast } from "react-toastify";
 import folderService from "../../services/folderService";
 import { CgSpinner } from "react-icons/cg";
 import FileItemUser from "./FileItemUser";
+import { useNavigate } from "react-router-dom";
 // import FileItem from "./FileItem";
 const FolderItemUser = ({ folder, loadFolders }) => {
   const [openMenu, setOpenMenu] = useState(false);
@@ -26,7 +28,7 @@ const FolderItemUser = ({ folder, loadFolders }) => {
   const menuRef = useRef(null);
   const [files, setFiles] = useState([]);
   const [loadFiles, setLoadFiles] = useState(false);
-
+  const navigate = useNavigate();
   // useEffect(() => {
   //   const handleClickOutside = (e) => {
   //     if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -152,6 +154,15 @@ const FolderItemUser = ({ folder, loadFolders }) => {
             className="p-1 text-blue-400 bg-white border border-slate-200 group-hover:flex hover:bg-blue-100"
           >
             <CopyCheck size={16} />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => window.open(`/folder/${folder.id}`, "_blank")}
+            title="view"
+            className="p-1 text-blue-400 bg-white border border-slate-200 group-hover:flex hover:bg-blue-100"
+          >
+            <Eye size={16} />
           </button>
         </div>
 

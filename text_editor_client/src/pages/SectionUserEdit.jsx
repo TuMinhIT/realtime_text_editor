@@ -145,7 +145,7 @@ const SectionUserEdit = () => {
       <div className="flex flex-wrap gap-3 px-4 py-1 ">
         {openAside && (
           <aside
-            className={` max-w-[360px] overflow-y-scroll h-screen  flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg transition-all duration-300  `}
+            className={` w-[360px] overflow-y-scroll h-screen  flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg transition-all duration-300  `}
           >
             <div className="border-b border-slate-200 px-4 py-4">
               <div className="grid grid-cols-2 gap-2 rounded-2xl bg-slate-100 p-1">
@@ -259,7 +259,11 @@ const SectionUserEdit = () => {
 
         {/* Nọi dung */}
         {selectedSection && (
-          <SectionEdit documentId={documentId} tempSection={selectedSection}  setSections={setSections} />
+          <SectionEdit
+            documentId={documentId}
+            tempSection={selectedSection}
+            setSections={setSections}
+          />
         )}
       </div>
     </main>

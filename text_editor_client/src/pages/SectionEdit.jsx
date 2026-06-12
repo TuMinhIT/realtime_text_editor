@@ -329,8 +329,15 @@ const SectionEdit = ({ documentId, tempSection, setSections }) => {
     try {
       isSavingRef.current = true;
       const serialized = normalizeJson(editor.serialize());
-      await sectionService.updateSectionContent(sectionId, serialized);
+      var res = await sectionService.updateSectionContent(
+        sectionId,
+        serialized,
+      );
 
+      if (res && res.flag) {
+        console.log(res.flag);
+        refetch();
+      }
       await signalRService.notifySectionUpdated(sectionId);
       //console.log("[Realtime] autosaved");
     } catch (err) {
@@ -405,15 +412,7 @@ const SectionEdit = ({ documentId, tempSection, setSections }) => {
                       {getInitials(user.username)}
 
                       <span
-                        className={`
-                              absolute
-                              bottom-0
-                              right-0
-                              h-3
-                              w-3
-                              rounded-full
-                              border-2
-                              border-white
+                        className={` absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white
                               ${isEditing ? "bg-orange-500" : "bg-green-500"}
                             `}
                       />

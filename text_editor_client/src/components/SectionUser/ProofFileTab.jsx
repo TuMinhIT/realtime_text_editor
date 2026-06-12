@@ -86,7 +86,7 @@ const ProofFileTab = ({ documentId }) => {
   };
 
   return (
-    <section className=" rounded-xl bg-white ">
+    <section className=" w-full rounded-xl bg-white ">
       <div className="flex flex-row items-center justify-between">
         <div className="flex items-center flex-row gap-2.5">
           <span className="flex text-lg font-medium text-slate-900">
