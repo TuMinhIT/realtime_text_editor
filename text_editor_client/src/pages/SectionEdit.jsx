@@ -313,7 +313,7 @@ const SectionEdit = ({ documentId, tempSection, setSections }) => {
         clearTimeout(autoSaveTimeoutRef.current);
       }
     };
-  }, []);
+  }, [tempSection?.id]);
 
   // save realtime:
   const saveRealtime = async (sectionId) => {
@@ -341,7 +341,6 @@ const SectionEdit = ({ documentId, tempSection, setSections }) => {
       await signalRService.notifySectionUpdated(sectionId);
       //console.log("[Realtime] autosaved");
     } catch (err) {
-      //console.error("Realtime save failed", err);
     } finally {
       isSavingRef.current = false;
       setIsDirty(false);
@@ -441,12 +440,12 @@ const SectionEdit = ({ documentId, tempSection, setSections }) => {
                             `}
                 >
                   <Lock size={14} />
-
+                  {/* 
                   {lockState.lockedByUserId === userId ? (
                     <span>Bạn đang chỉnh sửa</span>
                   ) : (
                     <span>{lockState.lockedByUsername} đang chỉnh sửa</span>
-                  )}
+                  )} */}
                 </div>
               )}
 

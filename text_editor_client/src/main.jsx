@@ -5,6 +5,7 @@ import { registerLicense } from "@syncfusion/ej2-base";
 import "./index.css";
 import { ToastContainer } from "react-toastify";
 import { TurkishLira } from "lucide-react";
+import Footer from "./components/Footer.jsx";
 
 const syncfusionLicenseKey = import.meta.env.VITE_SYNCFUSION_LICENSE_KEY;
 
@@ -27,6 +28,8 @@ createRoot(document.getElementById("root")).render(
         pauseOnHover={false}
       />
       <App />
+
+      <Footer />
     </BrowserRouter>
   </>,
 );

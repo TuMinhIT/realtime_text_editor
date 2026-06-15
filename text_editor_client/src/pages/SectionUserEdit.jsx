@@ -87,9 +87,9 @@ const SectionUserEdit = () => {
 
   const handleSelectSection = async (section) => {
     try {
-      if (selectedSection?.id === section.id) {
-        return;
-      }
+      // if (selectedSection?.id === section.id) {
+      //   return;
+      // }
 
       if (selectedSection?.id) {
         signalRService.releaseEditSession(selectedSection.id);
