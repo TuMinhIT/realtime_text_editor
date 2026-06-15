@@ -9,7 +9,8 @@ import {
   UserCheck,
 } from "lucide-react";
 import { toast } from "react-toastify";
-const FileItemUser = ({ doc }) => {
+import fileService from "../../services/fileService";
+const FileItemUser = ({ doc, isEdit = false, loadFiles }) => {
   const base = import.meta.env.VITE_API_URL || "";
 
   const getDownloadUrl = (doc) => {
@@ -29,6 +30,20 @@ const FileItemUser = ({ doc }) => {
     }
   };
 
+  const handleDelete = async (id) => {
+    const isConfirmed = window.confirm("Bạn có chắc muốn xóa file này?");
+    if (!isConfirmed) return;
+    try {
+      await fileService.deleteFile(id);
+      toast.success("Đã xóa file.");
+      await loadFiles();
+    } catch (err) {
+      console.error(err);
+      setErrorMessage(err?.message || "Xóa thất bại.");
+      toast.error("Xóa thất bại");
+    }
+  };
+
   return (
     <div>
       <div key={doc.id} className=" p-2 text-slate-700 group relative">
@@ -41,6 +56,16 @@ const FileItemUser = ({ doc }) => {
           >
             <CopyCheck size={16} />
           </button>
+          {isEdit && (
+            <button
+              type="button"
+              onClick={() => handleDelete(doc.id)}
+              title="Xóa"
+              className=" p-1 text-red-600 bg-white border border-slate-200 group-hover:flex hover:bg-red-50"
+            >
+              <DeleteIcon size={16} />
+            </button>
+          )}
         </div>
 
         <div className="border-b border-slate-100 ">

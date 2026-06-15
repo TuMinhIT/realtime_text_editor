@@ -85,27 +85,28 @@ namespace text_editor_server.Data
 
             modelBuilder.Entity<SectionPermission>()
                 .HasIndex(sp => new { sp.SectionId, sp.UserId });
-                
+
             modelBuilder.Entity<DocumentSnapshot>()
                 .HasIndex(ds => ds.DocumentId);
 
 
-             modelBuilder.Entity<DocumentFile>()
-                .HasOne(x => x.Document)
-                .WithMany(x => x.DocumentFiles)
-                .HasForeignKey(x => x.DocumentId)
-                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<DocumentFile>()
+               .HasOne(x => x.Document)
+               .WithMany(x => x.DocumentFiles)
+               .HasForeignKey(x => x.DocumentId)
+               .OnDelete(DeleteBehavior.Cascade);
 
-            //modelBuilder.Entity<DocumentFile>()
-            //    .HasOne(x => x.File)
-            //    .WithMany(x => x.DocumentFiles)
-            //    .HasForeignKey(x => x.FileId);
+            modelBuilder.Entity<DocumentFile>()
+                .HasOne(x => x.File)
+                .WithMany(x => x.DocumentFiles)
+                .HasForeignKey(x => x.FileId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Folder>()
                 .HasMany(x => x.Files)
                 .WithOne(x => x.Folder)
                 .HasForeignKey(x => x.FolderId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.SetNull);
 
             //Thiết lập quan hệ giữa SectionHyperlink và ProofFile và Section
 
@@ -114,7 +115,7 @@ namespace text_editor_server.Data
                 entity.HasKey(x => x.Id);
 
                 entity.Property(x => x.Code)
-                   
+
                     .HasMaxLength(50);
 
                 entity.Property(x => x.Url)
@@ -135,10 +136,6 @@ namespace text_editor_server.Data
         }
     }
 }
-
-
-
-
 
 
 

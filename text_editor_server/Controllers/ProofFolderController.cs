@@ -13,11 +13,11 @@ namespace text_editor_server.Controllers
     public class ProofFolderController: ControllerBase
     {    
         private readonly FolderService _folderService;
-        private readonly ProofFileService _proofFileService;
-        public ProofFolderController( FolderService folderService, ProofFileService proofFileService)
+      
+        public ProofFolderController( FolderService folderService)
         {
             _folderService = folderService;
-            _proofFileService = proofFileService;
+           
         }
 
         // tạo mới 1 folder
@@ -90,7 +90,7 @@ namespace text_editor_server.Controllers
         }
         // load all file in folder
         [HttpGet("{folderId:guid}/files")]
-        [Authorize]
+        //[Authorize]
         public async Task<IActionResult> GetAllFileInFolder(Guid folderId)
         {
             var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -110,6 +110,8 @@ namespace text_editor_server.Controllers
             return Ok(result);
         }
 
+
+        // ;lấy tất cã folder global
         [HttpGet()]
         [Authorize]
         public async Task<IActionResult> GetAllFolderGlobal()
@@ -121,7 +123,7 @@ namespace text_editor_server.Controllers
                 return Unauthorized("Invalid token payload");
             }
 
-            var result = await  _folderService.GetAllFolderAsync();
+            var result = await _folderService.GetAllFolderAsync();
 
             if (result == null)
             {
@@ -130,6 +132,29 @@ namespace text_editor_server.Controllers
 
             return Ok(result);
         }
+
+         // lấy tất cã folder trong 1 tài liệu
+        [HttpGet("getInternalFolder/{documentId:guid}")]
+        [Authorize]
+        public async Task<IActionResult> GetAllInternalFolder(Guid documentId)
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrWhiteSpace(userIdClaim) || !Guid.TryParse(userIdClaim, out var currentUserId))
+            {
+                return Unauthorized("Invalid token payload");
+            }
+
+            var result = await _folderService.GetAllInternalAsync(documentId);
+
+            if (result == null)
+            {
+                return BadRequest(new { message = "Can't get all file" });
+            }
+
+            return Ok(result);
+        }
+
 
         // tải xuống 1 folder
         [HttpGet("{id:guid}/")]

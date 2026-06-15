@@ -9,6 +9,7 @@ import {
   DownloadCloud,
   FileText,
   FolderOpen,
+  MoreHorizontal,
   MoveDiagonal2,
   Plus,
   Upload,
@@ -16,10 +17,13 @@ import {
 } from "lucide-react";
 
 import fileService from "../../services/fileService";
+import folderService from "../../services/folderService";
 import { CgAdd, CgSpinner } from "react-icons/cg";
 import { ClipLoader } from "react-spinners";
 import { toast } from "react-toastify";
 import { SiAuthelia } from "react-icons/si";
+import FileItemUser from "./FileItemUser";
+import FolderItemUser from "./FolderItemUser";
 
 const formatDate = (value) => {
   if (!value) {
@@ -36,9 +40,14 @@ const formatDate = (value) => {
 const InternalFileComponent = ({ documentId }) => {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
+  const folderInputRef = useRef(null);
   const [files, setFiles] = useState([]);
+  const [folders, setFolders] = useState([]);
+
   const [isUploading, setIsUploading] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingFolder, setIsLoadingFolder] = useState(false);
+
   const [keyword, setKeyword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const base = import.meta.env.VITE_API_URL || "";
@@ -56,36 +65,13 @@ const InternalFileComponent = ({ documentId }) => {
   // mới dô load data lên đi
   useEffect(() => {
     loadFiles();
+    loadFolders();
   }, []);
-
-  const formatFileSize = (size) => {
-    if (size === undefined || size === null) return "-";
-    if (size < 1024) return `${size} B`;
-    if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
-    return `${(size / (1024 * 1024)).toFixed(2)} MB`;
-  };
 
   const handleFileChange = async (event) => {
     const selectedFiles = Array.from(event.target.files || []);
     event.target.value = "";
     await handleUploadFiles(selectedFiles);
-  };
-
-  const getDownloadUrl = (doc) => {
-    if (!doc) return "";
-    return `${base}/prooffile/file/${doc.id}`;
-  };
-
-  const handleCopy = async (doc) => {
-    try {
-      const url = getDownloadUrl(doc);
-      if (!url) return;
-      await navigator.clipboard.writeText(url);
-      toast.success("Copied link to clipboard.");
-    } catch (err) {
-      console.error(err);
-      toast.error("Copy failed.");
-    }
   };
 
   const handleUpload = async (file) => {
@@ -115,59 +101,106 @@ const InternalFileComponent = ({ documentId }) => {
       await loadFiles();
     } catch (err) {
       console.error(err);
-      toast.error("Upload thất bại"); 
+      toast.error("Upload thất bại");
     }
   };
 
-  const handleDelete = async (id) => {
-    const isConfirmed = window.confirm("Bạn có chắc muốn xóa file này?");
-    if (!isConfirmed) return;
+  const handleFolderSelect = async (e) => {
+    const files = Array.from(e.target.files);
+    e.target.value = "";
+    if (files.length === 0) return;
+
+    const folderName = files[0].webkitRelativePath.split("/")[0];
+
+    const formData = new FormData();
+
+    formData.append("folderName", folderName);
+    formData.append("documentId", documentId);
+    formData.append("global", false);
+    files.forEach((file) => {
+      formData.append("files", file);
+    });
+
+    const res = await folderService.uploadFolder(formData);
+    if (res) {
+      toast.success("upload thành công!");
+      loadFolders();
+    }
+  };
+
+  const loadFolders = async () => {
+    setIsLoadingFolder(true);
     try {
-      await fileService.deleteFile(id);
-      toast.success("Đã xóa file.");
-      await loadFiles();
+      const result = await folderService.getAllInternalFolder(documentId);
+      setFolders(result.data);
     } catch (err) {
-      console.error(err);
-      setErrorMessage(err?.message || "Xóa thất bại.");
-      toast.error("Xóa thất bại");
+      setFolders([]);
+    } finally {
+      setIsLoadingFolder(false);
     }
   };
 
   return (
     <>
       <div className="flex flex-row items-center justify-between mt-5">
-        <div className="flex items-center flex-row gap-2.5">
-          <span className="flex text-lg font-medium text-slate-900">
+        <div className="flex relative items-center flex-row gap-2.5">
+          <div className="flex items-center   text-lg font-medium text-slate-900">
             File nọi bộ
-          </span>
-
-          <span className=" flex text-sm text-slate-500">
-            {files && files.length} files
-          </span>
-
-          <div className="flex ">
-            {isUploading ? (
-              <ClipLoader color="red" />
-            ) : (
+            <span className="text-sm text-gray-500 ml-2">
+              {files && files.length} files
+            </span>
+          </div>
+          <div className="   right-0 ">
+            <div className="relative inline-block group ">
               <button
                 type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="flex flex-col items-center justify-center gap-3 rounded-2xl  bg-white transition hover:border-[#1a73e8] hover:shadow-sm"
+                className="inline-flex items-center gap-2 rounded-full  px-2 py-1 text-sm font-medium text-gray-500 transition bg-amber-50 hover:bg-gray-200"
                 disabled={isUploading}
               >
-                <div className="flex p-2  items-center justify-center rounded-xl bg-[#e8f0fe] text-[#1a73e8]">
-                  <CgAdd size={18} />
-                </div>
+                <MoreHorizontal size={16} />
               </button>
-            )}
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              onChange={handleFileChange}
-              className="hidden"
-            />
+
+              {/* Dropdown */}
+              <div className="invisible absolute left-0 top-full z-10 mt-2 min-w-[180px] rounded-lg border border-slate-200 bg-white shadow-lg opacity-0 transition-all group-hover:visible group-hover:opacity-100">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-slate-700 hover:bg-slate-100"
+                >
+                  <Upload size={16} />
+                  Upload file
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => folderInputRef.current?.click()}
+                  className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-slate-700 hover:bg-slate-100"
+                >
+                  <FolderOpen size={16} />
+                  Upload folder
+                </button>
+              </div>
+            </div>
           </div>
+
+          {isUploading && <ClipLoader size={18} color="#1a73e8" />}
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            onChange={handleFileChange}
+            className="hidden"
+          />
+
+          <input
+            ref={folderInputRef}
+            type="file"
+            multiple
+            webkitdirectory=""
+            onChange={handleFolderSelect}
+            className="hidden"
+          />
         </div>
       </div>
 
@@ -183,59 +216,30 @@ const InternalFileComponent = ({ documentId }) => {
           </div>
         ) : files && files.length ? (
           files.map((doc) => (
-            <div key={doc.id} className=" p-2 text-slate-700 group relative">
-              <div className="absolute gap-2 right-2 top-2 hidden items-center p-1 group-hover:flex">
-                <button
-                  type="button"
-                  onClick={() => handleCopy(doc)}
-                  title="copy"
-                  className="p-1 text-blue-400 bg-white border border-slate-200 group-hover:flex hover:bg-blue-100"
-                >
-                  <CopyCheck size={16} />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleDelete(doc.id)}
-                  title="Xóa"
-                  className=" p-1 text-red-600 bg-white border border-slate-200 group-hover:flex hover:bg-red-50"
-                >
-                  <DeleteIcon size={16} />
-                </button>
-              </div>
-
-              <div className="border-b border-slate-100 px-2 py-2">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-5 w-5 items-center justify-center text-blue-600">
-                    <FileText size={16} />
-                  </div>
-                  <div>
-                    <p className="font-medium text-slate-900">{doc.fileName}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  {/* <a
-                    href={getDownloadUrl(doc)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-[#1a73e8] hover:underline break-all"
-                  >
-                    link: ....file/{doc.id}
-                  </a> */}
-                </div>
-              </div>
-            </div>
+            <FileItemUser
+              key={doc.id}
+              doc={doc}
+              isEdit={true}
+              loadFiles={loadFiles}
+            />
           ))
-        ) : (
-          <div>
-            <div
-              colSpan={5}
-              className="border-b border-slate-100 px-4 py-8 text-center text-sm text-slate-500"
-            >
-              Chua co tai lieu nao. Hay upload file `.docx` dau tien.
-            </div>
-          </div>
+        ) : null}
+
+        {/* folders */}
+
+        {!isLoadingFolder && (
+          <>
+            {folders && folders.length
+              ? folders.map((folder) => (
+                  <FolderItemUser
+                    key={folder.id}
+                    folder={folder}
+                    isEdit={true}
+                    loadFolders={loadFolders}
+                  />
+                ))
+              : null}
+          </>
         )}
       </div>
     </>

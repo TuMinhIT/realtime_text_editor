@@ -117,7 +117,6 @@ namespace text_editor_server.Controllers
             {
                 return NotFound(new { message = result.Message });
             }
-
             return Ok(new { success = true });
         }
 

@@ -94,6 +94,15 @@ export const folderService = {
     }
   },
 
+  async getAllInternalFolder(id) {
+    try {
+      const res = await http.get(`${resource}/getInternalFolder/${id}`);
+      return res.data;
+    } catch (err) {
+      throw toError(err);
+    }
+  },
+
   //oke
   async getAllFileInFolder(folderId) {
     try {

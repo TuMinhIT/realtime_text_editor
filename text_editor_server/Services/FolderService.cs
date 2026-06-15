@@ -332,25 +332,21 @@ namespace text_editor_server.Services
             return resultStream.ToArray();
         }
 
-        public async Task<ServiceResult<List<ProofFileRes>>> GetAllInternalAsync(Guid documentId)
+        public async Task<ServiceResult<List<FolderRes>>> GetAllInternalAsync(Guid documentId)
         {
-            var files = await _context.DocumentFiles
-            .AsNoTracking()
-            .Where(d => d.DocumentId == documentId && d.FileId != null)
-            .Select(d => new ProofFileRes
-            {
-                Id = d.File!.Id,
-                FileName = d.File.FileName,
-                StoredFileName = d.File.StoredFileName,
-                FileUrl = d.File.StoredFileName,
-                FileSize = d.File.FileSize,
-                ContentType = d.File.ContentType,
-                IsGlobal = d.File.IsGlobal,
-                CreatedAt = d.File.CreatedAt
-            })
-            .ToListAsync();
+            var folders = await _context.DocumentFiles
+                .AsNoTracking()
+                .Where(df => df.DocumentId == documentId && df.FolderId != null)
+                .Select(df => new FolderRes
+                {
+                    Id = df.Folder!.Id,
+                    Name = df.Folder.Name,
+                    CreatedAt = df.Folder.CreatedAt,
+                    IsGlobal = df.Folder.IsGlobal
+                })
+                .ToListAsync();
 
-            return ServiceResult<List<ProofFileRes>>.Ok(files);
+            return ServiceResult<List<FolderRes>>.Ok(folders);
         }
 
         public async Task<ServiceResult<List< ProofFileRes>>> GetAllAsync()
