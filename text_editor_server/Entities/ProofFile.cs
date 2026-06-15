@@ -22,7 +22,7 @@
 
         public DateTime CreatedAt { get; set; }
 
-        public ICollection<DocumentFile> DocumentFiles { get; set; } = new List<DocumentFile>();
+        //public ICollection<DocumentFile> DocumentFiles { get; set; } = new List<DocumentFile>();
     }
 
 

@@ -95,16 +95,16 @@ namespace text_editor_server.Data
                 .WithMany(x => x.DocumentFiles)
                 .HasForeignKey(x => x.DocumentId);
 
-            modelBuilder.Entity<DocumentFile>()
-                .HasOne(x => x.File)
-                .WithMany(x => x.DocumentFiles)
-                .HasForeignKey(x => x.FileId);
+            //modelBuilder.Entity<DocumentFile>()
+            //    .HasOne(x => x.File)
+            //    .WithMany(x => x.DocumentFiles)
+            //    .HasForeignKey(x => x.FileId);
 
             modelBuilder.Entity<Folder>()
                 .HasMany(x => x.Files)
                 .WithOne(x => x.Folder)
                 .HasForeignKey(x => x.FolderId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Cascade);
 
             //Thiết lập quan hệ giữa SectionHyperlink và ProofFile và Section
 

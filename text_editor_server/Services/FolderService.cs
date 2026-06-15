@@ -401,21 +401,17 @@ namespace text_editor_server.Services
 
 
         public async Task<ServiceResult<FolderRes>> CreateFolderAsync(
-            string name,
+            string? folderName,
+           List<IFormFile> files,
             bool isGlobal,
             Guid? documentId,
-            Guid currentUserId)
+            Guid  currentUserId)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(name))
+                if (string.IsNullOrWhiteSpace(folderName))
                 {
-                    return ServiceResult<FolderRes>.Fail("Folder name is required");
-                }
-
-                if (isGlobal && documentId.HasValue)
-                {
-                    return ServiceResult<FolderRes>.Fail("Global folder cannot attach to document");
+                    return ServiceResult<FolderRes>.Fail("Folder name required");
                 }
 
                 if (!isGlobal && !documentId.HasValue)
@@ -426,7 +422,7 @@ namespace text_editor_server.Services
                 var folder = new Folder
                 {
                     Id = Guid.NewGuid(),
-                    Name = name.Trim(),
+                    Name = folderName.Trim(),
                     IsGlobal = isGlobal,
                     CreatedAt = DateTime.UtcNow
                 };
@@ -447,6 +443,8 @@ namespace text_editor_server.Services
                     }
                 }
 
+                await UploadProofFilesToFolderAsync(files, currentUserId, folder.Id);
+                
                 return ServiceResult<FolderRes>.Ok(new FolderRes
                 {
                     Id = folder.Id,
@@ -497,6 +495,7 @@ namespace text_editor_server.Services
             }
         }
 
+        //upload 1 file
         public async Task<ServiceResult<ProofFileRes>> UploadProofFileToFolderAsync(
             IFormFile file,
             Guid currentUserId,
@@ -543,8 +542,9 @@ namespace text_editor_server.Services
             return uploadResult;
         }
 
+        // upload 1 đóng file
         public async Task<ServiceResult<List<ProofFileRes>>> UploadProofFilesToFolderAsync(
-            IFormFileCollection files,
+            List<IFormFile> files,
             Guid currentUserId,
             Guid folderId)
         {

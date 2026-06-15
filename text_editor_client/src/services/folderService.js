@@ -5,12 +5,12 @@ const resource = "/ProofFolder";
 const toError = (err) => err?.response?.data || err;
 
 export const folderService = {
-  async createFolder(name, isGlobal = true, documentId = null) {
+  async uploadFolder(formData) {
     try {
-      const res = await http.post(`${resource}`, {
-        name,
-        isGlobal,
-        documentId,
+      const res = await http.post(`${resource}`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
 
       return res.data;

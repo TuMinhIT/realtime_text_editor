@@ -8,6 +8,7 @@ import {
   Users,
   ArrowRight,
   ArrowBigDown,
+  MenuIcon,
 } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -18,6 +19,7 @@ import { signalRService } from "../services/signalRService";
 
 import ProofFileTab from "../components/SectionUser/ProofFileTab";
 import SectionEdit from "./SectionEdit";
+import { IoIosReorder } from "react-icons/io";
 
 const SectionUserEdit = () => {
   const location = useLocation();
@@ -128,7 +130,7 @@ const SectionUserEdit = () => {
               className="inline-flex h-10 w-10 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100"
               aria-label="Toggle sidebar"
             >
-              {openAside ? <X size={18} /> : <Menu size={18} />}
+              {openAside ? <IoIosReorder size={18} /> : <Menu size={18} />}
             </button>
 
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1a73e8] text-white">

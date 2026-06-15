@@ -129,25 +129,27 @@ const ProofFileSection = () => {
     await handleUploadFiles(selectedFiles);
   };
 
-  const handleFolderChange = async (event) => {
-    const selectedFiles = Array.from(event.target.files || []);
-    event.target.value = "";
-    await handleUploadFiles(selectedFiles, { fromFolder: true });
-  };
+  const handleFolderSelect = async (e) => {
+    const files = Array.from(e.target.files);
+    e.target.value = "";
+    if (files.length === 0) return;
 
-  const createFolder = async () => {
-    const trimmedFolderName = folderName.trim();
+    const folderName = files[0].webkitRelativePath.split("/")[0];
 
-    if (!trimmedFolderName) {
-      toast.error("Nhập tên folder.");
-      return;
-    }
-    const res = await folderService.createFolder(trimmedFolderName);
-    if (res.success) {
+    const formData = new FormData();
+
+    formData.append("folderName", folderName);
+    // formData.append("documentId", null);
+    formData.append("global", true);
+    files.forEach((file) => {
+      formData.append("files", file);
+    });
+
+    const res = await folderService.uploadFolder(formData);
+    if (res) {
+      toast.success("upload thành công!");
       loadFolders();
-      toast.success("Đã tạo folder.");
-    } else toast.error(res.message);
-    setIsCreateFolderOpen(false);
+    }
   };
 
   return (
@@ -167,16 +169,6 @@ const ProofFileSection = () => {
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            onClick={() => setIsCreateFolderOpen(true)}
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-[#1a73e8] hover:text-[#1a73e8]"
-            disabled={isUploading}
-          >
-            <FolderPlus size={16} />
-            Tạo folder
-          </button>
-
-          <button
-            type="button"
             onClick={() => fileInputRef.current?.click()}
             className="inline-flex items-center gap-2 rounded-full bg-[#1a73e8] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#1765cc]"
             disabled={isUploading}
@@ -185,7 +177,7 @@ const ProofFileSection = () => {
             Upload file
           </button>
 
-          {/* <button
+          <button
             type="button"
             onClick={() => folderInputRef.current?.click()}
             className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-[#1a73e8] hover:text-[#1a73e8]"
@@ -193,7 +185,7 @@ const ProofFileSection = () => {
           >
             <FolderOpen size={16} />
             Upload folder
-          </button> */}
+          </button>
 
           {isUploading ? <ClipLoader size={18} color="#1a73e8" /> : null}
         </div>
@@ -212,7 +204,7 @@ const ProofFileSection = () => {
         multiple
         webkitdirectory=""
         directory=""
-        onChange={handleFolderChange}
+        onChange={handleFolderSelect}
         className="hidden"
       />
 
@@ -248,60 +240,6 @@ const ProofFileSection = () => {
           ) : null}
         </div>
       </div>
-
-      {isCreateFolderOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-3xl bg-white shadow-2xl">
-            <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
-              <div>
-                <h4 className="text-base font-semibold text-slate-900">
-                  Tạo folder mới
-                </h4>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setIsCreateFolderOpen(false)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
-                aria-label="Đóng modal"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="px-5 py-5">
-              <label className="block text-sm font-medium text-slate-700">
-                Tên folder
-              </label>
-              <input
-                type="text"
-                value={folderName}
-                onChange={(event) => setFolderName(event.target.value)}
-                placeholder="Ví dụ: Proof 2026"
-                className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-[#1a73e8]"
-              />
-
-              <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsCreateFolderOpen(false)}
-                  className="rounded-full border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="button"
-                  onClick={createFolder}
-                  className="inline-flex items-center gap-2 rounded-full bg-[#1a73e8] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#1765cc]"
-                >
-                  <FolderPlus size={16} />
-                  Tạo folder
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </section>
   );
 };

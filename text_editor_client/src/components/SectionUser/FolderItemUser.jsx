@@ -146,7 +146,7 @@ const FolderItemUser = ({ folder, loadFolders }) => {
           </button>
         </div>
 
-        <div className="absolute right-2 hidden items-center p-1 group-hover:flex">
+        <div className="absolute right-0 hidden items-center p-1 group-hover:flex">
           <button
             type="button"
             onClick={() => handleCopy(folder)}

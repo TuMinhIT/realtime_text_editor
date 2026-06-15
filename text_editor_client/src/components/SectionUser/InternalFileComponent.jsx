@@ -65,11 +65,10 @@ const InternalFileComponent = ({ documentId }) => {
     return `${(size / (1024 * 1024)).toFixed(2)} MB`;
   };
 
-  const handleFileChange = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    handleUpload(file);
+  const handleFileChange = async (event) => {
+    const selectedFiles = Array.from(event.target.files || []);
     event.target.value = "";
+    await handleUploadFiles(selectedFiles);
   };
 
   const getDownloadUrl = (doc) => {
@@ -101,6 +100,22 @@ const InternalFileComponent = ({ documentId }) => {
       toast.error("Upload thất bại");
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleUploadFiles = async (selectedFiles) => {
+    if (!selectedFiles || selectedFiles.length === 0) {
+      return;
+    }
+    try {
+      for (const file of selectedFiles) {
+        await fileService.uploadByUser(file, documentId);
+      }
+      toast.success("Upload file thành công.");
+      await loadFiles();
+    } catch (err) {
+      console.error(err);
+      toast.error("Upload thất bại"); 
     }
   };
 
@@ -148,6 +163,7 @@ const InternalFileComponent = ({ documentId }) => {
             <input
               ref={fileInputRef}
               type="file"
+              multiple
               onChange={handleFileChange}
               className="hidden"
             />

@@ -50,7 +50,6 @@ const FolderItem = ({ folder, loadFolders }) => {
 
     try {
       await folderService.deleteFolder(id);
-
       toast.success("Đã xóa file.");
       await loadFolders();
     } catch (err) {
@@ -222,7 +221,7 @@ const FolderItem = ({ folder, loadFolders }) => {
           ) : (
             files?.map((child) => (
               <div key={child.id} className="ml-8">
-                <FileItem doc={child} loadFiles={loadFolders} />
+                <FileItem doc={child} loadFiles={fetchFiles} />
               </div>
             ))
           )}

@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using text_editor_server.DTOs.req;
+using text_editor_server.Entities;
 using text_editor_server.Services;
 
 
@@ -22,8 +23,13 @@ namespace text_editor_server.Controllers
         // tạo mới 1 folder
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> CreateFolder([FromBody] CreateFolderReq request)
-        {
+        public async Task<IActionResult> UploadFolder(
+            [FromForm] string folderName,
+              [FromForm] bool global,
+              [FromForm] Guid? documentId,
+            [FromForm] List<IFormFile> files)
+             {
+
             var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (string.IsNullOrWhiteSpace(userIdClaim) ||
@@ -31,34 +37,15 @@ namespace text_editor_server.Controllers
             {
                 return Unauthorized("Invalid token payload");
             }
-
-            if (string.IsNullOrWhiteSpace(request.Name))
+            var result = await _folderService.CreateFolderAsync(
+                folderName, files, global, documentId , currentUserId);
+            if (result.Success)
             {
-                return BadRequest(new { message = "Folder name is required" });
+                return Ok(result.Data);
+
             }
-
-            if (request.IsGlobal && request.DocumentId.HasValue)
-            {
-                return BadRequest(new { message = "Global folder cannot attach to document" });
-            }
-
-            if (!request.IsGlobal && !request.DocumentId.HasValue)
-            {
-                return BadRequest(new { message = "DocumentId is required" });
-            }
-
-            var result = await  _folderService.CreateFolderAsync(
-                request.Name,
-                request.IsGlobal,
-                request.DocumentId,
-                currentUserId);
-
-            if (!result.Success)
-            {
-                return BadRequest(new { message = result.Message });
-            }
-
-            return Ok(result);
+            return NotFound(new { message = result.Message });
+            
         }
 
         // delete folder
@@ -75,7 +62,6 @@ namespace text_editor_server.Controllers
 
             return Ok(new { success = true });
         }
-
 
         // thêm file vào folders
         [Authorize]
@@ -182,7 +168,7 @@ namespace text_editor_server.Controllers
             }
 
             var result = await  _folderService
-                .UploadProofFilesToFolderAsync((IFormFileCollection)files, currentUserId, folderId);
+                .UploadProofFilesToFolderAsync(files, currentUserId, folderId);
 
             if (!result.Success)
             {
