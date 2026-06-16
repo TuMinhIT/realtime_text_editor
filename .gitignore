@@ -34,8 +34,5 @@ artifacts/
 appsettings.json
 appsettings.Development.json
 Migrations
-.vs/realtime_text_editor/v17/DocumentLayout.backup.json
-.vs/realtime_text_editor/v17/DocumentLayout.backup.json
-.vs/realtime_text_editor/v17/DocumentLayout.json
-.vs/realtime_text_editor/v17/DocumentLayout.backup.json
-.vs/realtime_text_editor/v17/DocumentLayout.backup.json
+.vs/
+
