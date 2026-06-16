@@ -291,13 +291,8 @@ namespace text_editor_server.Services
                     CreatedAt = f.CreatedAt
                  })
                     .ToListAsync();
-
-
             return ServiceResult<List<ProofFileRes>>.Ok(files);
-            
-            
+   
         }
-
- 
     }
 }

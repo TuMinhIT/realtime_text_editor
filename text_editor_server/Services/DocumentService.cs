@@ -7,12 +7,13 @@ using Newtonsoft.Json.Linq;
 using text_editor_server.Data;
 using text_editor_server.DTOs.res;
 using text_editor_server.Entities;
+using text_editor_server.Services.Helper;
 namespace text_editor_server.Services
 {
 	public class DocumentService
-	{
+    {
+
 		private readonly AppDbContext _context;
-	
 		private readonly ILogger<DocumentService> _logger;
         private readonly SectionParser _sectionParser;
 
@@ -24,6 +25,8 @@ namespace text_editor_server.Services
 			
 		}
 
+
+        // GET all document
         public async Task<List<DocumentRes>?> GetAllDocumentAsync()
         {
 			try
@@ -59,6 +62,7 @@ namespace text_editor_server.Services
 			}		
         }
 
+        // DELETE document
         public async Task<bool> RemoveDocumentAsync(Guid id)
         {
             try
@@ -79,7 +83,6 @@ namespace text_editor_server.Services
                 return false;
             }
         }
-
 
         public async Task<bool> UpdateDocumentStatusAsync(Guid id, bool isActive)
         {
@@ -148,10 +151,8 @@ namespace text_editor_server.Services
 
 
                 _context.Documents.Add(document);
-                await _context.SaveChangesAsync();
                 _context.DocumentSnapshots.Add(documentSnapshot);
                 await _context.SaveChangesAsync();
-
 
                 return ServiceResult<DocumentUploadRes>.Ok(
                     new DocumentUploadRes
@@ -168,80 +169,12 @@ namespace text_editor_server.Services
             }
         }
 
-		public async Task<ServiceResult<List<BlockPermissionRes>>> GetBlockUsersAsync(Guid sectionId)
-		{
-			var sectionExists = await _context.Sections.AnyAsync(s => s.Id == sectionId);
-			if (!sectionExists)
-			{
-				return ServiceResult<List<BlockPermissionRes>>.Fail("Block not found");
-			}
-
-			
-
-			return ServiceResult<List<BlockPermissionRes>>.Ok(null);
-		}
-
-        //NoFillEmpty usege
-        public async Task<ServiceResult<DocumentSnapshot>>
-            GetDocumentContentAsyncNo(Guid documentId)
+        // GET document detail by id
+        public async Task<ServiceResult<DocumentRes>> GetDocumentDetailAsync(Guid documentId)
         {
             try
             {
-                var snapshot = await _context.DocumentSnapshots
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(x => x.DocumentId == documentId);
-
-                if (snapshot == null)
-                {
-                    return ServiceResult<DocumentSnapshot>
-                        .Fail("Document snapshot not found");
-                }
-
-                // check đã parse section chưa
-                var hasSections = await _context.Sections
-                    .AsNoTracking()
-                    .AnyAsync(x => x.DocumentId == documentId);
-
-                // ==========================
-                // CASE 1: upload lần đầu
-                // chưa có section
-                // => dùng snapshot gốc
-                // ==========================
-                if (!hasSections)
-                {
-                    return ServiceResult<DocumentSnapshot>
-                        .Ok(snapshot);
-                }
-
-                // ==========================
-                // CASE 2: đã parse section
-                // => merge từ sections
-                // ==========================
-                var mergedSfdt =
-                    await MergeAllSectionsAsync(documentId);
-
-                snapshot.JsonContent = mergedSfdt;
-
-                return ServiceResult<DocumentSnapshot>
-                    .Ok(snapshot);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex,
-                    "Failed to get document content");
-
-                return ServiceResult<DocumentSnapshot>
-                    .Fail("Failed to get document");
-            }
-        }
-
-
-        public async Task<ServiceResult<DocumentRes>>
-        GetDocumentDetailAsync(Guid documentId)
-        {
-            try
-            {
-                Document document = await _context.Documents
+                Document? document = await _context.Documents
                    .AsNoTracking()
                    .FirstOrDefaultAsync(x => x.Id == documentId);
                 if (document == null)
@@ -250,15 +183,12 @@ namespace text_editor_server.Services
                         .Fail("Document not found");
                 }
 
-                //kiểm tra nếu có thay đổi thì merger
+                //kiểm tra nếu có thay đổi thì merge
                 if (document.hasChanges)
                 {
-                    // => merge từ sections tạo thành jsonContent mới
-                    // không cần hứng,
                     await MergeAllSectionsAsync(documentId);                     
                 }
               
-
                 var snapshot = await _context.DocumentSnapshots
                     .AsNoTracking()
                     .FirstOrDefaultAsync(x => x.DocumentId == documentId);
@@ -293,32 +223,32 @@ namespace text_editor_server.Services
             }
         }
 
-        // update title document
-        public async Task<bool> updateTitleAsync(Guid documentId, string title)
+        // Update title document
+        public async Task<bool> UpdateTitleAsync(Guid documentId, string title)
         {
             try
             {
-                // Tìm Document chính
+                // Find document by id
                 var document = await _context.Documents
                     .FirstOrDefaultAsync(d => d.Id == documentId);
 
                 if (document == null)
                     return false;
 
-                // Cập nhật title cho Document
+                // Update title for Document
                 document.Title = title;
 
-                // Tìm DocumentSnapshot tương ứng
+                // Find corresponding DocumentSnapshot
                 var documentSnapshot = await _context.DocumentSnapshots
                     .FirstOrDefaultAsync(ds => ds.DocumentId == documentId);
 
-                // Cập nhật title cho Snapshot nếu tồn tại
+                // Update title for DocumentSnapshot if it exists
                 if (documentSnapshot != null)
                 {
                     documentSnapshot.Title = title;
                 }
 
-                // Lưu thay đổi vào DB
+                // Save
                 await _context.SaveChangesAsync();
 
                 return true;
@@ -331,12 +261,12 @@ namespace text_editor_server.Services
         }
 
 
-        // update json content
-        public async Task<ServiceResult<DocumentSnapshot>> updateContentAsync(Guid documentId, string newContent)
+        // Update json content
+        public async Task<ServiceResult<DocumentSnapshot>> UpdateContentAsync(Guid documentId, string newContent)
         {
             try
             {                            
-                Document document = await _context.Documents
+                Document? document = await _context.Documents
                     .FirstOrDefaultAsync(d => d.Id == documentId);
         
                 if (document == null || document.isActive ) {
@@ -344,7 +274,7 @@ namespace text_editor_server.Services
                     return ServiceResult<DocumentSnapshot>.Fail("Document is active, you must block user edit ");
                 } 
 
-               DocumentSnapshot documentSnapshot = await _context.DocumentSnapshots
+               DocumentSnapshot? documentSnapshot = await _context.DocumentSnapshots
               .FirstOrDefaultAsync(ds => ds.DocumentId == documentId);
 
 
@@ -446,9 +376,7 @@ namespace text_editor_server.Services
                     continue;
                 }
 
-                // =====================
                 // Merge blocks
-                // =====================
                 if (sectionObj["b"] is JArray blocks)
                 {
                     foreach (var block in blocks)
@@ -457,10 +385,7 @@ namespace text_editor_server.Services
                             block.DeepClone());
                     }
                 }
-
-                // =====================
                 // Merge imgs
-                // =====================
                 if (sectionObj["imgs"] is JObject imgs)
                 {
                     foreach (var prop in imgs.Properties())
@@ -471,19 +396,12 @@ namespace text_editor_server.Services
                     }
                 }
             }
-
-            // =====================
             // Replace first section
-            // =====================
             if (secArray[0] is JObject firstSec)
             {
                 firstSec["b"] = allBlocks;
             }
-
-            // =====================
-            // Clear remaining sections
-            // tránh duplicate content
-            // =====================
+            // Clear remaining sections - important to prevent old content from reappearing after merge
             for (int i = 1; i < secArray.Count; i++)
             {
                 if (secArray[i] is JObject sec)
@@ -492,13 +410,10 @@ namespace text_editor_server.Services
                 }
             }
 
-            // =====================
-            // IMPORTANT FIX
             // replace imgs
-            // =====================
             originalSfdt["imgs"] = mergedImgs;
 
-            //Thêm merge
+            //Add metadata
             var mergedSfdt = originalSfdt.ToString(
                 Formatting.None);
             //Final Merger SFDT:

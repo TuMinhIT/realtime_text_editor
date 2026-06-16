@@ -1,13 +1,12 @@
-﻿using DocumentFormat.OpenXml.Spreadsheet;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using System.Text.RegularExpressions;
 using text_editor_server.Data;
 using text_editor_server.DTOs.res;
 using text_editor_server.Entities;
+using text_editor_server.Services.Helper;
 
 namespace text_editor_server.Services
 {
@@ -16,14 +15,20 @@ namespace text_editor_server.Services
         private readonly AppDbContext _context;
         private readonly ILogger<SectionService> _logger;
         private readonly HyperlinkEngine _hyperlinkEngine;
+        private readonly UpdateSectionContentHelper _updateHelper;
 
-        public SectionService(AppDbContext context, ILogger<SectionService> logger, HyperlinkEngine hyperlinkEngine)
+        public SectionService(AppDbContext context,
+            ILogger<SectionService> logger,
+            HyperlinkEngine hyperlinkEngine,
+            UpdateSectionContentHelper updateHelper)
         {
             _context = context;
             _logger = logger;
             _hyperlinkEngine = hyperlinkEngine;
+            _updateHelper = updateHelper;
         }
 
+        // Get user permissions on section:
         public async Task<ServiceResult<List<BlockPermissionRes>>> GetBlockUsersAsync(Guid sectionId)
         {
             var sectionExists = await _context.Sections.AnyAsync(s => s.Id == sectionId);
@@ -51,6 +56,7 @@ namespace text_editor_server.Services
             return ServiceResult<List<BlockPermissionRes>>.Ok(users);
         }
 
+        // Assign permission for user on section:
         public async Task<ServiceResult<BlockPermissionRes>> AssignUserToSectionAsync(Guid sectionId, Guid userId, PermissionLevel permission)
         {
             var sectionExists = await _context.Sections.AnyAsync(s => s.Id == sectionId);
@@ -101,6 +107,7 @@ namespace text_editor_server.Services
             });
         }
 
+        // Delete permission of user on section:
         public async Task<ServiceResult<bool>> RemoveUserFromSectionAsync(Guid sectionPermissionId)
         {
             var assignment = await _context.SectionPermissions
@@ -117,6 +124,7 @@ namespace text_editor_server.Services
             return ServiceResult<bool>.Ok(true);
         }
 
+        // Get all sections of a document:
         public async Task<ServiceResult<List<Section>>> GetAllSectionsByDocumentAsync(Guid documentId)
         {
             var sections = await _context.Sections
@@ -127,8 +135,8 @@ namespace text_editor_server.Services
             return ServiceResult<List<Section>>.Ok(sections);
         }
 
-        // get section by id:
-        public async Task<ServiceResult<SectionRes>> getSectionAndPermissionAsync(Guid userId, Guid sectionId)
+        // Get section by id:
+        public async Task<ServiceResult<SectionRes>> GetSectionAndPermissionAsync(Guid userId, Guid sectionId)
         {     
             var section = await _context.Sections.FirstOrDefaultAsync(s => s.Id == sectionId);
             if (section == null)
@@ -156,8 +164,8 @@ namespace text_editor_server.Services
             });
         }
 
-
-        public async Task<List<BlockPermissionRes>> GetSectionPermissonAsync(Guid sectionId)
+        // Get all user permissions on section:
+        public async Task<List<BlockPermissionRes>> GetSectionPermissionsAsync(Guid sectionId)
         {
             var sectionPermissions = await _context.SectionPermissions
                 .AsNoTracking()
@@ -181,8 +189,8 @@ namespace text_editor_server.Services
             return sectionPermissions;
         }
 
-        // lấy quyền của 1 user trên 1 section
-        public async Task<SectionPermission> GetUserPermissonAsync(Guid userId, Guid sectionId)
+        //// Get permission of user on section:
+        public async Task<SectionPermission?> GetUserPermissonAsync(Guid userId, Guid sectionId)
         {
             var permission = await _context.SectionPermissions
                 .AsNoTracking()
@@ -192,26 +200,23 @@ namespace text_editor_server.Services
             return permission;
         }
 
-        public async Task<ServiceResult<UpdateContentRes>> UpdateSectionContentAsync(
-     Guid sectionId,
-     string newContent)
+        // Update section content and manage hyperlinks:
+        public async Task<ServiceResult<UpdateContentRes>> UpdateSectionContentAsync(Guid sectionId, string newContent)
         {
+            // START TRANSACTION
             using var transaction =
                 await _context.Database.BeginTransactionAsync();
 
-            //Khởi tạo:
             var response = new UpdateContentRes
             {
                 Id = sectionId,
                 Flag = false
             };
 
-
             try
             {
-                var section =
-                    await _context.Sections
-                        .FirstOrDefaultAsync(x => x.Id == sectionId);
+                var section = await _context.Sections
+                    .FirstOrDefaultAsync(x => x.Id == sectionId);
 
                 if (section == null)
                 {
@@ -219,21 +224,17 @@ namespace text_editor_server.Services
                         .Fail("Section not found");
                 }
 
-                // =========================
+               
                 // PHASE 1: PARSE SFDT
-                // =========================
-
                 var root = JObject.Parse(newContent);
 
-                var blocks =
-                    ExtractBlocksFromSfdt(newContent);
+                var blocks = ExtractBlocksFromSfdt(newContent);
 
-                var safeSectionJson =
-                    new JObject
-                    {
-                        ["b"] = new JArray(blocks),
-                        ["imgs"] = root["imgs"]
-                    };
+                var safeSectionJson = new JObject
+                {
+                    ["b"] = new JArray(blocks),
+                    ["imgs"] = root["imgs"]
+                };
 
                 using var doc =
                     JsonDocument.Parse(
@@ -246,81 +247,66 @@ namespace text_editor_server.Services
                 section.Content =
                     rewriteResult.Sfdt.GetRawText();
 
-                // =========================
-                // PHASE 2: REPLACE LINKS
-                // =========================
+                // PHASE 2: REPLACE LINK
+                var oldCount = await _context.SectionHyperlinks
+                    .CountAsync(x => x.SectionId == sectionId);
 
-                var oldLinks =
-                    await _context.SectionHyperlinks
-                        .Where(x => x.SectionId == sectionId)
-                        .ToListAsync();
+                response.Flag =
+                    rewriteResult.Hyperlinks.Count > oldCount;
 
-                var oldCount = oldLinks.Count;
-                var newCount = rewriteResult.Hyperlinks.Count;
+                await _context.SectionHyperlinks
+                    .Where(x => x.SectionId == sectionId)
+                    .ExecuteDeleteAsync();
+  
+                var newLinks = rewriteResult.Hyperlinks
+                    .Select(item => new SectionHyperlink
+                    {
+                        Id = Guid.NewGuid(),
+                        SectionId = sectionId,
+                        ProofFileId = item.ProofFileId,
+                        Url = item.Url,
+                        Position = item.Position,
+                        CreatedAt = DateTime.UtcNow
+                    })
+                    .ToList();
 
-                response.Flag = newCount > oldCount;
-
-                _context.SectionHyperlinks.RemoveRange(oldLinks);
-
-                foreach (var item in rewriteResult.Hyperlinks)
-                {
-                    _context.SectionHyperlinks.Add(
-                        new SectionHyperlink
-                        {
-                            Id = Guid.NewGuid(),
-                            SectionId = sectionId,
-                            ProofFileId = item.ProofFileId,
-                            Url = item.Url,
-                            Position = item.Position,
-                            CreatedAt = DateTime.UtcNow
-                        });
-                }
+                _context.SectionHyperlinks.AddRange(newLinks);
 
                 await _context.SaveChangesAsync();
 
-                // =========================
                 // LOAD DOCUMENT LINKS
-                // =========================
-
+  
                 var currentLinks =
                     await _context.SectionHyperlinks
                         .Include(x => x.Section)
                         .Where(x =>
-                            x.Section.DocumentId == section.DocumentId)
+                            x.Section.DocumentId ==
+                            section.DocumentId)
                         .ToListAsync();
 
-                // =========================
                 // RECALCULATE OWNER
-                // =========================
-
-                RecalculateOwners(currentLinks);
-
-                // =========================
+                _updateHelper.RecalculateOwners(currentLinks);
                 // BUILD NUMBERING
-                // =========================
-
-                BuildNumbering(currentLinks, section.DocumentId);
-
-                // =========================
+                _updateHelper.BuildNumbering(currentLinks, section.DocumentId);
+               
                 // REWRITE DISPLAY
-                // =========================
-
-                RewriteAllSections(section.DocumentId);
-
-                // =========================
+                _updateHelper.RewriteAllSections(section.DocumentId);
                 // FINAL SAVE + VERSION
-                // =========================
-                await _context.SaveChangesAsync();
+
                 section.Version++;
                 section.Timestamp =
-                    DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                    DateTimeOffset.UtcNow
+                        .ToUnixTimeMilliseconds();
 
                 var docEntity =
                     await _context.Documents
-                        .FirstOrDefaultAsync(x => x.Id == section.DocumentId);
+                        .FirstOrDefaultAsync(
+                            x => x.Id == section.DocumentId);
 
                 if (docEntity != null)
+                {
                     docEntity.hasChanges = true;
+                }
 
                 await _context.SaveChangesAsync();
 
@@ -333,13 +319,16 @@ namespace text_editor_server.Services
             {
                 await transaction.RollbackAsync();
 
-                _logger.LogError(ex, "UpdateSectionContent error");
+                _logger.LogError(
+                    ex,
+                    "UpdateSectionContent error");
+
                 return ServiceResult<UpdateContentRes>
-                     .Fail(ex.Message);
+                    .Fail("Failed to update section");
             }
         }
         //Hàm chuyển từ sfdt gốc sang section content:
-    public static List<JObject> ExtractBlocksFromSfdt(string json)
+        public static List<JObject> ExtractBlocksFromSfdt(string json)
         {
             var result = new List<JObject>();
 
@@ -383,154 +372,7 @@ namespace text_editor_server.Services
             {
                 return new List<JObject>();
             }
-
             return result;
         }
-
-        //HELPER for update:
-    private void RecalculateOwners(List<SectionHyperlink> links)
-        {
-            var groups =
-                links
-                    .Where(x => x.ProofFileId.HasValue)
-                    .GroupBy(x => x.ProofFileId.Value);
-
-            foreach (var group in groups)
-            {
-                var safeGroup = group.ToList();
-
-                var owner =
-                    safeGroup
-                        .OrderBy(x => x.Section?.OrderIndex ?? int.MaxValue)
-                        .ThenBy(x => x.Position)
-                        .FirstOrDefault();
-
-                if (owner == null)
-                    continue;
-
-                foreach (var item in safeGroup)
-                {
-                    item.OwnerSectionId = owner.SectionId;
-                }
-            }
-        }
-        
-        private void BuildNumbering(
-    List<SectionHyperlink> links,
-    Guid documentId)
-        {
-            var sections =
-                _context.Sections
-                    .Where(x => x.DocumentId == documentId)
-                    .OrderBy(x => x.OrderIndex)
-                    .ToList();
-
-            foreach (var section in sections)
-            {
-                var sectionCode =
-                    Regex.Match(
-                        section.Title ?? "",
-                        @"^\d+(\.\d+)*")
-                    .Value;
-
-                if (string.IsNullOrWhiteSpace(sectionCode))
-                    sectionCode = "section";
-
-                int counter = 1;
-
-                var ownerLinks =
-                    links
-                        .Where(x =>
-                            x.OwnerSectionId == section.Id &&
-                            x.ProofFileId.HasValue)
-                        .GroupBy(x => x.ProofFileId!.Value)
-                        .Select(g =>
-                            g.OrderBy(x => x.Section?.OrderIndex ?? int.MaxValue)
-                             .ThenBy(x => x.Position)
-                             .First())
-                        .OrderBy(x => x.Section?.OrderIndex ?? int.MaxValue)
-                        .ThenBy(x => x.Position)
-                        .ToList();
-
-                foreach (var link in ownerLinks)
-                {
-                    var code =
-                        $"{sectionCode}-{counter:D2}";
-
-                    var sameProof =
-                        links.Where(x =>
-                            x.ProofFileId ==
-                            link.ProofFileId);
-
-                    foreach (var item in sameProof)
-                    {
-                        item.Code = code;
-                    }
-
-                    counter++;
-                }
-            }
-        }
-
-    private void RewriteAllSections(Guid documentId)
-        {
-            var sections =
-                _context.Sections
-                    .Where(x => x.DocumentId == documentId)
-                    .ToList();
-
-            var links =
-                _context.SectionHyperlinks
-                    .Where(x => x.Section.DocumentId == documentId)
-                    .Include(x => x.Section)
-                    .ToList();
-
-            foreach (var section in sections)
-            {
-                var map =
-              links
-                  .Where(x => x.SectionId == section.Id)
-                  .Where(x => x.ProofFileId.HasValue && !string.IsNullOrEmpty(x.Code))
-                  .GroupBy(x => x.ProofFileId.Value)
-                  .ToDictionary(
-                      g => g.Key,
-                      g => g
-                          .OrderBy(x => x.Position)
-                          .First()
-                          .Code
-                  );
-
-                section.Content =
-                    RewriteSfdtDisplayText(section.Content, map);
-
-                // ❗ FIX: remove double version increment (ONLY HERE)
-                section.Timestamp =
-                    DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            }
-        }
-
-    private string RewriteSfdtDisplayText(
-     string content,
-     Dictionary<Guid, string> codeMap)
-        {
-            if (string.IsNullOrWhiteSpace(content))
-                return content;
-
-            using var doc = JsonDocument.Parse(content);
-
-            var safeMap =
-                codeMap.ToDictionary(
-                    x => (Guid?)x.Key,
-                    x => x.Value ?? ""
-                );
-
-            var rewritten =
-                _hyperlinkEngine.RewriteDisplayCodes(
-                    doc.RootElement,
-                    safeMap);
-
-            return rewritten.GetRawText();
-        }
-
     }
 }

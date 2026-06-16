@@ -127,7 +127,7 @@ namespace text_editor_server.Controllers
         [HttpPost("{documentId:guid}/title")]
         public async Task<IActionResult> UpdateTitle(Guid documentId, string title)
         {
-            var res = await _documentService.updateTitleAsync(documentId, title);
+            var res = await _documentService.UpdateTitleAsync(documentId, title);
             if (!res)
             {
                 return NotFound(new { message = "Document not found" });
@@ -141,7 +141,7 @@ namespace text_editor_server.Controllers
         [HttpPut("{documentId:guid}/content")]
         public async Task<IActionResult> UpdateContent(Guid documentId, [FromBody] UpdateJsonSfdtReq req)
         {
-            var res = await _documentService.updateContentAsync(documentId, req.JsonContent);
+            var res = await _documentService.UpdateContentAsync(documentId, req.JsonContent);
             if (!res.Success)
             {
                 return BadRequest(new { message = res.Message });

@@ -6,7 +6,7 @@ namespace text_editor_server.Entities
     {
         public Guid Id { get; set; }
         public Guid DocumentId { get; set; }
-        public string Title { get; set; }
+        public string Title { get; set; } = string.Empty;
         public int Level { get; set; }
         public int OrderIndex { get; set; }
         public Guid? ParentSectionId { get; set; }
@@ -19,5 +19,7 @@ namespace text_editor_server.Entities
         public int Version { get; set; } = 0;
         public long Timestamp { get; set; } = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         public ICollection<SectionPermission> Assignments { get; set; } = new List<SectionPermission>();
+
+        
     }
 }
