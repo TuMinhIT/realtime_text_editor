@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using text_editor_server.DTOs.req;
 using text_editor_server.Entities;
 using text_editor_server.Services;
+using text_editor_server.Services.Helper;
 
 namespace text_editor_server.Controllers
 {
@@ -40,7 +41,7 @@ namespace text_editor_server.Controllers
         [Authorize]
         public async Task<IActionResult> GetSectionAndPermission(Guid sectionId, Guid userID)
         {
-            var result = await _sectionService.getSectionAndPermissionAsync( userID, sectionId);
+            var result = await _sectionService.GetSectionAndPermissionAsync( userID, sectionId);
             if (!result.Success)
             {
                 return BadRequest(new { message = result.Message });
@@ -126,7 +127,7 @@ namespace text_editor_server.Controllers
         [HttpGet("assignments/{sectionId:guid}")]
         public async Task<IActionResult> GetSectionAssignments(Guid sectionId)
         {
-            var assignment = await _sectionService.GetSectionPermissonAsync(sectionId);
+            var assignment = await _sectionService.GetSectionPermissionsAsync(sectionId);
             return Ok(assignment);
             
         }

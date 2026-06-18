@@ -15,6 +15,7 @@ using text_editor_server.Realtime.Hubs;
 using text_editor_server.Realtime.Interfaces;
 using text_editor_server.Realtime.Services;
 using text_editor_server.Realtime.Managers;
+using text_editor_server.Services.Helper;
 
 
 namespace text_editor_server
@@ -39,6 +40,7 @@ namespace text_editor_server
             builder.Services.AddScoped<ProofFileService>();
             builder.Services.AddScoped<FolderService>();
             builder.Services.AddScoped<HyperlinkEngine>();
+            builder.Services.AddScoped<UpdateSectionContentHelper>();
 
             builder.Services.AddHttpContextAccessor();
    
