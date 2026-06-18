@@ -1,9 +1,17 @@
-import { FileText, MoreVertical, Copy, Download, Trash2 } from "lucide-react";
+import {
+  FileText,
+  MoreVertical,
+  Copy,
+  Download,
+  Trash2,
+  PenBox,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import fileService from "../../services/fileService";
 
 import React from "react";
 import { toast } from "react-toastify";
+import RenameForm from "./RenameForm";
 
 const formatDate = (value) => {
   if (!value) {
@@ -36,7 +44,7 @@ const FileItem = ({ doc, loadFiles }) => {
   const [openMenu, setOpenMenu] = useState(false);
   const menuRef = useRef(null);
   const base = import.meta.env.VITE_API_URL || "";
-
+  const [openRename, setOpenRename] = useState(false);
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -50,6 +58,18 @@ const FileItem = ({ doc, loadFiles }) => {
       document.removeEventListener("click", handleClickOutside);
     };
   }, []);
+
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [fileName, setFileName] = useState(doc.fileName);
+  const [newName, setNewName] = useState(doc.fileName);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (isRenaming) {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }
+  }, [isRenaming]);
 
   const getDownloadUrl = (doc) => {
     if (!doc) return "";
@@ -84,6 +104,20 @@ const FileItem = ({ doc, loadFiles }) => {
     }
   };
 
+  const handleRename = async (newName) => {
+    const isConfirmed = window.confirm("Bạn có chắc muốn đổi tên file này?");
+
+    if (!isConfirmed) return;
+    try {
+      await fileService.renameFile(doc.id, newName);
+      setFileName(newName);
+      // await loadFiles();/
+    } catch (err) {
+      console.error(err);
+      toast.error("Đổi tên thất bại");
+    }
+  };
+
   return (
     <div className="group relative flex items-center gap-4 border-t border-slate-200 bg-white px-4 py-3 transition hover:bg-slate-50">
       {/* File Info */}
@@ -93,9 +127,36 @@ const FileItem = ({ doc, loadFiles }) => {
         </div>
 
         <div className="min-w-0">
-          <p className="truncate font-medium text-slate-900">{doc.fileName}</p>
+          {isRenaming ? (
+            <input
+              ref={inputRef}
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onBlur={async () => {
+                if (newName.trim() && newName !== fileName) {
+                  setIsRenaming(false);
+                  await handleRename(newName);
+                }
+                setIsRenaming(false);
+              }}
+              onKeyDown={async (e) => {
+                if (e.key === "Enter") {
+                  if (newName.trim() && newName !== fileName) {
+                    await handleRename(newName);
+                  }
+                  setIsRenaming(false);
+                }
 
-          <p className="truncate text-xs text-slate-500">{doc.relativePath}</p>
+                if (e.key === "Escape") {
+                  setNewName(fileName);
+                  setIsRenaming(false);
+                }
+              }}
+              className="w-full rounded border border-blue-400 px-2 py-1 text-sm"
+            />
+          ) : (
+            <p className="truncate font-medium text-slate-900">{fileName}</p>
+          )}
         </div>
       </div>
 
@@ -128,6 +189,18 @@ const FileItem = ({ doc, loadFiles }) => {
             >
               <Download size={16} />
               Download
+            </button>
+
+            <button
+              onClick={() => {
+                setNewName(doc.fileName);
+                setIsRenaming(true);
+                setOpenMenu(false);
+              }}
+              className="flex w-full items-center gap-3 px-4 py-3 text-sm text-yellow-300 hover:bg-red-50"
+            >
+              <PenBox size={16} />
+              Rename
             </button>
 
             <button

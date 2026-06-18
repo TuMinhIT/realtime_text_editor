@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using text_editor_server.DTOs.req;
@@ -105,6 +106,26 @@ namespace text_editor_server.Controllers
                 result.Data.FileName
             );
         }
+
+
+        // dổi tên file
+        [Authorize]
+        [HttpPut("rename/{id:guid}")]
+        public async Task<IActionResult> RenameFile(Guid id, [FromBody] UpdateNameReq req )
+        {
+   
+            var result = await _proofFileService
+                .UpdateNameAsync(id, req.fileName);
+
+            if (!result.Success || result.Data == null)
+            {
+                return NotFound(new { message = result.Message });
+            }
+
+            return Ok();
+        }
+
+
 
         [HttpDelete("{id:guid}")]
         [Authorize]

@@ -6,6 +6,7 @@ import {
   DeleteIcon,
   FileText,
   FolderOpen,
+  PenBox,
   UserCheck,
 } from "lucide-react";
 import { toast } from "react-toastify";
@@ -44,6 +45,32 @@ const FileItemUser = ({ doc, isEdit = false, loadFiles }) => {
     }
   };
 
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [fileName, setFileName] = useState(doc.fileName);
+  const [newName, setNewName] = useState(doc.fileName);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (isRenaming) {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }
+  }, [isRenaming]);
+
+  const handleRename = async (newName) => {
+    const isConfirmed = window.confirm("Bạn có chắc muốn đổi tên file này?");
+
+    if (!isConfirmed) return;
+    try {
+      await fileService.renameFile(doc.id, newName);
+      setFileName(newName);
+      // await loadFiles();/
+    } catch (err) {
+      console.error(err);
+      toast.error("Đổi tên thất bại");
+    }
+  };
+
   return (
     <div>
       <div key={doc.id} className=" p-2 text-slate-700 group relative">
@@ -57,14 +84,26 @@ const FileItemUser = ({ doc, isEdit = false, loadFiles }) => {
             <CopyCheck size={16} />
           </button>
           {isEdit && (
-            <button
-              type="button"
-              onClick={() => handleDelete(doc.id)}
-              title="Xóa"
-              className=" p-1 text-red-600 bg-white border border-slate-200 group-hover:flex hover:bg-red-50"
-            >
-              <DeleteIcon size={16} />
-            </button>
+            <>
+              <button
+                onClick={() => {
+                  setNewName(fileName);
+                  setIsRenaming(true);
+                }}
+                className="p-1 text-yellow-300 bg-white border border-slate-200 group-hover:flex hover:bg-red-50"
+              >
+                <PenBox size={16} />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleDelete(doc.id)}
+                title="Xóa"
+                className=" p-1 text-red-600 bg-white border border-slate-200 group-hover:flex hover:bg-red-50"
+              >
+                <DeleteIcon size={16} />
+              </button>
+            </>
           )}
         </div>
 
@@ -73,21 +112,39 @@ const FileItemUser = ({ doc, isEdit = false, loadFiles }) => {
             <div className="flex h-8 w-8 items-center justify-center text-blue-600">
               <FileText size={16} />
             </div>
-            <div>
-              <p className="font-medium text-slate-900">{doc.fileName}</p>
-            </div>
+            {isRenaming ? (
+              <input
+                ref={inputRef}
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                onBlur={async () => {
+                  if (newName.trim() && newName !== fileName) {
+                    setIsRenaming(false);
+                    await handleRename(newName);
+                  }
+                  setIsRenaming(false);
+                }}
+                onKeyDown={async (e) => {
+                  if (e.key === "Enter") {
+                    if (newName.trim() && newName !== fileName) {
+                      await handleRename(newName);
+                    }
+                    setIsRenaming(false);
+                  }
+
+                  if (e.key === "Escape") {
+                    setNewName(fileName);
+                    setIsRenaming(false);
+                  }
+                }}
+                className="w-full rounded border border-blue-400 px-2 py-1 text-sm"
+              />
+            ) : (
+              <p className="truncate font-medium text-slate-900">{fileName}</p>
+            )}
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* <a
-                    href={getDownloadUrl(doc)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-[#1a73e8] hover:underline break-all"
-                  >
-                    link: ....file/{doc.id}
-                  </a> */}
-          </div>
+          <div className="flex items-center gap-3"></div>
         </div>
       </div>
     </div>

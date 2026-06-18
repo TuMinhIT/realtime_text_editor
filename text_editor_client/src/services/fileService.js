@@ -98,6 +98,18 @@ export const fileService = {
       throw toError(err);
     }
   },
+
+  async renameFile(id, fileName) {
+    try {
+      const res = await http.put(`${resource}/rename/${id}`, {
+        id: id,
+        fileName: fileName,
+      });
+      return res.data;
+    } catch (err) {
+      throw toError(err);
+    }
+  },
 };
 
 export default fileService;

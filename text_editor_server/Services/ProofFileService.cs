@@ -208,6 +208,33 @@ namespace text_editor_server.Services
             }
         }
 
+
+        public async Task<ServiceResult<bool>> UpdateNameAsync(Guid fileId,string name)
+        {
+            try
+            {
+                var entity = await _context.ProofFiles
+                    .FirstOrDefaultAsync(x => x.Id == fileId);
+
+                if (entity == null)
+                {
+                    return ServiceResult<bool>.Fail("File not found");
+                }
+
+                entity.FileName = name;
+
+                await _context.SaveChangesAsync();
+
+                return ServiceResult<bool>.Ok(true);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to rename proof file {FileId}", fileId);
+                return ServiceResult<bool>.Fail("Failed to rename file");
+            }
+        }
+
+
         private byte[] EncryptFile(byte[] data)
         {
             var key = Encoding.UTF8.GetBytes("12345678901234561234567890123456"); // 32 bytes

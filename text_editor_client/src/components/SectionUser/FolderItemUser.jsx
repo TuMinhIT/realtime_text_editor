@@ -23,7 +23,7 @@ import { useNavigate } from "react-router-dom";
 const FolderItemUser = ({ folder, loadFolders, isEdit = false }) => {
   const [openMenu, setOpenMenu] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  const base = import.meta.env.VITE_API_URL || "";
+  const base = import.meta.env.VITE_FE_API_URL || "";
   const fileInputRef = useRef(null);
   const menuRef = useRef(null);
   const [files, setFiles] = useState([]);
@@ -46,9 +46,10 @@ const FolderItemUser = ({ folder, loadFolders, isEdit = false }) => {
     }
   };
 
+  console.log(base);
   const getDownloadUrl = (doc) => {
     if (!doc) return "";
-    return `${base}/ProofFolder/${doc.id}`;
+    return `${base}/folder/${doc.id}`;
   };
 
   const handleCopy = async (doc) => {
