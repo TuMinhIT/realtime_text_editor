@@ -130,14 +130,14 @@ namespace text_editor_server.Services
             var sections = await _context.Sections
                 .AsNoTracking()
                 .Where(s => s.DocumentId == documentId)
-                .OrderBy(s => s.OrderIndex)               
+                .OrderBy(s => s.OrderIndex)
                 .ToListAsync();
             return ServiceResult<List<Section>>.Ok(sections);
         }
 
         // Get section by id:
         public async Task<ServiceResult<SectionRes>> GetSectionAndPermissionAsync(Guid userId, Guid sectionId)
-        {     
+        {
             var section = await _context.Sections.FirstOrDefaultAsync(s => s.Id == sectionId);
             if (section == null)
             {
@@ -224,7 +224,7 @@ namespace text_editor_server.Services
                         .Fail("Section not found");
                 }
 
-               
+
                 // PHASE 1: PARSE SFDT
                 var root = JObject.Parse(newContent);
 
@@ -257,7 +257,7 @@ namespace text_editor_server.Services
                 await _context.SectionHyperlinks
                     .Where(x => x.SectionId == sectionId)
                     .ExecuteDeleteAsync();
-  
+
                 var newLinks = rewriteResult.Hyperlinks
                     .Select(item => new SectionHyperlink
                     {
@@ -275,7 +275,7 @@ namespace text_editor_server.Services
                 await _context.SaveChangesAsync();
 
                 // LOAD DOCUMENT LINKS
-  
+
                 var currentLinks =
                     await _context.SectionHyperlinks
                         .Include(x => x.Section)
@@ -288,7 +288,7 @@ namespace text_editor_server.Services
                 _updateHelper.RecalculateOwners(currentLinks);
                 // BUILD NUMBERING
                 _updateHelper.BuildNumbering(currentLinks, section.DocumentId);
-               
+
                 // REWRITE DISPLAY
                 _updateHelper.RewriteAllSections(section.DocumentId);
                 // FINAL SAVE + VERSION
@@ -373,6 +373,20 @@ namespace text_editor_server.Services
                 return new List<JObject>();
             }
             return result;
+        }
+
+
+        // Get section by sectionId
+        public async Task<ServiceResult<Section>> GetSectionByIdAsync(Guid sectionId)
+        {
+            var section = await _context.Sections
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Id == sectionId);
+            if (section == null)
+            {
+                return ServiceResult<Section>.Fail("Section not found");
+            }
+            return ServiceResult<Section>.Ok(section);
         }
     }
 }

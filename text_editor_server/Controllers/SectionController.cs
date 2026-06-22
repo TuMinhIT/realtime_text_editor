@@ -1,9 +1,16 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Threading.Tasks;
+using text_editor_server.Data;
 using text_editor_server.DTOs.req;
 using text_editor_server.Entities;
 using text_editor_server.Services;
 using text_editor_server.Services.Helper;
+
 
 namespace text_editor_server.Controllers
 {
@@ -14,12 +21,22 @@ namespace text_editor_server.Controllers
         private readonly SectionService _sectionService;
         private readonly DocumentService _documentService;
         private readonly SectionParser _sectionParse;
+        private readonly HyperlinkTableService _hyperlinkTableService;
 
-        public SectionController(SectionService sectionService, DocumentService documentService, SectionParser sectionParse)
+        private readonly AppDbContext _context; // Để tạm để test
+
+        public SectionController(SectionService sectionService,
+            DocumentService documentService,
+            SectionParser sectionParse,
+            HyperlinkTableService hyperlinkTableService,
+            AppDbContext context)
         {
             _sectionService = sectionService;
             _documentService = documentService;
             _sectionParse = sectionParse;
+
+            _hyperlinkTableService = hyperlinkTableService;
+            _context = context;
         }
 
 
@@ -163,7 +180,67 @@ namespace text_editor_server.Controllers
 
             return Ok(result.Data);
         }
+
+        //[HttpPost("insert-table")]
+        //public async Task<IActionResult> InsertTable([FromBody] JObject sfdt, Guid sectionId)
+        //{
+        //    try
+        //    {
+        //        var updatedSfdt =
+        //            _hyperlinkTableService.InsertEvidenceTable(sfdt);
+
+        //        Console.WriteLine("Updated SFDT: " + updatedSfdt.ToString(Formatting.None));
+
+
+        //        var section = await _context.Sections.FindAsync(sectionId);
+
+        //        if (section == null)
+        //            return NotFound();
+
+        //        section.Content =
+        //            updatedSfdt.ToString(Formatting.None);
+
+        //        await _context.SaveChangesAsync();
+
+        //        return Ok(updatedSfdt);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return BadRequest(ex.Message);
+        //    }
+        //}
+
+        [HttpPost("insert-table")]
+        public async Task<IActionResult> InsertTable(
+    [FromQuery] Guid documentSnapshotId)
+        {
+            try
+            {
+                var document =
+                    await _context.DocumentSnapshots.FindAsync(documentSnapshotId);
+
+                if (document == null)
+                    return NotFound();
+
+                var sfdt =
+                    JObject.Parse(document.JsonContent);
+                    
+                var updated =
+                    _hyperlinkTableService.InsertTableAtEnd(sfdt);
+
+                Console.WriteLine(updated.ToString());
+
+                document.JsonContent =
+                    updated.ToString(Formatting.None);
+
+                await _context.SaveChangesAsync();
+
+                return Ok(updated);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
     }
-
-
 }

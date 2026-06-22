@@ -41,11 +41,14 @@ namespace text_editor_server
             builder.Services.AddScoped<FolderService>();
             builder.Services.AddScoped<HyperlinkEngine>();
             builder.Services.AddScoped<UpdateSectionContentHelper>();
+            builder.Services.AddScoped<HyperlinkTableService>();
 
             builder.Services.AddHttpContextAccessor();
-   
+
             // Add controllers
-            builder.Services.AddControllers();
+            builder.Services
+    .AddControllers()
+    .AddNewtonsoftJson();
 
             // Add CORS
             builder.Services.AddCors(options =>
