@@ -1,5 +1,9 @@
-﻿
+﻿using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Linq;
+
+using text_editor_server.Data;
 using text_editor_server.DTOs.req;
 
 namespace text_editor_server.Services;
@@ -7,30 +11,64 @@ namespace text_editor_server.Services;
 public class HyperlinkTableService
 {
     private readonly JObject _tableTemplate;
+    private readonly AppDbContext _db;
 
-    public HyperlinkTableService()
+    public HyperlinkTableService(AppDbContext db)
     {
+        _db = db;
         _tableTemplate = GetTableTemplate();
     }
-
-    public JObject InsertTableAtEnd(JObject document)
+    public async Task<JObject> InsertTableToSection(Guid sectionId, JObject sfdt)
     {
-        if (document["sec"] is not JArray sections)
-            throw new Exception("Document missing sec array");
+        var section = await _db.Sections
+            .FirstOrDefaultAsync(s => s.Id == sectionId);
 
-        var lastSection = (JObject)sections.Last!;
+        if (section == null)
+            throw new Exception("Section not found");
 
-        if (lastSection["b"] is not JArray blocks)
-            throw new Exception("Section missing blocks");
+        // 1. lấy section đầu tiên (hoặc match theo logic bạn muốn)
+        var sec = sfdt["sec"]?[0] as JObject;
+        if (sec == null)
+            throw new Exception("Invalid SFDT: missing sec");
 
-        blocks.Add(CreateEvidenceTable());
+        var blocks = sec["b"] as JArray;
+        if (blocks == null)
+            throw new Exception("Invalid SFDT: missing blocks (b)");
 
-        return document;
+        // 2. convert block list
+        var blockList = blocks
+            .Cast<JObject>()
+            .ToList();
+
+        // 3. CHÈN TABLE
+        blockList.Add(CreateEvidenceTable());
+
+        // 4. replace lại blocks trong section
+        sec["b"] = new JArray(blockList);
+
+        // 5. build lại SFDT rút gọn để lưu DB
+        var simplified = SerializeSection(sec);
+
+        section.Content = simplified;
+        section.Version++;
+        section.Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+        await _db.SaveChangesAsync();
+
+        return JObject.Parse(simplified);
+    }
+    private string SerializeSection(JObject section)
+    {
+        return new JObject
+        {
+            ["b"] = section["b"],
+            ["imgs"] = section["imgs"] ?? new JObject()
+        }.ToString(Formatting.None);
     }
 
     private JObject CreateEvidenceTable()
     {
-        var criteria = GetMockCriteria();
+        var criteria = GetCriteriaFromDb();
 
         var table = (JObject)_tableTemplate.DeepClone();
 
@@ -40,7 +78,8 @@ public class HyperlinkTableService
         rows.Add(CreateEvidenceRow(
             "No.",
             "Code",
-            "Name of evidence"));
+            "Name of evidence",
+            null));
 
         foreach (var criterion in criteria)
         {
@@ -53,7 +92,8 @@ public class HyperlinkTableService
                 rows.Add(CreateEvidenceRow(
                     no.ToString(),
                     evidence.Code,
-                    evidence.Name));
+                    evidence.Name,
+                    evidence.Url));
 
                 no++;
             }
@@ -117,11 +157,12 @@ public class HyperlinkTableService
 
         return row;
     }
-
-    private JObject CreateEvidenceRow(
-      string no,
-      string code,
-      string name)
+    //Hàm tạo 1 row cho bảng minh chứng có link đính kèm:
+    public JObject CreateEvidenceRow(
+     string no,
+     string code,
+     string name,
+     string? url)
     {
         var row = JObject.Parse("""
     {
@@ -137,12 +178,7 @@ public class HyperlinkTableService
                 "lif":{}
               },
               "cf":{},
-              "i":[
-                {
-                  "cf":{"bi":false},
-                  "tlp":""
-                }
-              ]
+              "i":[]
             }
           ],
           "tcpr":{
@@ -166,12 +202,7 @@ public class HyperlinkTableService
                 "lif":{}
               },
               "cf":{},
-              "i":[
-                {
-                  "cf":{"bi":false},
-                  "tlp":""
-                }
-              ]
+              "i":[]
             }
           ],
           "tcpr":{
@@ -195,12 +226,7 @@ public class HyperlinkTableService
                 "lif":{}
               },
               "cf":{},
-              "i":[
-                {
-                  "cf":{"bi":false},
-                  "tlp":""
-                }
-              ]
+              "i":[]
             }
           ],
           "tcpr":{
@@ -227,88 +253,302 @@ public class HyperlinkTableService
     }
     """);
 
-        row["c"]![0]!["b"]![0]!["i"]![0]!["tlp"] = no;
-        row["c"]![1]!["b"]![0]!["i"]![0]!["tlp"] = code;
-        row["c"]![2]!["b"]![0]!["i"]![0]!["tlp"] = name;
+        // ===== Column No =====
+
+        row["c"]![0]!["b"]![0]!["i"] = new JArray
+    {
+        new JObject
+        {
+            ["cf"] = new JObject
+            {
+                ["bi"] = false
+            },
+            ["tlp"] = no
+        }
+    };
+
+        // ===== Column Code =====
+        var codeRuns = new JArray();
+
+        if (!string.IsNullOrWhiteSpace(url))
+        {
+            // Field Begin
+            codeRuns.Add(new JObject
+            {
+                ["cf"] = new JObject
+                {
+                    ["hc"] = 0,
+                    ["bi"] = false
+                },
+                ["ft"] = 0,
+                ["hfe"] = true
+            });
+
+            // Hyperlink instruction
+            codeRuns.Add(new JObject
+            {
+                ["cf"] = new JObject
+                {
+                    ["hc"] = 0,
+                    ["bi"] = false
+                },
+                ["tlp"] = $" HYPERLINK \"{url}\" "
+            });
+
+            // Field Separator
+            codeRuns.Add(new JObject
+            {
+                ["cf"] = new JObject
+                {
+                    ["hc"] = 0,
+                    ["bi"] = false
+                },
+                ["ft"] = 2
+            });
+
+            // Text hiển thị
+            codeRuns.Add(new JObject
+            {
+                ["cf"] = new JObject
+                {
+                    ["u"] = 1,
+                    ["hc"] = 0,
+                    ["fc"] = "#0563c1",
+                    ["bi"] = false
+                },
+                ["tlp"] = code
+            });
+
+            // Field End
+            codeRuns.Add(new JObject
+            {
+                ["cf"] = new JObject
+                {
+                    ["hc"] = 0,
+                    ["bi"] = false
+                },
+                ["ft"] = 1
+            });
+        }
+        else
+        {
+            codeRuns.Add(new JObject
+            {
+                ["cf"] = new JObject
+                {
+                    ["bi"] = false
+                },
+                ["tlp"] = code
+            });
+        }
+
+
+        row["c"]![1]!["b"]![0]!["i"] = codeRuns;
+        Console.WriteLine(
+    row["c"]![1]!["b"]![0]!["i"]!.ToString()
+);
+
+        // ===== Column Name =====
+
+        row["c"]![2]!["b"]![0]!["i"] = new JArray
+    {
+        new JObject
+        {
+            ["cf"] = new JObject
+            {
+                ["bi"] = false
+            },
+            ["tlp"] = name
+        }
+    };
 
         return row;
     }
-    private List<CriterionReq> GetMockCriteria()
+    //private JObject CreateEvidenceRow(
+    //  string no,
+    //  string code,
+    //  string name)
+    //{
+    //    var row = JObject.Parse("""
+    //{
+    //  "c":[
+    //    {
+    //      "b":[
+    //        {
+    //          "pf":{
+    //            "bdrs":{"tp":{},"lt":{},"rg":{},"bt":{},"h":{},"v":{}},
+    //            "lin":0,
+    //            "fin":0,
+    //            "stn":"Normal",
+    //            "lif":{}
+    //          },
+    //          "cf":{},
+    //          "i":[
+    //            {
+    //              "cf":{"bi":false},
+    //              "tlp":""
+    //            }
+    //          ]
+    //        }
+    //      ],
+    //      "tcpr":{
+    //        "bdrs":{"tp":{},"lt":{},"rg":{},"bt":{},"dd":{},"du":{},"h":{},"v":{}},
+    //        "sd":{},
+    //        "pw":156,
+    //        "cw":156,
+    //        "colsp":1,
+    //        "rwsp":1
+    //      },
+    //      "ci":0
+    //    },
+    //    {
+    //      "b":[
+    //        {
+    //          "pf":{
+    //            "bdrs":{"tp":{},"lt":{},"rg":{},"bt":{},"h":{},"v":{}},
+    //            "lin":0,
+    //            "fin":0,
+    //            "stn":"Normal",
+    //            "lif":{}
+    //          },
+    //          "cf":{},
+    //          "i":[
+    //            {
+    //              "cf":{"bi":false},
+    //              "tlp":""
+    //            }
+    //          ]
+    //        }
+    //      ],
+    //      "tcpr":{
+    //        "bdrs":{"tp":{},"lt":{},"rg":{},"bt":{},"dd":{},"du":{},"h":{},"v":{}},
+    //        "sd":{},
+    //        "pw":156,
+    //        "cw":156,
+    //        "colsp":1,
+    //        "rwsp":1
+    //      },
+    //      "ci":1
+    //    },
+    //    {
+    //      "b":[
+    //        {
+    //          "pf":{
+    //            "bdrs":{"tp":{},"lt":{},"rg":{},"bt":{},"h":{},"v":{}},
+    //            "lin":0,
+    //            "fin":0,
+    //            "stn":"Normal",
+    //            "lif":{}
+    //          },
+    //          "cf":{},
+    //          "i":[
+    //            {
+    //              "cf":{"bi":false},
+    //              "tlp":""
+    //            }
+    //          ]
+    //        }
+    //      ],
+    //      "tcpr":{
+    //        "bdrs":{"tp":{},"lt":{},"rg":{},"bt":{},"dd":{},"du":{},"h":{},"v":{}},
+    //        "sd":{},
+    //        "pw":156,
+    //        "cw":156,
+    //        "colsp":1,
+    //        "rwsp":1
+    //      },
+    //      "ci":2
+    //    }
+    //  ],
+    //  "trpr":{
+    //    "h":1,
+    //    "ht":0,
+    //    "bdrs":{
+    //      "tp":{},"lt":{},"rg":{},"bt":{},
+    //      "dd":{},"du":{},"h":{},"v":{}
+    //    },
+    //    "gb":0,
+    //    "ga":0
+    //  }
+    //}
+    //""");
+
+    //    row["c"]![0]!["b"]![0]!["i"]![0]!["tlp"] = no;
+    //    row["c"]![1]!["b"]![0]!["i"]![0]!["tlp"] = code;
+    //    row["c"]![2]!["b"]![0]!["i"]![0]!["tlp"] = name;
+
+    //    return row;
+    //}
+
+    // New implementation: read criteria + evidences from DB.
+    private List<CriterionReq> GetCriteriaFromDb()
     {
-        return
-        [
-            new CriterionReq
-            {
-                Title = "Criterion 1: Expected Learning Outcomes",
-                Evidences =
-                [
-                    new EvidenceReq
-                    {
-                        Code = "1.1-01",
-                        Name = "Programme Learning Outcomes"
-                    },
-                    new EvidenceReq
-                    {
-                        Code = "1.1-02",
-                        Name = "Course Learning Outcomes Mapping"
-                    }
-                ]
-            },
+        // Query all sections ordered by OrderIndex (adjust filter if you need only certain sections)
+        var sections = _db.Sections
+            .Where(s => s.Level == 2)
+            .OrderBy(s => s.OrderIndex)
+            .Select(s => new { s.Id, s.Title })
+            .ToList();
 
-            new CriterionReq
-            {
-                Title = "Criterion 2: Programme Structure and Content",
-                Evidences =
-                [
-                    new EvidenceReq
-                    {
-                        Code = "2.1-01",
-                        Name = "Curriculum Structure"
-                    },
-                    new EvidenceReq
-                    {
-                        Code = "2.1-02",
-                        Name = "Curriculum Review Report"
-                    }
-                ]
-            },
+       // Console.WriteLine($"Found {sections.Count} sections in DB.");
+        var result = new List<CriterionReq>();
 
-            new CriterionReq
-            {
-                Title = "Criterion 3: Teaching and Learning Approach",
-                Evidences =
-                [
-                    new EvidenceReq
-                    {
-                        Code = "3.1-01",
-                        Name = "Teaching Plan"
-                    },
-                    new EvidenceReq
-                    {
-                        Code = "3.1-02",
-                        Name = "Learning Activities"
-                    }
-                ]
-            },
+        foreach (var s in sections)
+        {
+            //var evidences = _db.SectionHyperlinks
+            //    .Where(h => h.SectionId == s.Id && !string.IsNullOrEmpty(h.Code))
+            //    .OrderBy(h => h.Position)
+            //    .Select(h => new EvidenceReq
+            //    {
+            //        Code = h.Code ?? string.Empty,
+            //        Name = h.Url ?? string.Empty
+            //    })
+            //    .ToList();
 
-            new CriterionReq
+            var evidences =
+            (
+                from h in _db.SectionHyperlinks
+                join p in _db.ProofFiles
+                    on h.ProofFileId equals p.Id into proofs
+                from p in proofs.DefaultIfEmpty()
+
+                where h.SectionId == s.Id && !string.IsNullOrEmpty(h.Code)
+
+                orderby h.Position
+
+                select new EvidenceReq
+                {
+                    Code = h.Code ?? string.Empty,
+                    Name = p != null
+                  ? p.FileName
+                  : "No proof file",
+                   Url = h.Url ?? string.Empty
+                }
+
+            ).ToList();
+
+            //Console.WriteLine($"Section '{s.Title}' has {evidences.Count} coded hyperlinks.");
+
+            if (evidences.Count == 0)
             {
-                Title = "Criterion 4: Student Assessment",
-                Evidences =
-                [
-                    new EvidenceReq
-                    {
-                        Code = "4.1-01",
-                        Name = "Assessment Rubrics"
-                    },
-                    new EvidenceReq
-                    {
-                        Code = "4.1-02",
-                        Name = "Final Examination"
-                    }
-                ]
+                // continue; // skip sections without coded hyperlinks
+
+                evidences.Add(new EvidenceReq
+                {
+                    Code = "N/A",
+                    Name = "No coded hyperlinks"
+                });
             }
-        ];
+              
+
+            result.Add(new CriterionReq
+            {
+                Title = s.Title,
+                Evidences = evidences
+            });
+        }
+
+        return result;
     }
 
     private JObject GetTableTemplate()

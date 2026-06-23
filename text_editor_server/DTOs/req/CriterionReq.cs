@@ -10,7 +10,6 @@
         /// <summary>
         ///  Danh sách section
         /// </summary>
-        public List<EvidenceReq> Evidences { get; set; } = [];
+        public List<EvidenceReq> Evidences { get; set; } = new List<EvidenceReq>();
     }
 }
-    

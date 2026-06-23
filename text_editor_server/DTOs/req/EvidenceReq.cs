@@ -11,5 +11,11 @@
         /// Tên tài liệu minh chứng
         /// </summary>
         public string Name { get; set; } = string.Empty;
+
+        ///<summary>
+        ///Link tài liệu minh chứng:
+        ///</summary>      
+        public string Url { get; set; } = string.Empty;
+        
     }
 }

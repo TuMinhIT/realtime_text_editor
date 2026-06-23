@@ -11,6 +11,6 @@
         /// <summary>
         /// Danh sách các tiêu chí và minh chứng tương ứng để tạo bảng minh chứng
         /// </summary>
-        public List<CriterionReq> Criteria { get; set; } = [];
+        public List<CriterionReq> Criteria { get; set; } = new List<CriterionReq>();
     }
 }

@@ -336,7 +336,6 @@ namespace text_editor_server.Services
             {
                 ["b"] = new JArray(blocks),
 
-                // 🔥 FIX QUAN TRỌNG
                 ["imgs"] = sfdt["imgs"],
                 //["cf"] = sfdt["cf"],
                 //["sty"] = sfdt["sty"]

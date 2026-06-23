@@ -210,32 +210,49 @@ namespace text_editor_server.Controllers
         //    }
         //}
 
+        //    [HttpPost("insert-table")]
+        //    public async Task<IActionResult> InsertTable(
+        //[FromQuery] Guid documentSnapshotId)
+        //    {
+        //        try
+        //        {
+        //            var document =
+        //                await _context.DocumentSnapshots.FindAsync(documentSnapshotId);
+
+        //            if (document == null)
+        //                return NotFound();
+
+        //            var sfdt =
+        //                JObject.Parse(document.JsonContent);
+
+        //            var updated =
+        //                _hyperlinkTableService.InsertTableAtEnd(sfdt);
+
+        //            Console.WriteLine(updated.ToString());
+
+        //            document.JsonContent =
+        //                updated.ToString(Formatting.None);
+
+        //            await _context.SaveChangesAsync();
+
+        //            return Ok(updated);
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            return BadRequest(ex.Message);
+        //        }
+        //    }
+
         [HttpPost("insert-table")]
         public async Task<IActionResult> InsertTable(
-    [FromQuery] Guid documentSnapshotId)
+            [FromQuery] Guid sectionId,
+            [FromBody] JObject  sfdt)
         {
             try
             {
-                var document =
-                    await _context.DocumentSnapshots.FindAsync(documentSnapshotId);
-
-                if (document == null)
-                    return NotFound();
-
-                var sfdt =
-                    JObject.Parse(document.JsonContent);
-                    
-                var updated =
-                    _hyperlinkTableService.InsertTableAtEnd(sfdt);
-
-                Console.WriteLine(updated.ToString());
-
-                document.JsonContent =
-                    updated.ToString(Formatting.None);
-
-                await _context.SaveChangesAsync();
-
-                return Ok(updated);
+                var updatedSfdt =
+                    await _hyperlinkTableService.InsertTableToSection(sectionId, sfdt);
+                return Ok(updatedSfdt);
             }
             catch (Exception ex)
             {
