@@ -1,28 +1,11 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  Clock3,
-  Copy,
-  DeleteIcon,
-  Download,
-  DownloadCloud,
-  FileText,
-  FolderOpen,
-  MoveDiagonal2,
-  Plus,
-  Upload,
-  UserCheck,
-} from "lucide-react";
-
+import React, { useEffect, useMemo, useRef, useState, useContext } from "react";
 import fileService from "../../services/fileService";
-import { CgAdd, CgSpinner } from "react-icons/cg";
-import { ClipLoader } from "react-spinners";
-import { toast } from "react-toastify";
-import { SiAuthelia } from "react-icons/si";
+
 import InternalFileComponent from "./InternalFileComponent";
 import FileItemUser from "./FileItemUser";
 import folderService from "../../services/folderService";
 import FolderItemUser from "./FolderItemUser";
+import { SectionContext } from "../../context/appContext";
 const formatDate = (value) => {
   if (!value) {
     return "-";
@@ -36,18 +19,14 @@ const formatDate = (value) => {
 };
 
 const ProofFileTab = ({ documentId }) => {
-  const navigate = useNavigate();
-  const fileInputRef = useRef(null);
+  const { handleInsertProofTable } = useContext(SectionContext);
   const [files, setFiles] = useState([]);
-  const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [keyword, setKeyword] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
-  const base = import.meta.env.VITE_API_URL || "";
+
   const [folders, setFolders] = useState([]);
   const loadFiles = async () => {
     setIsLoading(true);
-    setErrorMessage("");
+
     const result = await fileService.getAllFiles();
     if (result) {
       setFiles(result.data);
@@ -61,19 +40,7 @@ const ProofFileTab = ({ documentId }) => {
     loadFolders();
   }, []);
 
-  const formatFileSize = (size) => {
-    if (size === undefined || size === null) return "-";
-    if (size < 1024) return `${size} B`;
-    if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
-    return `${(size / (1024 * 1024)).toFixed(2)} MB`;
-  };
 
-  const handleFileChange = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    handleUpload(file);
-    event.target.value = "";
-  };
 
   const loadFolders = async () => {
     try {
@@ -81,13 +48,15 @@ const ProofFileTab = ({ documentId }) => {
       setFolders(result.data);
     } catch (err) {
       setFolders([]);
-      setErrorMessage(err?.message || "Không thể tải danh sách file.");
+
     }
   };
 
   return (
     <section className=" w-full rounded-xl bg-white ">
       <div className="flex flex-row items-center justify-between">
+
+
         <div className="flex items-center flex-row gap-2.5">
           <span className="flex text-lg font-medium text-slate-900">
             File dùng chung
@@ -117,18 +86,27 @@ const ProofFileTab = ({ documentId }) => {
         <div>
           {folders && folders.length
             ? folders.map((folder) => (
-                <FolderItemUser
-                  key={folder.id}
-                  folder={folder}
-                  loadFolders={loadFolders}
-                />
-              ))
+              <FolderItemUser
+                key={folder.id}
+                folder={folder}
+                loadFolders={loadFolders}
+              />
+            ))
             : null}
         </div>
       </div>
 
       {/* // internal file */}
       <InternalFileComponent documentId={documentId} />
+
+      <div className="flex w-full flex-row items-center justify-center gap-2">
+        <button
+          onClick={handleInsertProofTable}
+          className="rounded-lg border bg-amber-100 px-2 py-2 font-semibold hover:bg-amber-200">
+          Bảng minh chứng
+        </button>
+
+      </div>
     </section>
   );
 };

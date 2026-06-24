@@ -243,15 +243,14 @@ namespace text_editor_server.Controllers
         //        }
         //    }
 
-        [HttpPost("insert-table")]
-        public async Task<IActionResult> InsertTable(
-            [FromQuery] Guid sectionId,
-            [FromBody] JObject  sfdt)
+        [HttpPost("insert_table")]
+        public async Task<IActionResult> InsertTable(          
+            [FromBody] InsertTableReq req)
         {
             try
-            {
+            {  
                 var updatedSfdt =
-                    await _hyperlinkTableService.InsertTableToSection(sectionId, sfdt);
+                    await _hyperlinkTableService.InsertTableToSection(req.sectionId, JObject.FromObject(req.sfdt));
                 return Ok(updatedSfdt);
             }
             catch (Exception ex)

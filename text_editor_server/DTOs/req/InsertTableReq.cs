@@ -4,9 +4,8 @@ namespace text_editor_server.DTOs.req
 {
     public class InsertTableReq
     {
-        public JObject? sfdt { get; set; }
+        public Object sfdt { get; set; } 
+        public Guid sectionId { get; set; } = Guid.Empty;
 
-
-        //  public GenerateEvidenceTableReq? TableData { get; set; } = new();
     }
 }

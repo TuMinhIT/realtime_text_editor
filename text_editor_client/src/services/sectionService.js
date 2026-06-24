@@ -5,6 +5,23 @@ const resource = "/section";
 const toError = (err) => err?.response?.data || err;
 
 export const sectionService = {
+
+  // inser table minh chứng
+  async insertProofTable(sectionId, content) {
+    try {
+      const res = await http.post(
+        `${resource}/insert_table`,
+        {
+          sectionId: sectionId,
+          sfdt: content,
+        }
+      );
+      return res.data;
+    } catch (err) {
+      throw toError(err);
+    }
+  },
+
   //Lấy tất cả section của document
   async getAllSectionsByDocument(documentId) {
     try {

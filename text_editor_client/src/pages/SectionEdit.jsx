@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback, useContext } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -28,6 +28,7 @@ import useSignalRListeners from "../hooks/realtime/useSignalRListeners";
 import useSectionJoin from "../hooks/realtime/useSectionJoin";
 import ProofFileTab from "../components/SectionUser/ProofFileTab";
 import useRealtimeSectionUpdate from "../hooks/realtime/useRealtimeSectionUpdate";
+import { SectionContext } from "../context/appContext";
 const SERVICE_URL = import.meta.env.VITE_API_URL + "/document";
 
 const normalizeJson = (value) => {
@@ -77,8 +78,10 @@ const getInitials = (name) => {
 };
 
 const SectionEdit = ({ documentId, tempSection, setSections }) => {
-  const navigate = useNavigate();
-  const editorRef = useRef(null);
+
+  const context = useContext(SectionContext);
+  const localEditorRef = useRef(null);
+  const editorRef = context?.editorRef || localEditorRef;
 
   // autosave:
   const autoSaveTimeoutRef = useRef(null);
@@ -424,19 +427,18 @@ const SectionEdit = ({ documentId, tempSection, setSections }) => {
               {lockState?.isLocked && (
                 <div
                   className={`flex items-centergap-2 rounded-full border px-3 py-1 text-sm
-                              ${
-                                lockState.lockedByUserId === userId
-                                  ? `
+                              ${lockState.lockedByUserId === userId
+                      ? `
                                     border-green-200
                                     bg-green-50
                                     text-green-700
                                   `
-                                  : `
+                      : `
                                     border-amber-200
                                     bg-amber-50
                                     text-amber-700
                                   `
-                              }
+                    }
                             `}
                 >
                   <Lock size={14} />
