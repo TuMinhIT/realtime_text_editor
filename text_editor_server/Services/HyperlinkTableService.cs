@@ -26,7 +26,7 @@ public class HyperlinkTableService
         if (section == null)
             throw new Exception("Section not found");
 
-        // 1. lấy section đầu tiên (hoặc match theo logic bạn muốn)
+        // 1. lấy section đầu tiên
         var sec = sfdt["sec"]?[0] as JObject;
         if (sec == null)
             throw new Exception("Invalid SFDT: missing sec");
@@ -39,6 +39,12 @@ public class HyperlinkTableService
         var blockList = blocks
             .Cast<JObject>()
             .ToList();
+
+        //2.1 Xóa bảng cũ nếu block cuối 
+        blockList.RemoveAll(block =>
+            block["r"] != null &&
+            IsEnvidenceTable(block)
+        );
 
         // 3. CHÈN TABLE
         blockList.Add(CreateEvidenceTable());
@@ -364,121 +370,6 @@ public class HyperlinkTableService
 
         return row;
     }
-    //private JObject CreateEvidenceRow(
-    //  string no,
-    //  string code,
-    //  string name)
-    //{
-    //    var row = JObject.Parse("""
-    //{
-    //  "c":[
-    //    {
-    //      "b":[
-    //        {
-    //          "pf":{
-    //            "bdrs":{"tp":{},"lt":{},"rg":{},"bt":{},"h":{},"v":{}},
-    //            "lin":0,
-    //            "fin":0,
-    //            "stn":"Normal",
-    //            "lif":{}
-    //          },
-    //          "cf":{},
-    //          "i":[
-    //            {
-    //              "cf":{"bi":false},
-    //              "tlp":""
-    //            }
-    //          ]
-    //        }
-    //      ],
-    //      "tcpr":{
-    //        "bdrs":{"tp":{},"lt":{},"rg":{},"bt":{},"dd":{},"du":{},"h":{},"v":{}},
-    //        "sd":{},
-    //        "pw":156,
-    //        "cw":156,
-    //        "colsp":1,
-    //        "rwsp":1
-    //      },
-    //      "ci":0
-    //    },
-    //    {
-    //      "b":[
-    //        {
-    //          "pf":{
-    //            "bdrs":{"tp":{},"lt":{},"rg":{},"bt":{},"h":{},"v":{}},
-    //            "lin":0,
-    //            "fin":0,
-    //            "stn":"Normal",
-    //            "lif":{}
-    //          },
-    //          "cf":{},
-    //          "i":[
-    //            {
-    //              "cf":{"bi":false},
-    //              "tlp":""
-    //            }
-    //          ]
-    //        }
-    //      ],
-    //      "tcpr":{
-    //        "bdrs":{"tp":{},"lt":{},"rg":{},"bt":{},"dd":{},"du":{},"h":{},"v":{}},
-    //        "sd":{},
-    //        "pw":156,
-    //        "cw":156,
-    //        "colsp":1,
-    //        "rwsp":1
-    //      },
-    //      "ci":1
-    //    },
-    //    {
-    //      "b":[
-    //        {
-    //          "pf":{
-    //            "bdrs":{"tp":{},"lt":{},"rg":{},"bt":{},"h":{},"v":{}},
-    //            "lin":0,
-    //            "fin":0,
-    //            "stn":"Normal",
-    //            "lif":{}
-    //          },
-    //          "cf":{},
-    //          "i":[
-    //            {
-    //              "cf":{"bi":false},
-    //              "tlp":""
-    //            }
-    //          ]
-    //        }
-    //      ],
-    //      "tcpr":{
-    //        "bdrs":{"tp":{},"lt":{},"rg":{},"bt":{},"dd":{},"du":{},"h":{},"v":{}},
-    //        "sd":{},
-    //        "pw":156,
-    //        "cw":156,
-    //        "colsp":1,
-    //        "rwsp":1
-    //      },
-    //      "ci":2
-    //    }
-    //  ],
-    //  "trpr":{
-    //    "h":1,
-    //    "ht":0,
-    //    "bdrs":{
-    //      "tp":{},"lt":{},"rg":{},"bt":{},
-    //      "dd":{},"du":{},"h":{},"v":{}
-    //    },
-    //    "gb":0,
-    //    "ga":0
-    //  }
-    //}
-    //""");
-
-    //    row["c"]![0]!["b"]![0]!["i"]![0]!["tlp"] = no;
-    //    row["c"]![1]!["b"]![0]!["i"]![0]!["tlp"] = code;
-    //    row["c"]![2]!["b"]![0]!["i"]![0]!["tlp"] = name;
-
-    //    return row;
-    //}
 
     // New implementation: read criteria + evidences from DB.
     private List<CriterionReq> GetCriteriaFromDb()
@@ -495,16 +386,7 @@ public class HyperlinkTableService
 
         foreach (var s in sections)
         {
-            //var evidences = _db.SectionHyperlinks
-            //    .Where(h => h.SectionId == s.Id && !string.IsNullOrEmpty(h.Code))
-            //    .OrderBy(h => h.Position)
-            //    .Select(h => new EvidenceReq
-            //    {
-            //        Code = h.Code ?? string.Empty,
-            //        Name = h.Url ?? string.Empty
-            //    })
-            //    .ToList();
-
+           
             var evidences =
             (
                 from h in _db.SectionHyperlinks
@@ -533,11 +415,12 @@ public class HyperlinkTableService
             {
                 // continue; // skip sections without coded hyperlinks
 
-                evidences.Add(new EvidenceReq
-                {
-                    Code = "N/A",
-                    Name = "No coded hyperlinks"
-                });
+                //evidences.Add(new EvidenceReq
+                //{
+                //    Code = "N/A",
+                //    Name = "No coded hyperlinks"
+                //});
+                continue;
             }
               
 
@@ -579,5 +462,34 @@ public class HyperlinkTableService
         }
         """);
     }
-}
 
+    // Hàm kiểm tra xem block cuối cùng có phải là bảng minh chứng hay không?
+    private bool IsEnvidenceTable (JObject table)
+    {
+        try
+        {
+            var rows = table["r"] as JArray;
+            if (rows == null || rows.Count == 0)
+                return false;
+
+
+            var firstRow = rows[0] as JObject;
+
+            var cells = firstRow?["c"] as JArray;
+
+            //Kiểm tra từng ô:
+            if (cells == null || cells.Count < 3)
+                return false;
+
+            var no = cells[0]?["b"]?[0]?["i"]?[0]?["tlp"]?.ToString();
+            var code = cells[1]?["b"]?[0]?["i"]?[0]?["tlp"]?.ToString();
+            var name = cells[2]?["b"]?[0]?["i"]?[0]?["tlp"]?.ToString();
+
+            return no == "No." && code == "Code" && name == "Name of evidence";
+        }
+        catch
+        {
+            return false;
+        }
+    }
+}
