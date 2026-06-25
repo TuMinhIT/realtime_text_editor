@@ -27,6 +27,7 @@ const ProofFileTab = ({ documentId }) => {
   const loadFiles = async () => {
     setIsLoading(true);
 
+
     const result = await fileService.getAllFiles();
     if (result) {
       setFiles(result.data);

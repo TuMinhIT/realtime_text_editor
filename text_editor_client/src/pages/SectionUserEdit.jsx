@@ -23,7 +23,6 @@ import { IoIosReorder } from "react-icons/io";
 import { SectionContext } from "../context/appContext";
 
 const SectionUserEdit = () => {
-
   const { documentId, title } = useParams();
   const navigate = useNavigate();
 
@@ -37,10 +36,13 @@ const SectionUserEdit = () => {
   const [tab, setTab] = useState("section");
 
   const editorRef = useRef(null);
+  const sectionEditRef = useRef(null);
 
   const handleInsertProofTable = async () => {
     if (!selectedSection?.id) {
-      toast.warning("Vui lòng chọn một section trước khi chèn bảng minh chứng.");
+      toast.warning(
+        "Vui lòng chọn một section trước khi chèn bảng minh chứng.",
+      );
       return;
     }
     const editor = editorRef.current?.documentEditor;
@@ -53,16 +55,24 @@ const SectionUserEdit = () => {
       console.log(sfdtContent);
 
       // Parse sfdtContent to JS object if it is a JSON string
-      const sfdtObject = typeof sfdtContent === "string" ? JSON.parse(sfdtContent) : sfdtContent;
+      const sfdtObject =
+        typeof sfdtContent === "string" ? JSON.parse(sfdtContent) : sfdtContent;
 
-      const res = await sectionService.insertProofTable(selectedSection.id, sfdtObject);
+      const res = await sectionService.insertProofTable(
+        selectedSection.id,
+        sfdtObject,
+      );
 
-      //load lại sections
-
-      loadSections();
+      // render lại
       toast.success("Chèn bảng minh chứng thành công!");
 
+      // Gửi thông báo SignalR cho các client khác
+      await signalRService.notifySectionUpdated(selectedSection.id);
 
+      // Gọi refetch để tải lại dữ liệu mới trong SectionEdit
+      if (sectionEditRef.current?.refetch) {
+        await sectionEditRef.current.refetch();
+      }
     } catch (err) {
       console.error(err);
       toast.error(err?.message || "Lỗi khi chèn bảng minh chứng.");
@@ -121,7 +131,6 @@ const SectionUserEdit = () => {
 
   const handleSelectSection = async (section) => {
     try {
-
       if (selectedSection?.id) {
         signalRService.releaseEditSession(selectedSection.id);
         signalRService.leaveCurrentSection();
@@ -296,6 +305,7 @@ const SectionUserEdit = () => {
               documentId={documentId}
               tempSection={selectedSection}
               setSections={setSections}
+              sectionEditRef={sectionEditRef}
             />
           )}
         </div>

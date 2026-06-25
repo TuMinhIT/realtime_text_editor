@@ -1,4 +1,10 @@
-import React, { useEffect, useRef, useState, useCallback, useContext } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  useContext,
+} from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -77,8 +83,7 @@ const getInitials = (name) => {
     .toUpperCase();
 };
 
-const SectionEdit = ({ documentId, tempSection, setSections }) => {
-
+const SectionEdit = ({ documentId, tempSection, setSections, sectionEditRef }) => {
   const context = useContext(SectionContext);
   const localEditorRef = useRef(null);
   const editorRef = context?.editorRef || localEditorRef;
@@ -242,6 +247,20 @@ const SectionEdit = ({ documentId, tempSection, setSections }) => {
       console.error("Error loading preview on init", err);
     }
   };
+
+  // Expose refetch method to parent container via sectionEditRef
+  useEffect(() => {
+    if (sectionEditRef) {
+      sectionEditRef.current = {
+        refetch,
+      };
+    }
+    return () => {
+      if (sectionEditRef) {
+        sectionEditRef.current = null;
+      }
+    };
+  });
 
   const [isSaving, setIsSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
@@ -427,18 +446,19 @@ const SectionEdit = ({ documentId, tempSection, setSections }) => {
               {lockState?.isLocked && (
                 <div
                   className={`flex items-centergap-2 rounded-full border px-3 py-1 text-sm
-                              ${lockState.lockedByUserId === userId
-                      ? `
+                              ${
+                                lockState.lockedByUserId === userId
+                                  ? `
                                     border-green-200
                                     bg-green-50
                                     text-green-700
                                   `
-                      : `
+                                  : `
                                     border-amber-200
                                     bg-amber-50
                                     text-amber-700
                                   `
-                    }
+                              }
                             `}
                 >
                   <Lock size={14} />
