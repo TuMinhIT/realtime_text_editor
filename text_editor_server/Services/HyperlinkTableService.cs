@@ -372,21 +372,80 @@ public class HyperlinkTableService
     }
 
     // New implementation: read criteria + evidences from DB.
+    //private List<CriterionReq> GetCriteriaFromDb()
+    //{
+    //    // Query all sections ordered by OrderIndex (adjust filter if you need only certain sections)
+    //    var sections = _db.Sections
+    //        .Where(s => s.Level == 2)
+    //        .OrderBy(s => s.OrderIndex)
+    //        .Select(s => new { s.Id, s.Title })
+    //        .ToList();
+
+    //   // Console.WriteLine($"Found {sections.Count} sections in DB.");
+    //    var result = new List<CriterionReq>();
+
+    //    foreach (var s in sections)
+    //    {
+
+    //        var evidences =
+    //        (
+    //            from h in _db.SectionHyperlinks
+    //            join p in _db.ProofFiles
+    //                on h.ProofFileId equals p.Id into proofs
+    //            from p in proofs.DefaultIfEmpty()
+
+    //            where h.SectionId == s.Id && !string.IsNullOrEmpty(h.Code)
+
+    //            orderby h.Position
+
+    //            select new EvidenceReq
+    //            {
+    //                Code = h.Code ?? string.Empty,
+    //                Name = p != null
+    //              ? p.FileName
+    //              : "No proof file",
+    //               Url = h.Url ?? string.Empty
+    //            }
+
+    //        ).ToList();
+
+    //        //Console.WriteLine($"Section '{s.Title}' has {evidences.Count} coded hyperlinks.");
+
+    //        if (evidences.Count == 0)
+    //        {
+    //            // continue; // skip sections without coded hyperlinks
+
+    //            //evidences.Add(new EvidenceReq
+    //            //{
+    //            //    Code = "N/A",
+    //            //    Name = "No coded hyperlinks"
+    //            //});
+    //            continue;
+    //        }
+
+
+    //        result.Add(new CriterionReq
+    //        {
+    //            Title = s.Title,
+    //            Evidences = evidences
+    //        });
+    //    }
+
+    //    return result;
+    //}
+
     private List<CriterionReq> GetCriteriaFromDb()
     {
-        // Query all sections ordered by OrderIndex (adjust filter if you need only certain sections)
         var sections = _db.Sections
             .Where(s => s.Level == 2)
             .OrderBy(s => s.OrderIndex)
             .Select(s => new { s.Id, s.Title })
             .ToList();
 
-       // Console.WriteLine($"Found {sections.Count} sections in DB.");
         var result = new List<CriterionReq>();
 
         foreach (var s in sections)
         {
-           
             var evidences =
             (
                 from h in _db.SectionHyperlinks
@@ -398,31 +457,32 @@ public class HyperlinkTableService
 
                 orderby h.Position
 
-                select new EvidenceReq
+                select new
                 {
-                    Code = h.Code ?? string.Empty,
-                    Name = p != null
-                  ? p.FileName
-                  : "No proof file",
-                   Url = h.Url ?? string.Empty
+                    h.Code,
+                    h.Url,
+                    h.ProofFileId,
+                    ProofFileName = p != null ? p.FileName : null
                 }
 
-            ).ToList();
-
-            //Console.WriteLine($"Section '{s.Title}' has {evidences.Count} coded hyperlinks.");
+            ).ToList()
+            .Select(x => new EvidenceReq
+            {
+                Code = x.Code ?? string.Empty,
+                Name = x.ProofFileName
+                       ?? _db.Folders
+                           .Where(f => f.Id == x.ProofFileId)
+                           .Select(f => f.Name)
+                           .FirstOrDefault()
+                       ?? "No proof file",
+                Url = x.Url ?? string.Empty
+            })
+            .ToList();
 
             if (evidences.Count == 0)
             {
-                // continue; // skip sections without coded hyperlinks
-
-                //evidences.Add(new EvidenceReq
-                //{
-                //    Code = "N/A",
-                //    Name = "No coded hyperlinks"
-                //});
                 continue;
             }
-              
 
             result.Add(new CriterionReq
             {
